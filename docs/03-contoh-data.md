@@ -2,7 +2,7 @@
 
 > Sumber: `Proses Bisnis Mata Sidik.xlsx` — Sheet **Contoh Data** (A1:V39)
 >
-> Dokumen ini adalah ekstraksi 3 dari 3 sheet. Seluruh tabel dipertahankan. Gambar dashboard yang tertanam di Excel diekstraksi ke `assets/output-dashboard-spm.png`.
+> Dokumen ini adalah ekstraksi 3 dari 3 sheet. Seluruh tabel dipertahankan. Gambar dashboard yang tertanam di Excel diekstraksi ke `../assets/output-dashboard-spm.png`.
 
 ## 1. OUTPUT DASHBOARD
 
@@ -10,7 +10,7 @@
 
 Gambar tertanam pada rentang A5:F17 di file sumber:
 
-![Output Dashboard SPM — Persentase](assets/output-dashboard-spm.png)
+![Output Dashboard SPM — Persentase](../assets/output-dashboard-spm.png)
 
 Transkripsi tabel pada gambar di atas (untuk keterbacaan dan pencarian teks, format tabel dipertahankan):
 

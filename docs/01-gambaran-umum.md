@@ -42,6 +42,10 @@
 
 ## 5. Flow Chart / Alur Proses
 
+<img src="../assets/diagrams/alur-bisnis.png" alt="Alur bisnis MATA SIDIK enam tahap: input Puskesmas, verifikasi Dinas, validasi Kabid/Sekretaris, pengolahan sistem + faktor, dashboard, keputusan Kepala Dinas + TL, dengan jalur pengembalian serta monitoring faktor dan TL.">
+
+*Gambar 5 — Rekonstruksi alur dari bagian ini: enam tahap dari input Puskesmas sampai keputusan pimpinan. Sumber HTML: [`../assets/diagrams/alur-bisnis.html`](../assets/diagrams/alur-bisnis.html); tabel mentah Excel tetap dipertahankan di Lampiran.*
+
 ### 5.1 Pengumpulan Data, Input dan Pengiriman Data
 
 User disini adalah Petugas Puskesmas, Petugas Dinas yang menjadi penanggung jawab program/indikator.
