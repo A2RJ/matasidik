@@ -7,7 +7,8 @@
     class: className = '',
     name = '',
     id = '',
-    disabled = false
+    disabled = false,
+    allowEmpty = false
   }: {
     value?: string;
     options?: { value: string; label: string }[];
@@ -16,12 +17,13 @@
     name?: string;
     id?: string;
     disabled?: boolean;
+    allowEmpty?: boolean;
   } = $props();
 </script>
 
 <div class="relative">
   <select bind:value {name} {id} {disabled} class={cn('nb-select', className)}>
-    {#if placeholder}<option value="" disabled>{placeholder}</option>{/if}
+    {#if placeholder}<option value="" disabled={!allowEmpty}>{placeholder}</option>{/if}
     {#each options as option (option.value)}
       <option value={option.value}>{option.label}</option>
     {/each}

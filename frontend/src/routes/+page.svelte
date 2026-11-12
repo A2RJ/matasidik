@@ -28,9 +28,14 @@
   let error = $state('');
   let filterFaskes = $state('');
   let filterStatus = $state('');
+  let filterCategory = $state('SPM');
 
   let periodOptions = $derived($periods.map((p) => ({ value: p.id, label: p.kode })));
   let faskesOptions = $derived(($bootstrap?.faskes ?? []).map((f) => ({ value: f.id, label: f.nama })));
+  let categoryOptions = $derived([
+    { value: 'ALL', label: 'Semua' },
+    ...($bootstrap?.categories ?? []).filter((c) => c.aktif).map((c) => ({ value: c.kode, label: c.nama }))
+  ]);
   let statusOptions = $derived(
     Object.entries(DISPLAY_STATUS_LABELS).map(([value, label]) => ({ value, label }))
   );
@@ -38,8 +43,10 @@
   let baselineHeader = $derived(
     items[0]?.baseline_year ? `Capaian ${items[0].baseline_year}` : TABLE_LABELS.baselinePrev
   );
+  let isSPM = $derived(filterCategory === 'SPM');
+  let isAll = $derived(filterCategory === 'ALL');
 
-  let columns = $derived([
+  let columns = $derived(isSPM ? [
     { key: 'kode', label: 'No', width: '56px' },
     { key: 'indikator', label: 'Indikator', width: '32%' },
     { key: 'target', label: TABLE_LABELS.target, class: 'text-right', width: '80px' },
@@ -49,6 +56,15 @@
     { key: 'status', label: TABLE_LABELS.status, width: '150px' },
     { key: 'gap', label: TABLE_LABELS.gap, class: 'text-right', width: '90px' },
     { key: 'trace', label: TABLE_LABELS.action, width: '96px' }
+  ] : [
+    { key: 'kode', label: 'Kode', width: '110px' },
+    { key: 'indikator', label: 'Label / Indikator', width: '34%' },
+    ...(isAll ? [{ key: 'category', label: 'Kelompok', width: '150px' }] : []),
+    { key: 'target', label: TABLE_LABELS.target, class: 'text-right', width: '90px' },
+    { key: 'value', label: 'Capaian', class: 'text-right', width: '110px' },
+    { key: 'status', label: TABLE_LABELS.status, width: '150px' },
+    { key: 'gap', label: TABLE_LABELS.gap, class: 'text-right', width: '90px' },
+    { key: 'owner', label: 'Bidang/Timker', width: '160px' }
   ]);
 
   async function load() {
@@ -57,13 +73,24 @@
     loading = true;
     error = '';
     try {
-      const [dashboard, chartData] = await Promise.all([
-        api.dashboard({ periode: period, faskes_id: filterFaskes || undefined, status: filterStatus || undefined }),
-        api.ikuByFaskes({ periode: period, faskes_id: filterFaskes || undefined })
-      ]);
-      items = dashboard.items;
-      summary = dashboard.summary;
-      chart = chartData;
+      if (filterCategory === 'SPM') {
+        const [dashboard, chartData] = await Promise.all([
+          api.dashboard({ periode: period, faskes_id: filterFaskes || undefined, status: filterStatus || undefined }),
+          api.ikuByFaskes({ periode: period, faskes_id: filterFaskes || undefined })
+        ]);
+        items = dashboard.items;
+        summary = dashboard.summary;
+        chart = chartData;
+      } else {
+        const result = await api.dashboardCategory(filterCategory, {
+          periode: period,
+          faskes_id: filterFaskes || undefined,
+          status: filterStatus || undefined
+        });
+        items = result.items;
+        summary = result.summary;
+        chart = null;
+      }
     } catch (err) {
       error = err instanceof Error ? err.message : 'Gagal memuat dashboard.';
     } finally {
@@ -75,6 +102,7 @@
     const period = $selectedPeriod;
     const faskes = filterFaskes;
     const status = filterStatus;
+    const category = filterCategory;
     if (period) void load();
   });
 
@@ -138,9 +166,9 @@
 
 <div class="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
   <StatCard
-    label="IKU induk · Kesehatan Ibu"
-    value={summary?.parent_value !== undefined ? formatPercent(summary.parent_value) : '—'}
-    hint={`Status ${summary?.parent_status ?? 'NO_DATA'} · RATIO_OF_SUMS`}
+    label={isSPM ? 'IKU induk · Kesehatan Ibu' : 'Total baris kategori'}
+    value={isSPM ? (summary?.parent_value !== undefined ? formatPercent(summary.parent_value) : '—') : `${summary?.total ?? 0}`}
+    hint={isSPM ? `Status ${summary?.parent_status ?? 'NO_DATA'} · RATIO_OF_SUMS` : `Kategori ${filterCategory}`}
     tone="primary"
   >
     {#snippet icon()}<Target size={18} />{/snippet}
@@ -148,7 +176,7 @@
   <StatCard
     label="Sesuai target"
     value={`${summary?.on_target ?? 0}`}
-    hint={`dari ${summary?.total ?? 0} baris SPM`}
+    hint={`dari ${summary?.total ?? 0} baris`}
     tone="success"
   >
     {#snippet icon()}<Activity size={18} />{/snippet}
@@ -177,42 +205,48 @@
       <div class="nb-kicker">Filter dashboard</div>
       <h2 class="mt-1 text-xl">Periode & scope</h2>
     </div>
-    <div class="grid gap-2 sm:grid-cols-3">
+    <div class="grid gap-2 sm:grid-cols-4">
       <div class="min-w-44">
         <label class="nb-label" for="period">Periode</label>
         <Select id="period" bind:value={$selectedPeriod} options={periodOptions} placeholder="Pilih periode" />
       </div>
       <div class="min-w-48">
+        <label class="nb-label" for="category">Kelompok</label>
+        <Select id="category" bind:value={filterCategory} options={categoryOptions} placeholder="Pilih kelompok" />
+      </div>
+      <div class="min-w-48">
         <label class="nb-label" for="faskes">Faskes/UPTD</label>
-        <Select id="faskes" bind:value={filterFaskes} options={faskesOptions} placeholder="Semua faskes" />
+        <Select id="faskes" bind:value={filterFaskes} options={faskesOptions} placeholder="Semua faskes" allowEmpty />
       </div>
       <div class="min-w-40">
         <label class="nb-label" for="status">Status</label>
-        <Select id="status" bind:value={filterStatus} options={statusOptions} placeholder="Semua status" />
+        <Select id="status" bind:value={filterStatus} options={statusOptions} placeholder="Semua status" allowEmpty />
       </div>
     </div>
   </div>
 </Card>
 
-<Card class="mb-6">
-  <div class="flex flex-wrap items-center justify-between gap-3 border-b-2 border-black bg-card px-4 py-3">
-    <div>
-      <div class="nb-kicker">Performa antar puskesmas/UPTD</div>
-      <h2 class="mt-1 text-xl">Multi-series IKU</h2>
-      <p class="mt-1 text-xs text-muted-foreground">Setiap warna adalah satu IKU leaf; bandingkan capaian antar faskes pada periode aktif.</p>
+{#if isSPM}
+  <Card class="mb-6">
+    <div class="flex flex-wrap items-center justify-between gap-3 border-b-2 border-black bg-card px-4 py-3">
+      <div>
+        <div class="nb-kicker">Performa antar puskesmas/UPTD</div>
+        <h2 class="mt-1 text-xl">Multi-series IKU</h2>
+        <p class="mt-1 text-xs text-muted-foreground">Setiap warna adalah satu IKU leaf; bandingkan capaian antar faskes pada periode aktif.</p>
+      </div>
+      <Badge tone="info">Legends: seluruh IKU leaf</Badge>
     </div>
-    <Badge tone="info">Legends: seluruh IKU leaf</Badge>
-  </div>
-  <CardContent>
-    <MultiBarChart faskes={chart?.faskes ?? []} series={chart?.series ?? []} />
-  </CardContent>
-</Card>
+    <CardContent>
+      <MultiBarChart faskes={chart?.faskes ?? []} series={chart?.series ?? []} />
+    </CardContent>
+  </Card>
+{/if}
 
 <Card>
   <div class="flex flex-wrap items-center justify-between gap-3 border-b-2 border-black bg-muted px-4 py-3">
     <div>
-      <div class="nb-kicker">Output SPM</div>
-      <h2 class="mt-1 text-xl">Capaian SPM per indikator</h2>
+      <div class="nb-kicker">{isSPM ? 'Output SPM' : 'Output kelompok'}</div>
+      <h2 class="mt-1 text-xl">{isSPM ? 'Capaian SPM per indikator' : isAll ? 'Capaian semua kelompok' : 'Capaian per label/owner'}</h2>
     </div>
     <div class="flex flex-wrap gap-2">
       <Badge tone="final">Data final</Badge>
@@ -226,18 +260,16 @@
   {:else if items.length === 0}
     <div class="p-4"><EmptyState title="Dashboard kosong" description={EMPTY_STATE.dashboard} /></div>
   {:else}
-    <DataTable {columns} rows={items} fixed onrowclick={(row) => openDetail(row.kode)}>
+    <DataTable {columns} rows={items} fixed onrowclick={isSPM ? (row) => openDetail(row.kode) : undefined}>
       {#snippet cell(item: DashboardItem, key)}
         {#if key === 'kode'}
           <span class="font-bold">{item.kode}</span>
         {:else if key === 'indikator'}
           <div class="font-semibold text-foreground">{item.indikator}</div>
-          <div class="mt-1 flex flex-wrap gap-1">
-            <Badge tone="neutral">{item.label_kode ?? '—'}</Badge>
-            {#if item.value_status}<StatusBadge kind="value" value={item.value_status} />{/if}
-          </div>
+        {:else if key === 'category'}
+          <span class="font-mono text-[10px]">{item.category_nama ?? item.category_kode ?? '—'}</span>
         {:else if key === 'target'}
-          {formatPercent(item.target, 0)}
+          {item.target > 0 ? formatPercent(item.target, 0) : '—'}
         {:else if key === 'baselinePrev'}
           {formatPercent(item.baseline_prev, 0)}
         {:else if key === 'baselineTW1'}
@@ -251,15 +283,19 @@
           <StatusBadge kind="display" value={item.display_status} />
         {:else if key === 'gap'}
           {item.gap !== undefined ? `${item.gap > 0 ? '+' : ''}${formatNumber(item.gap, 2)} pp` : '—'}
+        {:else if key === 'owner'}
+          {item.owner_nama ? `${item.owner_nama} (${item.owner_jenis ?? 'owner'})` : '—'}
         {:else if key === 'trace'}
-          <Button size="sm" variant="outline" onclick={(event) => { event.stopPropagation(); openDetail(item.kode); }}>
-            <Network size={12} /> Detail
-          </Button>
+          {#if isSPM}
+            <Button size="sm" variant="outline" onclick={(event) => { event.stopPropagation(); openDetail(item.kode); }}>
+              <Network size={12} /> Detail
+            </Button>
+          {/if}
         {/if}
       {/snippet}
     </DataTable>
     <div class="border-t-2 border-black bg-card px-4 py-2 font-mono text-[10px] text-muted-foreground">
-      Klik baris untuk melihat provenance per puskesmas, cakupan upload, dan chart performa.
+      {isSPM ? 'Klik baris untuk melihat provenance per puskesmas, cakupan upload, dan chart performa.' : 'Data mengikuti kategori dan filter yang dipilih; nilai tetap berasal dari label/indikator master.'}
     </div>
   {/if}
 </Card>

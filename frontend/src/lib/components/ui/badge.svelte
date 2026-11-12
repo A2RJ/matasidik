@@ -15,7 +15,9 @@
     success: 'bg-success text-success-foreground',
     warning: 'bg-warning text-warning-foreground',
     danger: 'bg-destructive text-destructive-foreground',
-    final: 'bg-primary text-primary-foreground'
+    final: 'bg-primary text-primary-foreground',
+    dark: 'bg-black text-white',
+    slate: 'bg-slate-200 text-slate-700'
   };
 </script>
 

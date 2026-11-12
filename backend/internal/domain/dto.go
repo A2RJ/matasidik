@@ -19,6 +19,8 @@ type DashboardFilter struct {
 	ScopeID     string
 	FaskesID    string
 	BidangID    string
+	TimkerID    string
+	Category    string
 	IndikatorID string
 	Status      string
 }
@@ -30,6 +32,12 @@ type DashboardSPMItem struct {
 	IndikatorID      *string  `json:"indikator_id,omitempty"`
 	LabelKode        *string  `json:"label_kode,omitempty"`
 	LabelNama        *string  `json:"label_nama,omitempty"`
+	CategoryKode     *string  `json:"category_kode,omitempty"`
+	CategoryNama     *string  `json:"category_nama,omitempty"`
+	OwnerID          *string  `json:"owner_id,omitempty"`
+	OwnerKode        *string  `json:"owner_kode,omitempty"`
+	OwnerNama        *string  `json:"owner_nama,omitempty"`
+	OwnerJenis       *string  `json:"owner_jenis,omitempty"`
 	IKUValueID       *string  `json:"iku_value_id,omitempty"`
 	IndicatorValueID *string  `json:"indicator_value_id,omitempty"`
 	CalculationRunID *string  `json:"calculation_run_id,omitempty"`
@@ -112,10 +120,17 @@ type DashboardSummary struct {
 	Total        int      `json:"total"`
 	OnTarget     int      `json:"on_target"`
 	BelowTarget  int      `json:"below_target"`
+	NoTarget     int      `json:"no_target"`
 	NoData       int      `json:"no_data"`
 	Average      float64  `json:"average"`
 	ParentValue  *float64 `json:"parent_value,omitempty"`
 	ParentStatus string   `json:"parent_status"`
+}
+
+type DashboardCategoryResult struct {
+	Category DashboardCategory  `json:"category"`
+	Items    []DashboardSPMItem `json:"items"`
+	Summary  *DashboardSummary  `json:"summary"`
 }
 
 type SPMFaskesDetail struct {

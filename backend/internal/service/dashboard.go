@@ -78,6 +78,8 @@ func (s *DashboardService) SPM(ctx context.Context, f domain.DashboardFilter) ([
 			if l, ok := labelByID[*item.LabelID]; ok {
 				item.LabelKode = &l.Kode
 				item.LabelNama = &l.Nama
+				item.CategoryKode = l.CategoryKode
+				item.CategoryNama = l.CategoryNama
 				if f.BidangID != "" && (l.PJBidangID == nil || *l.PJBidangID != f.BidangID) {
 					filteredOut = true
 				}
@@ -117,6 +119,241 @@ func (s *DashboardService) SPM(ctx context.Context, f domain.DashboardFilter) ([
 		}
 	}
 	return filtered, summary, nil
+}
+
+func (s *DashboardService) Category(ctx context.Context, kode string, f domain.DashboardFilter) (*domain.DashboardCategoryResult, error) {
+	f, err := s.ResolveFilter(ctx, f)
+	if err != nil {
+		return nil, err
+	}
+	kode = strings.ToUpper(strings.TrimSpace(kode))
+	if kode == "ALL" {
+		return s.allCategories(ctx, f)
+	}
+	category, err := s.master.GetDashboardCategoryByKode(ctx, kode)
+	if err != nil {
+		return nil, err
+	}
+	result := &domain.DashboardCategoryResult{Category: *category, Items: []domain.DashboardSPMItem{}}
+	if category.Kode == "SPM" {
+		items, summary, err := s.SPM(ctx, f)
+		if err != nil {
+			return nil, err
+		}
+		result.Items = items
+		result.Summary = summary
+		return result, nil
+	}
+	targets, err := s.master.ListTargets(ctx, f.PeriodeID)
+	if err != nil {
+		return nil, err
+	}
+	labelTargets, indicatorTargets := targetMaps(targets, f)
+	if category.Jenis == "OWNER" {
+		return s.ownerCategory(ctx, category, f, indicatorTargets, result)
+	}
+	if err := s.appendLabelCategory(ctx, category, f, labelTargets, result); err != nil {
+		return nil, err
+	}
+	result.Summary = summarize(result.Items)
+	return result, nil
+}
+
+func (s *DashboardService) allCategories(ctx context.Context, f domain.DashboardFilter) (*domain.DashboardCategoryResult, error) {
+	categories, err := s.master.ListDashboardCategories(ctx)
+	if err != nil {
+		return nil, err
+	}
+	targets, err := s.master.ListTargets(ctx, f.PeriodeID)
+	if err != nil {
+		return nil, err
+	}
+	labelTargets, indicatorTargets := targetMaps(targets, f)
+	result := &domain.DashboardCategoryResult{
+		Category: domain.DashboardCategory{
+			ID: "all", Kode: "ALL", Nama: "Semua", Jenis: "LABEL", Urutan: 0, Aktif: true, IsSystem: true,
+		},
+		Items: []domain.DashboardSPMItem{},
+	}
+	for _, category := range categories {
+		if !category.Aktif {
+			continue
+		}
+		category := category
+		if category.Jenis == "OWNER" {
+			if _, err := s.ownerCategory(ctx, &category, f, indicatorTargets, result); err != nil {
+				return nil, err
+			}
+			continue
+		}
+		if err := s.appendLabelCategory(ctx, &category, f, labelTargets, result); err != nil {
+			return nil, err
+		}
+	}
+	result.Summary = summarize(result.Items)
+	return result, nil
+}
+
+func (s *DashboardService) appendLabelCategory(ctx context.Context, category *domain.DashboardCategory, f domain.DashboardFilter, labelTargets map[string]float64, result *domain.DashboardCategoryResult) error {
+	labels, err := s.master.ListLabels(ctx)
+	if err != nil {
+		return err
+	}
+	for _, label := range labels {
+		if label.CategoryID == nil || *label.CategoryID != category.ID {
+			continue
+		}
+		item := domain.DashboardSPMItem{
+			Kode: label.Kode, Indikator: label.Nama, LabelID: &label.ID,
+			LabelKode: &label.Kode, LabelNama: &label.Nama,
+			CategoryKode: &category.Kode, CategoryNama: &category.Nama,
+			Target: labelTargets[label.ID], ValueStatus: string(domain.ValueNoData),
+		}
+		if v, err := s.values.GetIKUValue(ctx, label.ID, f.PeriodeID, f.ScopeType, f.ScopeID); err == nil && v != nil {
+			item.IKUValueID = &v.ID
+			item.Value = v.Value
+			item.Numerator = &v.Numerator
+			item.Denominator = &v.Denominator
+			item.ValueStatus = string(v.Status)
+			item.SourceHash = v.SourceHash
+			item.DataVersion = v.DataVersion
+			item.CalculationRunID = v.CalculationRunID
+			item.UpdatedAt = &v.UpdatedAt
+		}
+		item.DisplayStatus = displayStatus(item)
+		if item.Value != nil && item.Target > 0 {
+			gap := *item.Value - item.Target
+			item.Gap = &gap
+		}
+		if f.Status != "" && item.DisplayStatus != f.Status {
+			continue
+		}
+		result.Items = append(result.Items, item)
+	}
+	return nil
+}
+
+func (s *DashboardService) ownerCategory(ctx context.Context, category *domain.DashboardCategory, f domain.DashboardFilter, indicatorTargets map[string]float64, result *domain.DashboardCategoryResult) (*domain.DashboardCategoryResult, error) {
+	indicators, err := s.master.ListIndicators(ctx)
+	if err != nil {
+		return nil, err
+	}
+	bidangList, err := s.master.ListBidang(ctx)
+	if err != nil {
+		return nil, err
+	}
+	bidangByID := map[string]domain.Bidang{}
+	for _, b := range bidangList {
+		bidangByID[b.ID] = b
+	}
+	values, err := s.values.ListFinalIndicatorValuesForScope(ctx, f.PeriodeID, f.ScopeType, f.ScopeID)
+	if err != nil {
+		return nil, err
+	}
+	type aggregate struct {
+		num float64
+		den float64
+	}
+	byIndicator := map[string]aggregate{}
+	for _, v := range values {
+		a := byIndicator[v.IndikatorID]
+		a.num += v.Numerator
+		a.den += v.Denominator
+		byIndicator[v.IndikatorID] = a
+	}
+	for _, indicator := range indicators {
+		if f.TimkerID != "" && (indicator.PJTimkerID == nil || *indicator.PJTimkerID != f.TimkerID) {
+			continue
+		}
+		if f.BidangID != "" && !indicatorOwnedByBidang(indicator, f.BidangID, bidangByID) {
+			continue
+		}
+		item := domain.DashboardSPMItem{
+			Kode: indicator.Kode, Indikator: indicator.Nama, IndikatorID: &indicator.ID,
+			CategoryKode: &category.Kode, CategoryNama: &category.Nama,
+			Target: indicatorTargets[indicator.ID], ValueStatus: string(domain.ValueNoData),
+		}
+		if a, ok := byIndicator[indicator.ID]; ok && a.den > 0 {
+			value := a.num / a.den * 100
+			item.Value = &value
+			item.Numerator = &a.num
+			item.Denominator = &a.den
+			item.ValueStatus = string(domain.ValueComplete)
+		}
+		ownerID := indicator.PJBidangID
+		if indicator.PJTimkerID != nil {
+			ownerID = indicator.PJTimkerID
+		}
+		if ownerID != nil {
+			if owner, ok := bidangByID[*ownerID]; ok {
+				item.OwnerID = &owner.ID
+				item.OwnerKode = &owner.Kode
+				item.OwnerNama = &owner.Nama
+				item.OwnerJenis = &owner.Jenis
+			}
+		}
+		item.DisplayStatus = displayStatus(item)
+		if item.Value != nil && item.Target > 0 {
+			gap := *item.Value - item.Target
+			item.Gap = &gap
+		}
+		if f.Status != "" && item.DisplayStatus != f.Status {
+			continue
+		}
+		result.Items = append(result.Items, item)
+	}
+	result.Summary = summarize(result.Items)
+	return result, nil
+}
+
+func indicatorOwnedByBidang(indicator domain.Indikator, bidangID string, bidangByID map[string]domain.Bidang) bool {
+	if indicator.PJBidangID != nil && *indicator.PJBidangID == bidangID {
+		return true
+	}
+	if indicator.PJTimkerID == nil {
+		return false
+	}
+	timker, ok := bidangByID[*indicator.PJTimkerID]
+	return ok && timker.ParentID != nil && *timker.ParentID == bidangID
+}
+
+func targetMaps(targets []domain.Target, f domain.DashboardFilter) (map[string]float64, map[string]float64) {
+	type picked struct {
+		value float64
+		exact bool
+	}
+	labelPick := map[string]picked{}
+	indicatorPick := map[string]picked{}
+	set := func(m map[string]picked, id string, target float64, exact bool) {
+		if id == "" {
+			return
+		}
+		current, ok := m[id]
+		if !ok || (exact && !current.exact) {
+			m[id] = picked{value: target, exact: exact}
+		}
+	}
+	for _, t := range targets {
+		exact := t.ScopeType == f.ScopeType && deref(t.ScopeID) == f.ScopeID
+		if !exact && t.ScopeType != "KABUPATEN" {
+			continue
+		}
+		if t.LabelID != nil {
+			set(labelPick, *t.LabelID, t.TargetBulanan, exact)
+		}
+		if t.IndikatorID != nil {
+			set(indicatorPick, *t.IndikatorID, t.TargetBulanan, exact)
+		}
+	}
+	labels := map[string]float64{}
+	for id, p := range labelPick {
+		labels[id] = p.value
+	}
+	indicators := map[string]float64{}
+	for id, p := range indicatorPick {
+		indicators[id] = p.value
+	}
+	return labels, indicators
 }
 
 func (s *DashboardService) Trace(ctx context.Context, kode string, f domain.DashboardFilter) (*domain.SPMTrace, error) {
@@ -159,6 +396,9 @@ func displayStatus(item domain.DashboardSPMItem) string {
 	if item.ValueStatus == string(domain.ValueStale) {
 		return "STALE"
 	}
+	if item.Target <= 0 {
+		return "NO_TARGET"
+	}
 	if *item.Value >= item.Target {
 		return "ON_TARGET"
 	}
@@ -175,6 +415,8 @@ func summarize(items []domain.DashboardSPMItem) *domain.DashboardSummary {
 			out.OnTarget++
 		case "BELOW_TARGET":
 			out.BelowTarget++
+		case "NO_TARGET":
+			out.NoTarget++
 		default:
 			out.NoData++
 		}

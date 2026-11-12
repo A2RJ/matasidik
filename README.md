@@ -35,6 +35,7 @@
 | [`docs/02-daftar-indikator-kinerja.md`](docs/02-daftar-indikator-kinerja.md) | Dinas, Developer | Katalog 58 baris indikator dan label |
 | [`docs/03-contoh-data.md`](docs/03-contoh-data.md) | Dinas, Developer | Contoh output dashboard SPM dan data absolut |
 | [`docs/04-arsitektur-iku.md`](docs/04-arsitektur-iku.md) | Developer | Rancangan IKU dinamis, upload, workflow, kalkulasi, arsitektur |
+| [`docs/05-rencana-bnba-wilayah.md`](docs/05-rencana-bnba-wilayah.md) | Developer, Dinas | Rencana BNBA, sebaran wilayah, dan pengelompokan dashboard dinamis; Track A menunggu format BNBA, Track B sedang diimplementasikan |
 | [`docs/schema.md`](docs/schema.md) | Developer | Skema database, relasi, enum, index, seed, dan catatan migrasi SQLite → PostgreSQL |
 | [`docs/implementation.md`](docs/implementation.md) | Developer | Struktur proyek, cara run, API pilot, repository pattern, dan batasan implementasi |
 | [`docs/rules.md`](docs/rules.md) | Agent, Developer | Aturan proyek yang mengikat dan daftar keputusan terbuka |
@@ -202,7 +203,7 @@ Baris R3 pada contoh semula memakai kode IKU induk (rollup-only). Di preview, ba
 
 *Gambar B.3 — Pemisahan master/referensi dari transaksi, faktor, audit, dan TL. Sumber HTML: [`assets/diagrams/model-data.html`](assets/diagrams/model-data.html).*
 
-Skema database lengkap (30 tabel, kolom, relasi, index, enum, seed, dan catatan migrasi) ada di [`docs/schema.md`](docs/schema.md); diagram katalognya ada di [`assets/diagrams/schema-db.png`](assets/diagrams/schema-db.png).
+Skema database lengkap (31 tabel, kolom, relasi, index, enum, seed, dan catatan migrasi) ada di [`docs/schema.md`](docs/schema.md); diagram katalognya ada di [`assets/diagrams/schema-db.png`](assets/diagrams/schema-db.png).
 
 ### Field kunci per entitas
 
@@ -236,6 +237,8 @@ Skema database lengkap (30 tabel, kolom, relasi, index, enum, seed, dan catatan 
 ## B.5 Skema master indikator dinamis + RACI per label
 
 File `02` adalah master hidup (ada baris `dst belum selesai`). Aturan: tambah = versi baru, nonaktifkan = set `berlaku_sampai` + `status_aktif=false`. Jangan hapus fisik agar tren historis utuh. Setiap versi wajib isi: satuan baku, definisi + numerator/denominator, label (many-to-many via `INDIKATOR_LABEL`), sifat input, frekuensi, level wilayah, PJ bidang/timker.
+
+**Kategori dashboard dinamis.** Delapan pengelompokan laporan disimpan sebagai `dashboard_category` yang dapat di-CRUD admin: IKU, IKK, SPM, RIBK, Program, Kegiatan, Sub Kegiatan, dan Bidang/Sekretariat/Tim Kerja. Setiap label/IKU wajib punya satu kategori; indikator memilih satu atau banyak label, sehingga dapat muncul di beberapa kategori tanpa menduplikasi nilai. Bidang/Timker adalah dimensi PJ, bukan label.
 
 Contoh sifat dari sumber: UHH = input langsung kabupaten 1x/tahun (`docs/02-daftar-indikator-kinerja.md:17`); Kematian Ibu/Balita = input Puskesmas lalu agregat Desa/Puskesmas/Kecamatan/Kabupaten (`docs/02-daftar-indikator-kinerja.md:18-19`).
 
@@ -357,6 +360,7 @@ npm run dev
 - Admin mengisi **Capaian tahunan** di halaman Master. Dashboard periode 2026 otomatis memakai capaian 2025; ganti periode ke 2027 berarti memakai capaian 2026 tanpa menimpa histori.
 - Build frontend: `npm run build`; Go menyajikan `frontend/build` pada `APP_WEB_DIR`.
 - Test: `cd backend && go test ./...` · `cd frontend && npm run check`.
+- Template BNBA: `periode;kode_faskes;kode_kategori;kode_iku;...`; `kode_kategori` opsional, `kode_iku` adalah kode label/IKU leaf.
 - Data awal: submission final `S-2026-05-001`, 3 baris, induk 92,39%.
 - Reset data: hapus `backend/data/` lalu jalankan API lagi.
 

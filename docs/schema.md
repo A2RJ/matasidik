@@ -2,9 +2,11 @@
 
 > **Status implementasi pilot.** Skema ini adalah kontrak database aplikasi pada implementasi awal. Pemilik proyek meminta **SQLite lebih dulu** dan **PASETO v4.local**. `docs/rules.md` §4 menyebut PostgreSQL 16 + PASETO untuk produksi; karena itu, migrasi ke PostgreSQL wajib dilakukan sebelum produksi dan tetap mengikuti aturan proyek.
 >
-> Cakupan: **30 tabel domain** + `schema_migrations`, mencakup master, submission, kalkulasi, faktor/TL, audit, auth, dan jabatan struktural.
+> Cakupan: **31 tabel domain** + `schema_migrations`, mencakup master, submission, kalkulasi, faktor/TL, audit, auth, jabatan struktural, dan kategori dashboard dinamis.
 >
 > Diagram tabel, kolom, dan relasi: [`../assets/diagrams/schema-db.png`](../assets/diagrams/schema-db.png) · sumber HTML: [`../assets/diagrams/schema-db.html`](../assets/diagrams/schema-db.html) · generator: [`../assets/diagrams/gen-schema.py`](../assets/diagrams/gen-schema.py).
+>
+> **Catatan:** diagram `schema-db` belum diregenerasi setelah penambahan `dashboard_category`, `label.category_id`, `bidang.jenis`, dan `indikator.pj_timker_id`; generator sudah diperbarui, PNG menunggu build ulang.
 
 ## 1. Prinsip
 
@@ -35,7 +37,7 @@
 | Kelompok | Tabel |
 | --- | --- |
 | Master inti | `users`, `positions`, `auth_session`, `wilayah`, `faskes`, `bidang`, `periode`, `master_release`, `workflow_version` |
-| Taksonomi & target | `label`, `indikator`, `indikator_label`, `iku_komponen`, `target`, `capaian_tahunan`, `dashboard_row` |
+| Taksonomi & target | `dashboard_category`, `label`, `indikator`, `indikator_label`, `iku_komponen`, `target`, `capaian_tahunan`, `dashboard_row` |
 | Submission & file | `file_object`, `submission`, `submission_revision`, `submission_group`, `submission_row`, `submission_review`, `job` |
 | Nilai & kalkulasi | `indicator_value`, `calculation_run`, `iku_value`, `iku_value_detail` |
 | Faktor, TL & audit | `faktor`, `tindak_lanjut`, `audit_log` |
@@ -127,6 +129,9 @@ Bidang/sekretariat/timkerja pemilik data.
 | `id` | TEXT | PK | UUID bidang |
 | `kode` | TEXT | UNIQUE, NOT NULL | Kode bidang |
 | `nama` | TEXT | NOT NULL | Nama bidang |
+| `jenis` | TEXT | NOT NULL | `bidang`, `sekretariat`, atau `timker` |
+| `parent_id` | TEXT | FK → `bidang.id` | Parent untuk timker |
+| `aktif` | INTEGER | NOT NULL | Soft delete |
 
 ### 4.7 `periode`
 
@@ -170,6 +175,23 @@ Versi workflow yang di-pin ke submission. Perubahan workflow tidak mengubah peng
 
 ## 5. Taksonomi, indikator, dan target
 
+### 5.0 `dashboard_category`
+
+Kategori dashboard yang dapat di-CRUD admin. `jenis = LABEL` dipakai untuk taksonomi label/IKU; `jenis = OWNER` dipakai untuk filter Bidang/Sekretariat/Tim Kerja dan tidak memiliki label.
+
+| Kolom | Tipe | Constraint | Keterangan |
+| --- | --- | --- | --- |
+| `id` | TEXT | PK | UUID kategori |
+| `kode` | TEXT | UNIQUE, NOT NULL | `IKU`, `IKK`, `SPM`, `RIBK`, `PROGRAM`, `KEGIATAN`, `SUB_KEGIATAN`, `BIDANG_TIMKER` |
+| `nama` | TEXT | NOT NULL | Nama tampilan filter |
+| `jenis` | TEXT | CHECK `LABEL/OWNER` | Jenis kategori |
+| `urutan` | INTEGER | NOT NULL | Urutan filter |
+| `aktif` | INTEGER | NOT NULL | Soft delete; kategori yang dipakai tetap disimpan |
+| `is_system` | INTEGER | NOT NULL | Kategori seed tidak boleh dihapus fisik |
+| `config_json` | TEXT | | Konfigurasi tambahan |
+| `created_at` | TEXT | NOT NULL | Dibuat |
+| `updated_at` | TEXT | NOT NULL | Diubah |
+
 ### 5.1 `label`
 
 Taksonomi sekaligus node IKU. **`parent_id` adalah hierarki**, bukan parsing titik pada kode.
@@ -179,7 +201,8 @@ Taksonomi sekaligus node IKU. **`parent_id` adalah hierarki**, bukan parsing tit
 | `id` | TEXT | PK | UUID label |
 | `kode` | TEXT | UNIQUE per release | `IKU-2026-001`, `IKU-2026-001.01` |
 | `nama` | TEXT | NOT NULL | Nama label |
-| `tipe` | TEXT | NOT NULL | `IKU`, `IKK`, `SPM`, `RIBK`, `PROGRAM`, dll. |
+| `tipe` | TEXT | NOT NULL | Kode kategori legacy; disinkronkan dari `category_id` |
+| `category_id` | TEXT | FK → `dashboard_category.id` | Kategori label/IKU; wajib untuk label baru |
 | `parent_id` | TEXT | FK → `label.id` | Parent hierarki |
 | `master_release_id` | TEXT | FK → `master_release.id` | Release master |
 | `aggregation_method` | TEXT | CHECK | `RATIO_OF_SUMS`, `SUM`, `WEIGHTED_AVERAGE`, `FORMULA`, `NONE` |
@@ -208,8 +231,9 @@ Definisi indikator yang diukur.
 | `denominator_label` | TEXT |  | Label penyebut |
 | `sifat_input` | TEXT | NOT NULL | `puskesmas`, `kabupaten` |
 | `frekuensi` | TEXT | NOT NULL | `bulanan`, `tahunan` |
-| `pj_bidang_id` | TEXT | FK → `bidang.id` | PJ data |
-| `pj_timker` | TEXT |  | Timkerja |
+| `pj_bidang_id` | TEXT | FK → `bidang.id` | PJ data level bidang/sekretariat |
+| `pj_timker_id` | TEXT | FK → `bidang.id` | PJ data level timker (`bidang.jenis = timker`) |
+| `pj_timker` | TEXT |  | Nama timker legacy; diisi dari join `pj_timker_id` |
 | `aktif` | INTEGER | NOT NULL | Soft delete |
 
 ### 5.3 `indikator_label`
@@ -568,8 +592,11 @@ Internal migrasi.
 | `users` | `faskes` | N:1 | `faskes_id` |
 | `users` | `bidang` | N:1 | `bidang_id` |
 | `faskes` | `wilayah` | N:1 | `wilayah_id` |
+| `label` | `dashboard_category` | N:1 | `category_id` |
 | `label` | `label` | N:1 | `parent_id` |
 | `label` | `master_release` | N:1 | `master_release_id` |
+| `bidang` | `bidang` | N:1 | `parent_id` |
+| `indikator` | `bidang` | N:1 | `pj_timker_id` |
 | `indikator_label` | `indikator` | N:1 | `indikator_id` |
 | `indikator_label` | `label` | N:1 | `label_id` |
 | `iku_komponen` | `label` | N:1 | `parent_label_id` |
@@ -594,6 +621,10 @@ Internal migrasi.
 | Index/constraint | Tujuan |
 | --- | --- |
 | `ux_users_username` | Username login unik |
+| `ix_label_category` | Filter label per kategori |
+| `ix_category_urutan` | Urutan/aktif kategori dashboard |
+| `ix_bidang_jenis` | Filter bidang/sekretariat/timker |
+| `ix_indikator_timker` | Filter indikator per timker |
 | `ux_capaian_tahunan_key` | Cegah duplikasi capaian per tahun/label/indikator/scope |
 | `ix_capaian_tahunan_tahun` | Cari capaian per tahun/scope |
 | `ix_auth_session_user` | Cari sesi per user |
@@ -616,6 +647,8 @@ Internal migrasi.
 | Enum | Nilai |
 | --- | --- |
 | Role | `pkm_operator`, `pkm_pj`, `dinas_verifier`, `kabid`, `sekretaris`, `iku_owner`, `pimpinan`, `admin` |
+| Category jenis | `LABEL`, `OWNER` |
+| Bidang jenis | `bidang`, `sekretariat`, `timker` |
 | Submission status | `draf`, `dikirim`, `diverifikasi`, `dikembalikan_petugas`, `dikembalikan_verifikator`, `final`, `diubah_khusus` |
 | Workflow step | `DRAFT_PKM`, `VERIFY_DINAS`, `VALIDATE_KABID`, `FINAL`, `SPECIAL_CHANGE` |
 | Classification | `MATCHED`, `MISMATCH`, `UNKNOWN_IKU`, `UNKNOWN_INDICATOR`, `IKU_ROLLUP_ONLY`, `AMBIGUOUS`, `DUPLICATE`, `INVALID_VALUE`, `SCOPE_DENIED` |
@@ -630,9 +663,11 @@ Seed idempotent di `backend/internal/repository/sqlite/migrations/002_seed.sql` 
 - 7 pengguna awal (Siti, Rina, dr. Ahmad, Sekretaris, Kepala Dinas, Admin, PJ Gizi) dengan username dan password hash bcrypt.
 - 7 jabatan struktural + tabel `auth_session`.
 - Login awal: `admin`, `siti`, `rina`, `kabid`, `pimpinan`, `sekretaris`, `pjgizi` — password `password123` (ganti sebelum produksi).
-- 2 faskes (PKM Taliwang, PKM Jereweh) dan wilayah contoh.
+- 2 faskes (PKM Taliwang, PKM Jereweh), wilayah contoh, dan bidang/timker dengan `jenis`.
 - 2 periode (2026-05, 2026-06).
 - 1 master release 2026 + workflow `default_3_level`.
+- 8 `dashboard_category`: IKU, IKK, SPM, RIBK, Program, Kegiatan, Sub Kegiatan, dan Bidang/Sekretariat/Tim Kerja (`OWNER`). Kategori ke-9 tidak di-seed.
+- Label seed di-backfill ke kategori IKU/SPM; label baru wajib memilih kategori.
 - IKU `IKU-2026-001` (induk) dengan anak `.01`, `.02`, `.03`.
 - 12 indikator SPM + 12 baris `dashboard_row` (3 contoh terhubung ke IKU, 9 baris kontrak).
 - 12 baris `capaian_tahunan` 2025 hasil migrasi baseline JSON; dashboard 2026 memakainya sebagai pembanding.

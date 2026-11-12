@@ -97,10 +97,13 @@ TABLES = {
         ("jenis", "TEXT", "puskesmas"),
         ("aktif", "INTEGER", "soft delete"),
     ]),
-    "bidang": (0, "Bidang/timkerja pemilik data.", [
+    "bidang": (0, "Bidang/sekretariat/timkerja pemilik data.", [
         ("id", "TEXT", "PK"),
         ("kode", "TEXT", "UNIQUE"),
         ("nama", "TEXT", ""),
+        ("jenis", "TEXT", "bidang|sekretariat|timker"),
+        ("parent_id", "TEXT", "FK → bidang"),
+        ("aktif", "INTEGER", "soft delete"),
     ]),
     "periode": (0, "Bulan pelaporan; mengikat upload.", [
         ("id", "TEXT", "PK"),
@@ -137,11 +140,24 @@ TABLES = {
         ("created_at", "TEXT", ""),
     ]),
 
+    "dashboard_category": (1, "Kategori filter dashboard; CRUD admin.", [
+        ("id", "TEXT", "PK"),
+        ("kode", "TEXT", "UNIQUE · IKU|IKK|SPM|…"),
+        ("nama", "TEXT", ""),
+        ("jenis", "TEXT", "LABEL|OWNER"),
+        ("urutan", "INTEGER", "urutan filter"),
+        ("aktif", "INTEGER", "soft delete"),
+        ("is_system", "INTEGER", "kategori seed"),
+        ("config_json", "TEXT", ""),
+        ("created_at", "TEXT", ""),
+        ("updated_at", "TEXT", ""),
+    ]),
     "label": (1, "Taksonomi + node IKU; hierarki lewat parent_id.", [
         ("id", "TEXT", "PK"),
         ("kode", "TEXT", "UNIQUE per release"),
         ("nama", "TEXT", ""),
-        ("tipe", "TEXT", "IKU|IKK|SPM|RIBK|…"),
+        ("tipe", "TEXT", "legacy kategori"),
+        ("category_id", "TEXT", "FK → dashboard_category"),
         ("parent_id", "TEXT", "FK → label"),
         ("master_release_id", "TEXT", "FK → master_release"),
         ("aggregation_method", "TEXT", "RATIO_OF_SUMS|…"),
@@ -166,7 +182,8 @@ TABLES = {
         ("sifat_input", "TEXT", "puskesmas|kabupaten"),
         ("frekuensi", "TEXT", "bulanan|tahunan"),
         ("pj_bidang_id", "TEXT", "FK → bidang"),
-        ("pj_timker", "TEXT", ""),
+        ("pj_timker_id", "TEXT", "FK → bidang (timker)"),
+        ("pj_timker", "TEXT", "nama legacy"),
         ("aktif", "INTEGER", ""),
     ]),
     "indikator_label": (1, "Many-to-many indikator ↔ label.", [
@@ -396,6 +413,10 @@ RELATIONS = [
     ("periode", "submission", "periode_id"),
     ("file_object", "submission", "file_id"),
     ("master_release", "label", "release"),
+    ("dashboard_category", "label", "kategori"),
+    ("bidang", "bidang", "parent"),
+    ("bidang", "label", "owner"),
+    ("bidang", "indikator", "PJ"),
     ("label", "label", "parent"),
     ("indikator", "indikator_label", "label"),
     ("label", "indikator_label", "indikator"),
@@ -525,7 +546,7 @@ html_doc = f'''<!DOCTYPE html>
     <span>SQLite pilot · repository pattern · siap migrasi PostgreSQL</span>
   </div>
   <div class="foot">
-    <span>schema.md · 30 tabel · 1 file SQLite + volume file lokal</span>
+    <span>schema.md · 31 tabel · 1 file SQLite + volume file lokal</span>
     <span>icons: Lucide · dibuat dengan <a href="https://github.com/caru-ini/stack-diagram" target="_blank" rel="noopener">stack-diagram</a></span>
   </div>
 </div>

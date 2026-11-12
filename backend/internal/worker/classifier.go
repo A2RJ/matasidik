@@ -109,6 +109,18 @@ func (c *Classifier) Classify(ctx context.Context, sub *domain.Submission, raw [
 			out.Rows = append(out.Rows, row)
 			continue
 		}
+		if rawCategory := strings.TrimSpace(rr.KodeKategori); rawCategory != "" {
+			categoryKode := ""
+			if label.CategoryKode != nil {
+				categoryKode = *label.CategoryKode
+			}
+			if !strings.EqualFold(rawCategory, categoryKode) {
+				row.Classification = domain.ClassMismatch
+				row.ErrorMessage = "kode_kategori tidak sesuai dengan kategori label"
+				out.Rows = append(out.Rows, row)
+				continue
+			}
+		}
 		if label.IsRollupOnly || !label.AllowDirectInput {
 			row.Classification = domain.ClassRollupOnly
 			row.ErrorMessage = "IKU induk/rollup tidak boleh menerima input langsung"

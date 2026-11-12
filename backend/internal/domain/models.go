@@ -63,9 +63,25 @@ type Faskes struct {
 }
 
 type Bidang struct {
-	ID   string `db:"id" json:"id"`
-	Kode string `db:"kode" json:"kode"`
-	Nama string `db:"nama" json:"nama"`
+	ID       string  `db:"id" json:"id"`
+	Kode     string  `db:"kode" json:"kode"`
+	Nama     string  `db:"nama" json:"nama"`
+	Jenis    string  `db:"jenis" json:"jenis"`
+	ParentID *string `db:"parent_id" json:"parent_id,omitempty"`
+	Aktif    bool    `db:"aktif" json:"aktif"`
+}
+
+type DashboardCategory struct {
+	ID         string  `db:"id" json:"id"`
+	Kode       string  `db:"kode" json:"kode"`
+	Nama       string  `db:"nama" json:"nama"`
+	Jenis      string  `db:"jenis" json:"jenis"`
+	Urutan     int     `db:"urutan" json:"urutan"`
+	Aktif      bool    `db:"aktif" json:"aktif"`
+	IsSystem   bool    `db:"is_system" json:"is_system"`
+	ConfigJSON *string `db:"config_json" json:"config_json,omitempty"`
+	CreatedAt  string  `db:"created_at" json:"created_at"`
+	UpdatedAt  string  `db:"updated_at" json:"updated_at"`
 }
 
 type Periode struct {
@@ -90,6 +106,7 @@ type Label struct {
 	Kode              string            `db:"kode" json:"kode"`
 	Nama              string            `db:"nama" json:"nama"`
 	Tipe              string            `db:"tipe" json:"tipe"`
+	CategoryID        *string           `db:"category_id" json:"category_id,omitempty"`
 	ParentID          *string           `db:"parent_id" json:"parent_id,omitempty"`
 	MasterReleaseID   string            `db:"master_release_id" json:"master_release_id"`
 	AggregationMethod AggregationMethod `db:"aggregation_method" json:"aggregation_method"`
@@ -102,6 +119,9 @@ type Label struct {
 	Aktif             bool              `db:"aktif" json:"aktif"`
 	BerlakuDari       *string           `db:"berlaku_dari" json:"berlaku_dari,omitempty"`
 	BerlakuSampai     *string           `db:"berlaku_sampai" json:"berlaku_sampai,omitempty"`
+	// Join-only fields.
+	CategoryKode *string `db:"category_kode" json:"category_kode,omitempty"`
+	CategoryNama *string `db:"category_nama" json:"category_nama,omitempty"`
 }
 
 type Indikator struct {
@@ -115,8 +135,12 @@ type Indikator struct {
 	SifatInput       string  `db:"sifat_input" json:"sifat_input"`
 	Frekuensi        string  `db:"frekuensi" json:"frekuensi"`
 	PJBidangID       *string `db:"pj_bidang_id" json:"pj_bidang_id,omitempty"`
+	PJTimkerID       *string `db:"pj_timker_id" json:"pj_timker_id,omitempty"`
 	PJTimker         *string `db:"pj_timker" json:"pj_timker,omitempty"`
 	Aktif            bool    `db:"aktif" json:"aktif"`
+	// Join-only fields for master preview.
+	LabelIDs       []string `db:"-" json:"label_ids,omitempty"`
+	PrimaryLabelID *string  `db:"-" json:"primary_label_id,omitempty"`
 }
 
 type IndikatorLabel struct {

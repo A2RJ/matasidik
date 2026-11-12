@@ -19,6 +19,8 @@ Dua belas diagram di folder ini dirender dengan [stack-diagram](https://github.c
 
 Dokumen memakai `<img>` biasa dengan satu PNG per diagram. Tidak ada varian dark mode.
 
+> **Catatan status:** `schema-db.png` belum diregenerasi setelah penambahan `dashboard_category`, `label.category_id`, `bidang.jenis`, dan `indikator.pj_timker_id`. Generator `gen-schema.py` sudah diperbarui; jalankan `build.sh` saat dependency stack-diagram/Playwright tersedia.
+
 ## Regenerasi
 
 Prasyarat:

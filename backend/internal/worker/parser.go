@@ -16,6 +16,7 @@ type RawRow struct {
 	RowNo         int
 	Periode       string
 	KodeFaskes    string
+	KodeKategori  string
 	KodeIKU       string
 	KodeIndikator string
 	ScopeType     string
@@ -119,6 +120,7 @@ func rowsFromRecords(records [][]string) ([]RawRow, error) {
 			RowNo:         len(out) + 1,
 			Periode:       cell(rec, headers, "periode"),
 			KodeFaskes:    cell(rec, headers, "kode_faskes", "faskes"),
+			KodeKategori:  cell(rec, headers, "kode_kategori", "kategori"),
 			KodeIKU:       cell(rec, headers, "kode_iku", "iku"),
 			KodeIndikator: cell(rec, headers, "kode_indikator", "indikator"),
 			ScopeType:     strings.ToUpper(cell(rec, headers, "scope_type")),

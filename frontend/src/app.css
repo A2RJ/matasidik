@@ -87,9 +87,15 @@ body {
   }
   .nb-table th {
     @apply border-b-2 border-black bg-muted px-3 py-2 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    white-space: normal;
   }
   .nb-table td {
     @apply border-b border-black/20 px-3 py-3 align-top;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    white-space: normal;
   }
   .nb-table tbody tr:hover {
     @apply bg-primary/20;

@@ -4,6 +4,8 @@
 >
 > Dokumen ini adalah ekstraksi 2 dari 3 sheet. Seluruh tabel dan kolom dipertahankan apa adanya.
 > Kolom kosong (mis. Definisi Operasional yang masih kosong di file sumber) tetap ditampilkan.
+>
+> **Catatan implementasi:** nilai seperti “Bidang Kesmas” dan “Timker Kesga” pada kolom **Label Indikator** adalah dimensi kepemilikan/PJ, bukan label taksonomi. Di aplikasi, keduanya dipetakan ke kolom **PJ Data** (`indikator.pj_bidang_id` dan `indikator.pj_timker_id`); label/IKU hanya menyimpan kategori seperti IKU, IKK, SPM, RIBK, Program, Kegiatan, dan Sub Kegiatan.
 
 ## Tabel Indikator
 

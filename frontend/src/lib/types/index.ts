@@ -81,6 +81,22 @@ export interface Bidang {
   id: string;
   kode: string;
   nama: string;
+  jenis: 'bidang' | 'sekretariat' | 'timker';
+  parent_id?: string;
+  aktif: boolean;
+}
+
+export interface DashboardCategory {
+  id: string;
+  kode: string;
+  nama: string;
+  jenis: 'LABEL' | 'OWNER';
+  urutan: number;
+  aktif: boolean;
+  is_system: boolean;
+  config_json?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Wilayah {
@@ -105,6 +121,9 @@ export interface Label {
   kode: string;
   nama: string;
   tipe: string;
+  category_id?: string;
+  category_kode?: string;
+  category_nama?: string;
   parent_id?: string;
   master_release_id: string;
   aggregation_method: string;
@@ -128,7 +147,10 @@ export interface Indicator {
   sifat_input: string;
   frekuensi: string;
   pj_bidang_id?: string;
+  pj_timker_id?: string;
   pj_timker?: string;
+  label_ids?: string[];
+  primary_label_id?: string;
   aktif: boolean;
 }
 
@@ -179,6 +201,12 @@ export interface DashboardItem {
   indikator_id?: string;
   label_kode?: string;
   label_nama?: string;
+  category_kode?: string;
+  category_nama?: string;
+  owner_id?: string;
+  owner_kode?: string;
+  owner_nama?: string;
+  owner_jenis?: string;
   iku_value_id?: string;
   indicator_value_id?: string;
   calculation_run_id?: string;
@@ -201,10 +229,17 @@ export interface DashboardSummary {
   total: number;
   on_target: number;
   below_target: number;
+  no_target: number;
   no_data: number;
   average: number;
   parent_value?: number;
   parent_status: string;
+}
+
+export interface DashboardCategoryResult {
+  category: DashboardCategory;
+  items: DashboardItem[];
+  summary: DashboardSummary;
 }
 
 export interface SPMFaskesDetail {
@@ -252,6 +287,7 @@ export interface Bootstrap {
   faskes: Faskes[];
   wilayah: Wilayah[];
   bidang: Bidang[];
+  categories: DashboardCategory[];
   periods: Periode[];
   default_period_id?: string;
   labels: Label[];

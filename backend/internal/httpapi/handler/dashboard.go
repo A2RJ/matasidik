@@ -11,6 +11,7 @@ func dashboardFilter(c *gin.Context) domain.DashboardFilter {
 	return domain.DashboardFilter{
 		PeriodeID: c.Query("periode"), ScopeType: c.Query("scope_type"), ScopeID: c.Query("scope_id"),
 		FaskesID: c.Query("faskes_id"), BidangID: c.Query("bidang_id"),
+		TimkerID: c.Query("timker_id"), Category: c.Query("category"),
 		IndikatorID: c.Query("indikator_id"), Status: c.Query("status"),
 	}
 }
@@ -36,6 +37,19 @@ func (h *Handler) DashboardSPM(c *gin.Context) {
 		"items": items, "summary": summary,
 		"meta": gin.H{"status_basis": "target"},
 	})
+}
+
+func (h *Handler) DashboardCategory(c *gin.Context) {
+	kode := c.Query("kode")
+	if kode == "" {
+		kode = c.Query("category")
+	}
+	data, err := h.Dashboard.Category(c.Request.Context(), kode, h.scopedDashboardFilter(c))
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	response.OK(c, data)
 }
 
 func (h *Handler) DashboardTrace(c *gin.Context) {

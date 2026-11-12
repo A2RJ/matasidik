@@ -34,6 +34,14 @@ type MasterRepository interface {
 	ListFaskes(ctx context.Context) ([]domain.Faskes, error)
 	GetFaskes(ctx context.Context, id string) (*domain.Faskes, error)
 	ListBidang(ctx context.Context) ([]domain.Bidang, error)
+	GetBidang(ctx context.Context, id string) (*domain.Bidang, error)
+	CreateBidang(ctx context.Context, b *domain.Bidang) error
+	UpdateBidang(ctx context.Context, b *domain.Bidang) error
+	ListDashboardCategories(ctx context.Context) ([]domain.DashboardCategory, error)
+	GetDashboardCategoryByKode(ctx context.Context, kode string) (*domain.DashboardCategory, error)
+	GetDashboardCategoryByID(ctx context.Context, id string) (*domain.DashboardCategory, error)
+	CreateDashboardCategory(ctx context.Context, c *domain.DashboardCategory) error
+	UpdateDashboardCategory(ctx context.Context, c *domain.DashboardCategory) error
 	ListPeriods(ctx context.Context) ([]domain.Periode, error)
 	GetPeriodByKode(ctx context.Context, kode string) (*domain.Periode, error)
 	GetPeriodByID(ctx context.Context, id string) (*domain.Periode, error)
@@ -49,6 +57,7 @@ type MasterRepository interface {
 	GetIndicatorByID(ctx context.Context, id string) (*domain.Indikator, error)
 	GetIndicatorByKode(ctx context.Context, kode string) (*domain.Indikator, error)
 	ListIndicatorLabels(ctx context.Context, indikatorID string) ([]domain.IndikatorLabel, error)
+	ListAllIndicatorLabels(ctx context.Context) ([]domain.IndikatorLabel, error)
 	ListIndicatorLabelsForLabel(ctx context.Context, labelID string) ([]domain.IndikatorLabel, error)
 	ListIKUComponents(ctx context.Context, parentLabelID string) ([]domain.IKUComponent, error)
 	ListTargets(ctx context.Context, periodeID string) ([]domain.Target, error)
@@ -59,8 +68,9 @@ type MasterRepository interface {
 	ListDashboardRows(ctx context.Context) ([]domain.DashboardRow, error)
 	GetDashboardRowByKode(ctx context.Context, kode string) (*domain.DashboardRow, error)
 
-	CreateIndicator(ctx context.Context, indikator *domain.Indikator, labelIDs []string) error
+	CreateIndicator(ctx context.Context, indikator *domain.Indikator, labelIDs []string, primaryLabelID string) error
 	CreateLabel(ctx context.Context, label *domain.Label) error
+	UpdateLabel(ctx context.Context, label *domain.Label) error
 	UpsertTarget(ctx context.Context, target *domain.Target) error
 }
 

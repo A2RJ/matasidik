@@ -112,6 +112,7 @@ docs/
   02-daftar-indikator-kinerja.md
   03-contoh-data.md
   04-arsitektur-iku.md
+  05-rencana-bnba-wilayah.md
 assets/
   diagrams/README.md       # katalog dan cara regenerasi diagram
 ```
@@ -176,14 +177,15 @@ Aturan:
 File agregat minimal memuat:
 
 ```text
-periode;kode_faskes;kode_iku;kode_indikator;scope_type;scope_code;nilai;numerator;denominator;catatan
-2026-05;PKM-TALIWANG;IKU-2026-001.01;IND-001;DESA;5201...;45;450;500;
+periode;kode_faskes;kode_kategori;kode_iku;kode_indikator;scope_type;scope_code;nilai;numerator;denominator;catatan
+2026-05;PKM-TALIWANG;IKU;IKU-2026-001.01;IND-001;DESA;5201...;45;450;500;
 ```
 
 Aturan:
 
 - Upload dinamis **wajib** memuat `kode_iku` + `kode_indikator` + periode.
-- `kode_iku` adalah konteks pengelompokan dan validasi routing.
+- `kode_iku` adalah konteks pengelompokan dan validasi routing; nilainya adalah kode label/IKU leaf.
+- `kode_kategori` opsional; jika diisi, harus sama dengan kategori label pada `dashboard_category`.
 - `kode_indikator` adalah identitas baris data.
 - `periode` mengikat ke `MASTER_RELEASE` yang berlaku.
 - `numerator`/`denominator` wajib untuk rasio/persentase; `nilai` boleh diturunkan.
@@ -296,6 +298,8 @@ Sumber `docs/01-gambaran-umum.md` menyebut **9 kategori**:
 9. Baris `........................` — **belum didefinisikan**
 
 **Jangan mengisi kategori ke-9 dengan tebakan.** Delapan kategori pertama pasti; kategori ke-9 menunggu keputusan Dinas.
+
+Delapan kategori disimpan sebagai data `dashboard_category` dan dapat di-CRUD admin. Kategori yang sedang dipakai label/IKU **tidak boleh dihapus fisik**; gunakan soft delete `aktif = 0` agar label dan histori tetap tampil. Kategori sistem juga tidak boleh dihapus fisik. Bidang/Sekretariat/Tim Kerja adalah dimensi PJ (`bidang.jenis`), bukan label taksonomi. Setiap label/IKU wajib punya satu kategori; indikator memilih label/IKU spesifik, bukan kategori langsung.
 
 ### 8.2 Tampilan dan filter
 

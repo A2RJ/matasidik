@@ -10,7 +10,8 @@
     empty = 'Tidak ada data.',
     rowClass = () => '',
     onrowclick,
-    fixed = false
+    fixed = false,
+    minWidth = ''
   }: {
     columns: { key: string; label: string; class?: string; width?: string }[];
     rows: any[];
@@ -20,11 +21,12 @@
     rowClass?: (row: any) => string;
     onrowclick?: (row: any) => void;
     fixed?: boolean;
+    minWidth?: string;
   } = $props();
 </script>
 
 <div class="overflow-x-auto nb-scroll">
-  <table class={cn('nb-table', fixed && 'table-fixed')}>
+  <table class={cn('nb-table', fixed && 'table-fixed')} style={minWidth ? `min-width:${minWidth}` : undefined}>
     <colgroup>
       {#each columns as column (column.key)}
         <col style={column.width ? `width:${column.width}` : undefined} />

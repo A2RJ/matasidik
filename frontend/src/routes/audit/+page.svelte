@@ -67,7 +67,7 @@
       <h2 class="mt-1 text-xl">Audit append-only</h2>
     </div>
     <div class="min-w-56">
-      <Select bind:value={entityType} options={entityOptions} placeholder="Semua entitas" />
+      <Select bind:value={entityType} options={entityOptions} placeholder="Semua entitas" allowEmpty />
     </div>
   </div>
 

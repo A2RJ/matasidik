@@ -33,8 +33,91 @@ func (s *Store) GetFaskes(ctx context.Context, id string) (*domain.Faskes, error
 
 func (s *Store) ListBidang(ctx context.Context) ([]domain.Bidang, error) {
 	var out []domain.Bidang
-	err := s.db.SelectContext(ctx, &out, `SELECT id, kode, nama FROM bidang ORDER BY nama`)
+	err := s.db.SelectContext(ctx, &out, `SELECT id, kode, nama, jenis, parent_id, aktif
+		FROM bidang ORDER BY jenis, nama`)
 	return out, err
+}
+
+func (s *Store) GetBidang(ctx context.Context, id string) (*domain.Bidang, error) {
+	var out domain.Bidang
+	err := s.db.GetContext(ctx, &out, `SELECT id, kode, nama, jenis, parent_id, aktif
+		FROM bidang WHERE id = ?`, id)
+	if err == sql.ErrNoRows {
+		return nil, domain.NotFound("bidang")
+	}
+	return &out, err
+}
+
+func (s *Store) CreateBidang(ctx context.Context, b *domain.Bidang) error {
+	if b.ID == "" {
+		b.ID = uuid.NewString()
+	}
+	if b.Jenis == "" {
+		b.Jenis = "bidang"
+	}
+	if !b.Aktif {
+		b.Aktif = true
+	}
+	_, err := s.db.ExecContext(ctx, `INSERT INTO bidang (id, kode, nama, jenis, parent_id, aktif)
+		VALUES (?, ?, ?, ?, ?, ?)`,
+		b.ID, b.Kode, b.Nama, b.Jenis, nullString(b.ParentID), b.Aktif)
+	return err
+}
+
+func (s *Store) UpdateBidang(ctx context.Context, b *domain.Bidang) error {
+	_, err := s.db.ExecContext(ctx, `UPDATE bidang SET kode = ?, nama = ?, jenis = ?,
+		parent_id = ?, aktif = ? WHERE id = ?`,
+		b.Kode, b.Nama, b.Jenis, nullString(b.ParentID), b.Aktif, b.ID)
+	return err
+}
+
+func (s *Store) ListDashboardCategories(ctx context.Context) ([]domain.DashboardCategory, error) {
+	var out []domain.DashboardCategory
+	err := s.db.SelectContext(ctx, &out, `SELECT id, kode, nama, jenis, urutan, aktif, is_system,
+		config_json, created_at, updated_at FROM dashboard_category ORDER BY urutan, kode`)
+	return out, err
+}
+
+func (s *Store) GetDashboardCategoryByKode(ctx context.Context, kode string) (*domain.DashboardCategory, error) {
+	var out domain.DashboardCategory
+	err := s.db.GetContext(ctx, &out, `SELECT id, kode, nama, jenis, urutan, aktif, is_system,
+		config_json, created_at, updated_at FROM dashboard_category WHERE kode = ?`, kode)
+	if err == sql.ErrNoRows {
+		return nil, domain.NotFound("kategori dashboard")
+	}
+	return &out, err
+}
+
+func (s *Store) GetDashboardCategoryByID(ctx context.Context, id string) (*domain.DashboardCategory, error) {
+	var out domain.DashboardCategory
+	err := s.db.GetContext(ctx, &out, `SELECT id, kode, nama, jenis, urutan, aktif, is_system,
+		config_json, created_at, updated_at FROM dashboard_category WHERE id = ?`, id)
+	if err == sql.ErrNoRows {
+		return nil, domain.NotFound("kategori dashboard")
+	}
+	return &out, err
+}
+
+func (s *Store) CreateDashboardCategory(ctx context.Context, c *domain.DashboardCategory) error {
+	if c.ID == "" {
+		c.ID = uuid.NewString()
+	}
+	if c.Jenis == "" {
+		c.Jenis = "LABEL"
+	}
+	_, err := s.db.ExecContext(ctx, `INSERT INTO dashboard_category
+		(id, kode, nama, jenis, urutan, aktif, is_system, config_json, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		c.ID, c.Kode, c.Nama, c.Jenis, c.Urutan, c.Aktif, c.IsSystem,
+		nullString(c.ConfigJSON), c.CreatedAt, c.UpdatedAt)
+	return err
+}
+
+func (s *Store) UpdateDashboardCategory(ctx context.Context, c *domain.DashboardCategory) error {
+	_, err := s.db.ExecContext(ctx, `UPDATE dashboard_category SET nama = ?, jenis = ?, urutan = ?,
+		aktif = ?, config_json = ?, updated_at = ? WHERE id = ?`,
+		c.Nama, c.Jenis, c.Urutan, c.Aktif, nullString(c.ConfigJSON), c.UpdatedAt, c.ID)
+	return err
 }
 
 func (s *Store) ListPeriods(ctx context.Context) ([]domain.Periode, error) {
@@ -108,19 +191,23 @@ func (s *Store) GetWorkflowVersion(ctx context.Context, id string) (*domain.Work
 
 func (s *Store) ListLabels(ctx context.Context) ([]domain.Label, error) {
 	var out []domain.Label
-	err := s.db.SelectContext(ctx, &out, `SELECT id, kode, nama, tipe, parent_id, master_release_id,
-		aggregation_method, allow_direct_input, is_rollup_only, pj_bidang_id, iku_owner_id,
-		level, path, aktif, berlaku_dari, berlaku_sampai
-		FROM label WHERE aktif = 1 ORDER BY level, kode`)
+	err := s.db.SelectContext(ctx, &out, `SELECT l.id, l.kode, l.nama, l.tipe, l.category_id,
+		l.parent_id, l.master_release_id, l.aggregation_method, l.allow_direct_input,
+		l.is_rollup_only, l.pj_bidang_id, l.iku_owner_id, l.level, l.path, l.aktif,
+		l.berlaku_dari, l.berlaku_sampai, c.kode AS category_kode, c.nama AS category_nama
+		FROM label l LEFT JOIN dashboard_category c ON c.id = l.category_id
+		WHERE l.aktif = 1 ORDER BY l.level, l.kode`)
 	return out, err
 }
 
 func (s *Store) GetLabelByID(ctx context.Context, id string) (*domain.Label, error) {
 	var out domain.Label
-	err := s.db.GetContext(ctx, &out, `SELECT id, kode, nama, tipe, parent_id, master_release_id,
-		aggregation_method, allow_direct_input, is_rollup_only, pj_bidang_id, iku_owner_id,
-		level, path, aktif, berlaku_dari, berlaku_sampai
-		FROM label WHERE id = ?`, id)
+	err := s.db.GetContext(ctx, &out, `SELECT l.id, l.kode, l.nama, l.tipe, l.category_id,
+		l.parent_id, l.master_release_id, l.aggregation_method, l.allow_direct_input,
+		l.is_rollup_only, l.pj_bidang_id, l.iku_owner_id, l.level, l.path, l.aktif,
+		l.berlaku_dari, l.berlaku_sampai, c.kode AS category_kode, c.nama AS category_nama
+		FROM label l LEFT JOIN dashboard_category c ON c.id = l.category_id
+		WHERE l.id = ?`, id)
 	if err == sql.ErrNoRows {
 		return nil, domain.NotFound("label")
 	}
@@ -129,10 +216,12 @@ func (s *Store) GetLabelByID(ctx context.Context, id string) (*domain.Label, err
 
 func (s *Store) GetLabelByKode(ctx context.Context, kode, releaseID string) (*domain.Label, error) {
 	var out domain.Label
-	err := s.db.GetContext(ctx, &out, `SELECT id, kode, nama, tipe, parent_id, master_release_id,
-		aggregation_method, allow_direct_input, is_rollup_only, pj_bidang_id, iku_owner_id,
-		level, path, aktif, berlaku_dari, berlaku_sampai
-		FROM label WHERE kode = ? AND master_release_id = ? AND aktif = 1`, kode, releaseID)
+	err := s.db.GetContext(ctx, &out, `SELECT l.id, l.kode, l.nama, l.tipe, l.category_id,
+		l.parent_id, l.master_release_id, l.aggregation_method, l.allow_direct_input,
+		l.is_rollup_only, l.pj_bidang_id, l.iku_owner_id, l.level, l.path, l.aktif,
+		l.berlaku_dari, l.berlaku_sampai, c.kode AS category_kode, c.nama AS category_nama
+		FROM label l LEFT JOIN dashboard_category c ON c.id = l.category_id
+		WHERE l.kode = ? AND l.master_release_id = ? AND l.aktif = 1`, kode, releaseID)
 	if err == sql.ErrNoRows {
 		return nil, domain.NotFound("label")
 	}
@@ -141,17 +230,21 @@ func (s *Store) GetLabelByKode(ctx context.Context, kode, releaseID string) (*do
 
 func (s *Store) ListIndicators(ctx context.Context) ([]domain.Indikator, error) {
 	var out []domain.Indikator
-	err := s.db.SelectContext(ctx, &out, `SELECT id, kode, nama, satuan, definisi, numerator_label,
-		denominator_label, sifat_input, frekuensi, pj_bidang_id, pj_timker, aktif
-		FROM indikator WHERE aktif = 1 ORDER BY kode`)
+	err := s.db.SelectContext(ctx, &out, `SELECT i.id, i.kode, i.nama, i.satuan, i.definisi,
+		i.numerator_label, i.denominator_label, i.sifat_input, i.frekuensi, i.pj_bidang_id,
+		i.pj_timker_id, COALESCE(t.nama, i.pj_timker) AS pj_timker, i.aktif
+		FROM indikator i LEFT JOIN bidang t ON t.id = i.pj_timker_id
+		WHERE i.aktif = 1 ORDER BY i.kode`)
 	return out, err
 }
 
 func (s *Store) GetIndicatorByID(ctx context.Context, id string) (*domain.Indikator, error) {
 	var out domain.Indikator
-	err := s.db.GetContext(ctx, &out, `SELECT id, kode, nama, satuan, definisi, numerator_label,
-		denominator_label, sifat_input, frekuensi, pj_bidang_id, pj_timker, aktif
-		FROM indikator WHERE id = ?`, id)
+	err := s.db.GetContext(ctx, &out, `SELECT i.id, i.kode, i.nama, i.satuan, i.definisi,
+		i.numerator_label, i.denominator_label, i.sifat_input, i.frekuensi, i.pj_bidang_id,
+		i.pj_timker_id, COALESCE(t.nama, i.pj_timker) AS pj_timker, i.aktif
+		FROM indikator i LEFT JOIN bidang t ON t.id = i.pj_timker_id
+		WHERE i.id = ?`, id)
 	if err == sql.ErrNoRows {
 		return nil, domain.NotFound("indikator")
 	}
@@ -160,9 +253,11 @@ func (s *Store) GetIndicatorByID(ctx context.Context, id string) (*domain.Indika
 
 func (s *Store) GetIndicatorByKode(ctx context.Context, kode string) (*domain.Indikator, error) {
 	var out domain.Indikator
-	err := s.db.GetContext(ctx, &out, `SELECT id, kode, nama, satuan, definisi, numerator_label,
-		denominator_label, sifat_input, frekuensi, pj_bidang_id, pj_timker, aktif
-		FROM indikator WHERE kode = ? AND aktif = 1`, kode)
+	err := s.db.GetContext(ctx, &out, `SELECT i.id, i.kode, i.nama, i.satuan, i.definisi,
+		i.numerator_label, i.denominator_label, i.sifat_input, i.frekuensi, i.pj_bidang_id,
+		i.pj_timker_id, COALESCE(t.nama, i.pj_timker) AS pj_timker, i.aktif
+		FROM indikator i LEFT JOIN bidang t ON t.id = i.pj_timker_id
+		WHERE i.kode = ? AND i.aktif = 1`, kode)
 	if err == sql.ErrNoRows {
 		return nil, domain.NotFound("indikator")
 	}
@@ -173,6 +268,13 @@ func (s *Store) ListIndicatorLabels(ctx context.Context, indikatorID string) ([]
 	var out []domain.IndikatorLabel
 	err := s.db.SelectContext(ctx, &out, `SELECT indikator_id, label_id, bobot, is_primary
 		FROM indikator_label WHERE indikator_id = ?`, indikatorID)
+	return out, err
+}
+
+func (s *Store) ListAllIndicatorLabels(ctx context.Context) ([]domain.IndikatorLabel, error) {
+	var out []domain.IndikatorLabel
+	err := s.db.SelectContext(ctx, &out, `SELECT indikator_id, label_id, bobot, is_primary
+		FROM indikator_label ORDER BY indikator_id, is_primary DESC, label_id`)
 	return out, err
 }
 
@@ -221,9 +323,12 @@ func (s *Store) GetDashboardRowByKode(ctx context.Context, kode string) (*domain
 	return &out, err
 }
 
-func (s *Store) CreateIndicator(ctx context.Context, indikator *domain.Indikator, labelIDs []string) error {
+func (s *Store) CreateIndicator(ctx context.Context, indikator *domain.Indikator, labelIDs []string, primaryLabelID string) error {
 	if indikator.ID == "" {
 		indikator.ID = uuid.NewString()
+	}
+	if primaryLabelID == "" && len(labelIDs) > 0 {
+		primaryLabelID = labelIDs[0]
 	}
 	tx, err := s.db.BeginTxx(ctx, nil)
 	if err != nil {
@@ -231,16 +336,21 @@ func (s *Store) CreateIndicator(ctx context.Context, indikator *domain.Indikator
 	}
 	defer tx.Rollback()
 	if _, err := tx.ExecContext(ctx, `INSERT INTO indikator
-		(id, kode, nama, satuan, definisi, numerator_label, denominator_label, sifat_input, frekuensi, pj_bidang_id, pj_timker, aktif)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		(id, kode, nama, satuan, definisi, numerator_label, denominator_label, sifat_input, frekuensi,
+		 pj_bidang_id, pj_timker_id, pj_timker, aktif)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		indikator.ID, indikator.Kode, indikator.Nama, indikator.Satuan, indikator.Definisi,
 		indikator.NumeratorLabel, indikator.DenominatorLabel, indikator.SifatInput, indikator.Frekuensi,
-		indikator.PJBidangID, indikator.PJTimker, indikator.Aktif); err != nil {
+		indikator.PJBidangID, indikator.PJTimkerID, indikator.PJTimker, indikator.Aktif); err != nil {
 		return fmt.Errorf("simpan indikator: %w", err)
 	}
 	for _, labelID := range labelIDs {
+		isPrimary := 0
+		if labelID == primaryLabelID {
+			isPrimary = 1
+		}
 		if _, err := tx.ExecContext(ctx, `INSERT INTO indikator_label(indikator_id, label_id, bobot, is_primary)
-			VALUES (?, ?, 1, 1)`, indikator.ID, labelID); err != nil {
+			VALUES (?, ?, 1, ?)`, indikator.ID, labelID, isPrimary); err != nil {
 			return fmt.Errorf("hubungkan label: %w", err)
 		}
 	}
@@ -252,12 +362,26 @@ func (s *Store) CreateLabel(ctx context.Context, label *domain.Label) error {
 		label.ID = uuid.NewString()
 	}
 	_, err := s.db.ExecContext(ctx, `INSERT INTO label
-		(id, kode, nama, tipe, parent_id, master_release_id, aggregation_method, allow_direct_input,
-		 is_rollup_only, pj_bidang_id, iku_owner_id, level, path, aktif, berlaku_dari, berlaku_sampai)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		label.ID, label.Kode, label.Nama, label.Tipe, label.ParentID, label.MasterReleaseID,
-		label.AggregationMethod, label.AllowDirectInput, label.IsRollupOnly, label.PJBidangID,
-		label.IKUOwnerID, label.Level, label.Path, label.Aktif, label.BerlakuDari, label.BerlakuSampai)
+		(id, kode, nama, tipe, category_id, parent_id, master_release_id, aggregation_method,
+		 allow_direct_input, is_rollup_only, pj_bidang_id, iku_owner_id, level, path, aktif,
+		 berlaku_dari, berlaku_sampai)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		label.ID, label.Kode, label.Nama, label.Tipe, nullString(label.CategoryID), label.ParentID,
+		label.MasterReleaseID, label.AggregationMethod, label.AllowDirectInput, label.IsRollupOnly,
+		label.PJBidangID, label.IKUOwnerID, label.Level, label.Path, label.Aktif,
+		label.BerlakuDari, label.BerlakuSampai)
+	return err
+}
+
+func (s *Store) UpdateLabel(ctx context.Context, label *domain.Label) error {
+	_, err := s.db.ExecContext(ctx, `UPDATE label SET nama = ?, tipe = ?, category_id = ?,
+		parent_id = ?, aggregation_method = ?, allow_direct_input = ?, is_rollup_only = ?,
+		pj_bidang_id = ?, iku_owner_id = ?, aktif = ?, berlaku_dari = ?, berlaku_sampai = ?
+		WHERE id = ?`,
+		label.Nama, label.Tipe, nullString(label.CategoryID), label.ParentID,
+		label.AggregationMethod, label.AllowDirectInput, label.IsRollupOnly,
+		label.PJBidangID, label.IKUOwnerID, label.Aktif, label.BerlakuDari,
+		label.BerlakuSampai, label.ID)
 	return err
 }
 

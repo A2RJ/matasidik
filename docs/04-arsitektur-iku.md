@@ -81,7 +81,8 @@ Nilainya tetap **satu** di `INDICATOR_VALUE`. Label hanya menentukan di dashboar
 | Tabel | Field kunci | Fungsi |
 | --- | --- | --- |
 | `MASTER_RELEASE` | `id`, `tahun`, `status`, `published_at`, `published_by` | Satu bundel master yang dipakai upload; mencegah master berubah di tengah periode |
-| `LABEL` | `id`, `kode`, `tipe`, `status_aktif` | Identitas stabil label/IKU |
+| `DASHBOARD_CATEGORY` | `id`, `kode`, `nama`, `jenis` (`LABEL`/`OWNER`), `urutan`, `aktif`, `is_system` | Kategori filter dashboard yang dapat di-CRUD |
+| `LABEL` | `id`, `kode`, `category_id`, `tipe`, `status_aktif` | Identitas stabil label/IKU |
 | `LABEL_VERSION` | `label_id`, `master_release_id`, `nama`, `parent_id`, `path`, `level`, `berlaku_dari`, `berlaku_sampai` | Versi nama/hierarki per release |
 | `IKU_PROFILE` | `label_version_id`, `aggregation_method`, `formula_json`, `pj_bidang_id`, `pj_timker_id`, `iku_owner_id`, `allow_direct_input`, `is_rollup_only` | Aturan khusus IKU |
 | `INDIKATOR` | `id`, `kode`, `status_aktif` | Identitas stabil indikator |
@@ -155,13 +156,14 @@ Nilainya tetap **satu** di `INDICATOR_VALUE`. Label hanya menentukan di dashboar
 File agregat minimal memuat:
 
 ```text
-periode;kode_faskes;kode_iku;kode_indikator;scope_type;scope_code;nilai;numerator;denominator;catatan
-2026-05;PKM-TALIWANG;IKU-2026-001.01;IND-001;DESA;5201...;45;450;500;
+periode;kode_faskes;kode_kategori;kode_iku;kode_indikator;scope_type;scope_code;nilai;numerator;denominator;catatan
+2026-05;PKM-TALIWANG;IKU;IKU-2026-001.01;IND-001;DESA;5201...;45;450;500;
 ```
 
 Aturan:
 
-- `kode_iku` = konteks pengelompokan dan validasi routing.
+- `kode_iku` = konteks pengelompokan dan validasi routing (kode label/IKU leaf).
+- `kode_kategori` = opsional; jika diisi, harus sama dengan kategori label pada `dashboard_category`.
 - `kode_indikator` = identitas baris data.
 - `periode` = mengikat ke `MASTER_RELEASE` yang berlaku.
 - `numerator`/`denominator` wajib untuk indikator rasio/persentase; `nilai` boleh diturunkan.
@@ -645,6 +647,7 @@ Jika nanti butuh analisis log terpusat, kirim stdout container ke Loki/ELK tanpa
 | `GET` | `/api/v1/iku/{kode}/values?periode=2026-05` | Nilai IKU + status |
 | `GET` | `/api/v1/iku-values/{id}/detail` | Provenance komponen |
 | `GET` | `/api/v1/dashboard/spm?periode=2026-05` | Baris SPM + ringkasan berbasis target |
+| `GET` | `/api/v1/dashboard/category?kode=IKK&periode=2026-05` | Baris kategori dinamis (label/owner); `kode=ALL` menggabungkan semua kategori |
 | `GET` | `/api/v1/dashboard/spm/export?format=xlsx\|pdf` | Export seluruh output SPM |
 | `GET` | `/api/v1/dashboard/spm/{kode}/detail?periode=2026-05` | Coverage faskes + provenance |
 | `GET` | `/api/v1/dashboard/iku-by-faskes` | Data chart multi-series |

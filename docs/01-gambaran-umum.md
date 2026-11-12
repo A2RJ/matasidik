@@ -88,6 +88,8 @@ bagian pelaporan akan menampilkan data capaian yang bisa di filter sesuai pengel
 | 8. | Capaian Kinerja Indikator Kinerja Bidang/Sekretariat/Tim Kerja |
 | 9. | ........................ |
 
+> Implementasi: delapan pengelompokan di atas disimpan sebagai data `dashboard_category` yang dapat di-CRUD admin. Kategori ke-9 tetap menunggu keputusan Dinas dan tidak di-seed.
+
 ### 5.6 Pengambilan Keputusan
 
 Arahan pimpinan, rencana tindak lanjut, monitoring, dan evaluasi

@@ -36,7 +36,7 @@ export const SUBMISSION_STATUS_LABELS: Record<SubmissionStatus, string> = {
   diubah_khusus: 'Diubah Khusus'
 };
 
-export type Tone = 'neutral' | 'info' | 'success' | 'warning' | 'danger' | 'final';
+export type Tone = 'neutral' | 'info' | 'success' | 'warning' | 'danger' | 'final' | 'dark' | 'slate';
 
 export const SUBMISSION_STATUS_TONE: Record<SubmissionStatus, Tone> = {
   draf: 'neutral',
@@ -75,6 +75,7 @@ export const CLASSIFICATION_TONE: Record<ClassificationStatus, Tone> = {
 export const DISPLAY_STATUS_LABELS: Record<string, string> = {
   ON_TARGET: 'Sesuai target',
   BELOW_TARGET: 'Di bawah target',
+  NO_TARGET: 'Belum ada target',
   NO_DATA: 'Belum ada data',
   STALE: 'Perlu hitung ulang'
 };
@@ -82,6 +83,7 @@ export const DISPLAY_STATUS_LABELS: Record<string, string> = {
 export const DISPLAY_STATUS_TONE: Record<string, Tone> = {
   ON_TARGET: 'success',
   BELOW_TARGET: 'warning',
+  NO_TARGET: 'neutral',
   NO_DATA: 'neutral',
   STALE: 'warning'
 };

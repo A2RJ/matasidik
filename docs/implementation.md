@@ -156,6 +156,7 @@ Semua route di bawah `/api/v1`. Autentikasi memakai `Authorization: Bearer <PASE
 | POST | `/submissions/{id}/decision` | `approve`/`return` + catatan |
 | GET | `/jobs/{id}` | Polling progress background |
 | GET | `/dashboard/spm` | Baris SPM + summary berbasis target |
+| GET | `/dashboard/category?kode=IKK&periode=2026-05` | Baris kategori dinamis (label atau owner); `kode=ALL` untuk semua kategori |
 | GET | `/dashboard/spm/export?format=xlsx\|pdf` | Export seluruh output SPM |
 | GET | `/dashboard/spm/{kode}/detail` | Detail faskes, upload coverage, provenance |
 | GET | `/dashboard/iku-by-faskes` | Data multi-series chart antar faskes |
@@ -172,6 +173,9 @@ Semua route di bawah `/api/v1`. Autentikasi memakai `Authorization: Bearer <PASE
 | GET | `/files/{id}` | Unduh file asli |
 | GET | `/admin/overview` | Ringkasan user, faskes, jabatan, bidang |
 | GET/POST/PATCH | `/admin/users`, `/admin/faskes`, `/admin/positions` | Administrasi user, puskesmas, jabatan |
+| GET/POST/PATCH/DELETE | `/master/categories` | CRUD kategori dashboard; DELETE = nonaktifkan (Admin) |
+| GET/POST/PATCH | `/master/bidang` | CRUD bidang/sekretariat/timker (Admin) |
+| PATCH | `/master/labels/{id}` | Ubah nama/kategori/parent/PJ label (Admin) |
 | GET | `/master/labels` / `/master/indicators` / `/master/targets` | Master |
 | POST | `/master/labels` / `/master/indicators` | Tambah master (Admin) |
 | PUT | `/master/targets` | Upsert target (Admin/Kabid/Sekretaris) |
@@ -227,6 +231,14 @@ Error konsisten: `{code, message, details, request_id}`.
 | Scope faskes berbeda dari pengupload | `SCOPE_DENIED` |
 
 Baris non-`MATCHED` menjadi blocker submit sampai dikoreksi.
+
+### 6.1 Kategori dashboard dan template BNBA
+
+- Kategori disimpan di `dashboard_category` dan dapat di-CRUD admin. `jenis=LABEL` untuk taksonomi; `jenis=OWNER` untuk Bidang/Sekretariat/Tim Kerja.
+- Setiap label/IKU wajib punya `category_id`. Indikator memilih satu atau banyak label via `indikator_label`; kategori mengikuti label.
+- `bidang` menyimpan `jenis` (`bidang`/`sekretariat`/`timker`) dan `parent_id`; indikator memakai `pj_bidang_id` + `pj_timker_id`.
+- Template BNBA menambahkan kolom opsional `kode_kategori` setelah `kode_faskes`. Jika diisi, classifier memvalidasi kecocokan dengan kategori label; jika kosong, validasi lama tetap berlaku.
+- `GET /dashboard/category` mengembalikan label/indikator sesuai kategori; `SPM` tetap memakai `dashboard_row`.
 
 ## 7. Kalkulasi
 

@@ -186,6 +186,9 @@
       <a href="/api/v1/master/template" class="block text-center font-mono text-[10px] font-bold underline">
         Unduh template CSV
       </a>
+      <p class="text-center font-mono text-[10px] text-muted-foreground">
+        <code>kode_kategori</code> opsional; <code>kode_iku</code> adalah kode label/IKU leaf.
+      </p>
       {#if message}<div class="border-2 border-black bg-success p-2 font-mono text-[10px] font-bold">{message}</div>{/if}
       {#if error}<div class="border-2 border-black bg-destructive p-2 font-mono text-[10px] font-bold">{error}</div>{/if}
     </CardContent>

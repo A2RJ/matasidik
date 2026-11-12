@@ -3,7 +3,10 @@ import type {
   AdminOverview,
   AuditLog,
   Bootstrap,
+  Bidang,
   CapaianTahunan,
+  DashboardCategory,
+  DashboardCategoryResult,
   DashboardItem,
   DashboardSummary,
   Factor,
@@ -121,6 +124,10 @@ export const api = {
     request<SPMDetail>(`/dashboard/spm/${kode}/detail${query(params)}`),
   ikuByFaskes: (params: { periode?: string; faskes_id?: string } = {}) =>
     request<IKUChart>(`/dashboard/iku-by-faskes${query(params)}`),
+  dashboardCategory: (
+    kode: string,
+    params: { periode?: string; faskes_id?: string; status?: string; bidang_id?: string; timker_id?: string } = {}
+  ) => request<DashboardCategoryResult>(`/dashboard/category${query({ kode, ...params })}`),
 
   submissions: (params: { periode?: string; status?: string; faskes_id?: string } = {}) =>
     request<Submission[]>(`/submissions${query(params)}`),
@@ -145,11 +152,25 @@ export const api = {
     }),
 
   labels: () => request<Label[]>('/master/labels'),
+  categories: () => request<DashboardCategory[]>('/master/categories'),
+  bidang: () => request<Bidang[]>('/master/bidang'),
   indicators: () => request<Bootstrap['indicators']>('/master/indicators'),
   targets: (periode?: string) => request<Target[]>(`/master/targets${query({ periode })}`),
   periods: () => request<Periode[]>('/master/periods'),
   createLabel: (payload: Record<string, unknown>) =>
     request<Label>('/master/labels', { method: 'POST', body: JSON.stringify(payload) }),
+  updateLabel: (id: string, payload: Record<string, unknown>) =>
+    request<Label>(`/master/labels/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
+  createCategory: (payload: Record<string, unknown>) =>
+    request<DashboardCategory>('/master/categories', { method: 'POST', body: JSON.stringify(payload) }),
+  updateCategory: (id: string, payload: Record<string, unknown>) =>
+    request<DashboardCategory>(`/master/categories/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
+  deleteCategory: (id: string) =>
+    request<DashboardCategory>(`/master/categories/${id}`, { method: 'DELETE' }),
+  createBidang: (payload: Record<string, unknown>) =>
+    request<Bidang>('/master/bidang', { method: 'POST', body: JSON.stringify(payload) }),
+  updateBidang: (id: string, payload: Record<string, unknown>) =>
+    request<Bidang>(`/master/bidang/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
   createIndicator: (payload: Record<string, unknown>) =>
     request<Bootstrap['indicators'][number]>('/master/indicators', {
       method: 'POST',

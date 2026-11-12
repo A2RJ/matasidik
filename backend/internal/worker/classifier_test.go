@@ -54,3 +54,34 @@ func TestParseAndClassifySample(t *testing.T) {
 		t.Fatalf("nilai indikator matched: %d", len(classified.Values))
 	}
 }
+
+func TestClassifyRejectsCategoryMismatch(t *testing.T) {
+	ctx := context.Background()
+	dir := t.TempDir()
+	store, err := sqlite.New("file:"+filepath.Join(dir, "test.db")+"?_pragma=foreign_keys(1)", filepath.Join(dir, "files"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = store.Close() })
+	if _, err := store.SeedDemo(ctx); err != nil {
+		t.Fatal(err)
+	}
+	sub, err := store.GetSubmission(ctx, "sub-demo-001")
+	if err != nil {
+		t.Fatal(err)
+	}
+	num, den := 450.0, 500.0
+	raw := []worker.RawRow{{
+		RowNo: 1, Periode: "2026-05", KodeIKU: "IKU-2026-001.01",
+		KodeIndikator: "IND-001", KodeKategori: "SPM",
+		ScopeType: "FASKES", ScopeCode: "faskes-pkm-taliwang",
+		Numerator: &num, Denominator: &den,
+	}}
+	classified, err := worker.NewClassifier(store).Classify(ctx, sub, raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(classified.Rows) != 1 || classified.Rows[0].Classification != domain.ClassMismatch {
+		t.Fatalf("kategori mismatch tidak ditolak: %+v", classified.Rows)
+	}
+}

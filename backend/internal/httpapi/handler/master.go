@@ -56,6 +56,108 @@ func (h *Handler) CreateLabel(c *gin.Context) {
 	response.Created(c, label)
 }
 
+func (h *Handler) UpdateLabel(c *gin.Context) {
+	var in service.UpdateLabelInput
+	if !h.bind(c, &in) {
+		return
+	}
+	before, _ := h.Repo.GetLabelByID(c.Request.Context(), c.Param("id"))
+	data, err := h.Master.UpdateLabel(c.Request.Context(), c.Param("id"), in, h.actor(c))
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	_ = h.Audit.Write(c.Request.Context(), &h.actor(c).ID, "master.label_updated", "label", data.ID, before, data, "", h.requestID(c))
+	response.OK(c, data)
+}
+
+func (h *Handler) Categories(c *gin.Context) {
+	data, err := h.Master.Categories(c.Request.Context())
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	response.OK(c, data)
+}
+
+func (h *Handler) CreateCategory(c *gin.Context) {
+	var in service.CategoryInput
+	if !h.bind(c, &in) {
+		return
+	}
+	data, err := h.Master.CreateCategory(c.Request.Context(), in, h.actor(c))
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	_ = h.Audit.Write(c.Request.Context(), &h.actor(c).ID, "master.category_created", "dashboard_category", data.ID, nil, data, "", h.requestID(c))
+	response.Created(c, data)
+}
+
+func (h *Handler) UpdateCategory(c *gin.Context) {
+	var in service.CategoryInput
+	if !h.bind(c, &in) {
+		return
+	}
+	before, _ := h.Repo.GetDashboardCategoryByID(c.Request.Context(), c.Param("id"))
+	data, err := h.Master.UpdateCategory(c.Request.Context(), c.Param("id"), in, h.actor(c))
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	_ = h.Audit.Write(c.Request.Context(), &h.actor(c).ID, "master.category_updated", "dashboard_category", data.ID, before, data, "", h.requestID(c))
+	response.OK(c, data)
+}
+
+func (h *Handler) DeactivateCategory(c *gin.Context) {
+	before, _ := h.Repo.GetDashboardCategoryByID(c.Request.Context(), c.Param("id"))
+	data, err := h.Master.DeactivateCategory(c.Request.Context(), c.Param("id"), h.actor(c))
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	_ = h.Audit.Write(c.Request.Context(), &h.actor(c).ID, "master.category_deactivated", "dashboard_category", data.ID, before, data, "", h.requestID(c))
+	response.OK(c, data)
+}
+
+func (h *Handler) BidangList(c *gin.Context) {
+	data, err := h.Repo.ListBidang(c.Request.Context())
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	response.OK(c, data)
+}
+
+func (h *Handler) CreateBidang(c *gin.Context) {
+	var in service.BidangInput
+	if !h.bind(c, &in) {
+		return
+	}
+	data, err := h.Master.CreateBidang(c.Request.Context(), in, h.actor(c))
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	_ = h.Audit.Write(c.Request.Context(), &h.actor(c).ID, "master.bidang_created", "bidang", data.ID, nil, data, "", h.requestID(c))
+	response.Created(c, data)
+}
+
+func (h *Handler) UpdateBidang(c *gin.Context) {
+	var in service.BidangInput
+	if !h.bind(c, &in) {
+		return
+	}
+	before, _ := h.Repo.GetBidang(c.Request.Context(), c.Param("id"))
+	data, err := h.Master.UpdateBidang(c.Request.Context(), c.Param("id"), in, h.actor(c))
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	_ = h.Audit.Write(c.Request.Context(), &h.actor(c).ID, "master.bidang_updated", "bidang", data.ID, before, data, "", h.requestID(c))
+	response.OK(c, data)
+}
+
 func (h *Handler) Indicators(c *gin.Context) {
 	data, err := h.Master.Indicators(c.Request.Context())
 	if err != nil {
@@ -169,5 +271,5 @@ func (h *Handler) DeleteCapaianTahunan(c *gin.Context) {
 func (h *Handler) Template(c *gin.Context) {
 	c.Header("Content-Type", "text/csv")
 	c.Header("Content-Disposition", `attachment; filename="template-bnba.csv"`)
-	c.String(http.StatusOK, "periode;kode_faskes;kode_iku;kode_indikator;scope_type;scope_code;nilai;numerator;denominator;catatan\n")
+	c.String(http.StatusOK, "periode;kode_faskes;kode_kategori;kode_iku;kode_indikator;scope_type;scope_code;nilai;numerator;denominator;catatan\n")
 }
