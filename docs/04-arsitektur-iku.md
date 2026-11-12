@@ -3,6 +3,7 @@
 > Dokumen rancangan teknis untuk **IKU dinamis, upload terklasifikasi, workflow berjenjang, dan kalkulasi induk–anak**.
 > Terkait: [`README.md`](../README.md) bagian A.7 dan B.8, [`01-gambaran-umum.md`](01-gambaran-umum.md), [`02-daftar-indikator-kinerja.md`](02-daftar-indikator-kinerja.md), [`03-contoh-data.md`](03-contoh-data.md).
 > Aturan proyek yang mengikat: [`rules.md`](rules.md).
+> Skema database implementasi: [`schema.md`](schema.md).
 > Diagram end-to-end: [`../assets/diagrams/alur-data-iku.png`](../assets/diagrams/alur-data-iku.png).
 
 ---
@@ -44,7 +45,7 @@
 | Upload diproses di background | API mengembalikan `202 + job_id`; UI menampilkan halaman proses dan polling status |
 | Backend Go + Gin | HTTP API memakai Gin; worker, parser, kalkulasi, dan auth dalam satu binary/modul Go |
 | Frontend Svelte | SPA Svelte 5 + Vite; build statis disajikan satu origin dengan API |
-| Auth tanpa Keycloak | JWT akses singkat + refresh token rotasi + RBAC/scope + MFA untuk approver |
+| Auth tanpa Keycloak | PASETO v4.local akses singkat + refresh token rotasi + RBAC/scope + MFA untuk approver |
 | Observability level container | Log JSON ke stdout, metrik Prometheus, health check, rotasi log container; tanpa APM/tracing terdistribusi |
 | Skala awal satu Dinas | Modular monolith, bukan microservices; satu image dengan dua entrypoint (`api`, `worker`) |
 
@@ -391,25 +392,27 @@ Untuk IKU leaf, `IKU_VALUE` diturunkan dari `INDICATOR_VALUE` indikator komponen
 
 **Kontrak baris SPM.** `DASHBOARD_ROW` menyimpan `spm_kode`, label SPM, IKU leaf, indikator, urutan, dan target. Saat render, setiap baris membawa `iku_value_id`, `indicator_value_id`, `source_hash`, `data_version`, dan `calculation_run_id`; ID inilah yang dipakai untuk drill-down. Baris agregat membawa `iku_value_id` induk, lalu `IKU_VALUE_DETAIL` menunjuk komponennya.
 
-**Peta 3 baris contoh:**
+**Peta 3 baris acuan:**
 
 | Baris SPM | IKU leaf | Baris file | Indikator | Num/den | Capaian MEI 2026 | Status |
 | --- | --- | --- | --- | ---: | ---: | --- |
-| `01` Ibu Hamil | `.01` Ibu Hamil | `R1` | `IND-001` | 450/500 | **90,00%** | perlu perhatian |
-| `02` Ibu Bersalin | `.02` Ibu Bersalin | `R2` | `IND-002` | 380/400 | **95,00%** | sesuai target |
+| `01` Ibu Hamil | `.01` Ibu Hamil | `R1` | `IND-001` | 450/500 | **90,00%** | di bawah target |
+| `02` Ibu Bersalin | `.02` Ibu Bersalin | `R2` | `IND-002` | 380/400 | **95,00%** | di bawah target |
 | `03` Bayi Baru Lahir | `.03` Bayi Baru Lahir | `R3` (reklasifikasi dari IKU induk) | `IND-003` | 20/20 | **100,00%** | sesuai target |
 
 Ketiga baris berasal dari satu file yang sama: `FILE_OBJECT` hash `9f2c…a71`, `SUBMISSION S-2026-05-001`, `REVISION 1`, uploader Siti (PKM Taliwang), periode Mei 2026. Baris `R3` semula `IKU_ROLLUP_ONLY`; koreksi ke `.03` tercatat di `AUDIT_LOG` dan mengubah `SUBMISSION_ROW.matched_iku_id`.
 
-**Output dashboard SPM (3 baris contoh):**
+**Output dashboard SPM (3 baris acuan):**
 
 | No | Indikator | Target | Capaian 2025 | Status | Capaian TW1 2026 | Status | Capaian MEI 2026 | Status |
 | --- | --- | ---: | ---: | :---: | ---: | :---: | ---: | :---: |
 | 01 | Pelayanan Kesehatan Ibu Hamil | 100% | 100% | ✓ | 27,3% | ✓ | 90,00% | ● |
-| 02 | Pelayanan Kesehatan Ibu Bersalin | 100% | 96% | ● | 26,2% | ✓ | 95,00% | ✓ |
+| 02 | Pelayanan Kesehatan Ibu Bersalin | 100% | 96% | ● | 26,2% | ✓ | 95,00% | ● |
 | 03 | Pelayanan Kesehatan Bayi Baru Lahir | 100% | 100% | ✓ | 28,1% | ✓ | 100,00% | ✓ |
 
-Status: `✓` sesuai target; `●` perlu perhatian. Capaian 2025/TW1 adalah baseline dashboard SPM; kolom **Capaian MEI 2026** dihitung dari upload dan dipetakan ke IKU leaf. Tiga baris ini contoh; sembilan baris lain memakai kontrak yang sama. Nilai `MEI 2026` tidak boleh diisi manual — jika `IKU_VALUE` belum ada, status baris adalah `NO_DATA`, bukan nol.
+Status: `✓` sesuai target; `●` di bawah target. Capaian 2025/TW1 adalah baseline dashboard SPM; kolom **Capaian MEI 2026** dihitung dari upload dan dipetakan ke IKU leaf. Tiga baris ini adalah baris acuan; sembilan baris lain memakai kontrak yang sama. Nilai `MEI 2026` tidak boleh diisi manual — jika `IKU_VALUE` belum ada, status baris adalah `NO_DATA`, bukan nol.
+
+Capaian tahun sebelumnya dikelola admin di tabel `capaian_tahunan` per Indikator/IKU untuk scope kabupaten. Dashboard periode 2026 membaca capaian 2025; periode 2027 membaca 2026. Nilai tidak disalin otomatis dan tidak menimpa histori.
 
 **Drill-down yang disediakan API:**
 
@@ -439,7 +442,7 @@ Dengan kontrak ini, pertanyaan “angka 90,00% di baris 01 berasal dari file dan
 | Frontend | Svelte 5 + Vite | Build statis; disajikan Go `embed` atau reverse proxy |
 | Database | PostgreSQL 16 | JSONB untuk formula/diff, recursive query hierarki, `SKIP LOCKED` |
 | File | Volume lokal | Path content-addressed, metadata di `FILE_OBJECT` |
-| Auth | JWT + refresh + RBAC/scope | Tanpa Keycloak; detail di §6.6 |
+| Auth | PASETO + refresh + RBAC/scope | Tanpa Keycloak; detail di §6.6 |
 | Observability | Log JSON + metrik + health | Tanpa APM/tracing; detail di §6.7 |
 | Deployment | Docker Compose | `api`, `worker`, `postgres`, reverse proxy, volume |
 
@@ -467,12 +470,12 @@ r.Use(
 ```text
 /api/v1
 ├── /auth          publik: login, refresh, logout
-├── /submissions   JWT + scope; upload, preview, submit, revisi
-├── /jobs          JWT + cek pemilik submission
-├── /tasks         JWT + role approver
-├── /iku           JWT + scope baca
-├── /files         JWT + scope; stream lewat handler, bukan static
-└── /admin         JWT + role admin
+├── /submissions   PASETO + scope; upload, preview, submit, revisi
+├── /jobs          PASETO + cek pemilik submission
+├── /tasks         PASETO + role approver
+├── /iku           PASETO + scope baca
+├── /files         PASETO + scope; stream lewat handler, bukan static
+└── /admin         PASETO + role admin
 ```
 
 Aturan implementasi:
@@ -594,7 +597,7 @@ Aturan:
 | Komponen | Rancangan |
 | --- | --- |
 | Password | Argon2id + salt; kebijakan panjang; cek password bocor opsional |
-| Access token | JWT HS256/EdDSA, umur 15 menit, berisi `sub`, `role`, `scope`, `session_id` |
+| Access token | PASETO v4.local, umur 30 menit, berisi `sub`, `role`, `scope`, `session_id` |
 | Refresh token | Random 256-bit, disimpan **hash** di DB, rotasi setiap refresh, deteksi reuse |
 | Penyimpanan | Refresh token di cookie `HttpOnly; Secure; SameSite=Strict`; access token di memory |
 | CSRF | SameSite + double-submit token untuk request yang mengubah data |
@@ -602,7 +605,7 @@ Aturan:
 | Sesi | Daftar sesi aktif, revoke per sesi, revoke semua saat ganti password |
 | RBAC | Role + scope (`faskes_id`, `bidang_id`, `timker_id`); cek di middleware Gin + handler, bukan hanya UI |
 | Proteksi | Rate limit login, lockout bertahap, audit login sukses/gagal |
-| Secret | Environment/secret file, bukan repo; rotasi kunci JWT dengan `kid` |
+| Secret | Environment/secret file, bukan repo; rotasi kunci PASETO dengan `kid` |
 
 Role awal: `pkm_operator`, `pkm_pj`, `dinas_verifier`, `kabid`, `sekretaris`, `iku_owner`, `pimpinan`, `admin`.
 
@@ -629,19 +632,26 @@ Jika nanti butuh analisis log terpusat, kirim stdout container ke Loki/ELK tanpa
 
 | Method | Path | Fungsi |
 | --- | --- | --- |
+| `POST` | `/api/v1/auth/login` | Login username/password; set refresh cookie |
+| `POST` | `/api/v1/auth/refresh` | Rotasi refresh + access PASETO |
+| `POST` | `/api/v1/auth/acting-as` | Admin bertindak sebagai user lain |
 | `POST` | `/api/v1/submissions` | Upload multipart; balas `202 {submission_id, job_id}` |
 | `GET` | `/api/v1/jobs/{id}` | Status/progress job untuk halaman loading |
-| `GET` | `/api/v1/submissions/{id}/preview` | Baris + klasifikasi + IKU yang diizinkan |
+| `GET` | `/api/v1/submissions/{id}` | Detail + baris + klasifikasi + IKU yang diizinkan |
 | `PATCH` | `/api/v1/submissions/{id}/rows/{rowId}` | Ubah IKU sebelum submit; body `{iku_kode, reason}` |
-| `POST` | `/api/v1/submissions/{id}/submit` | Kirim ke workflow; buat revision immutable |
-| `GET` | `/api/v1/submissions/{id}/revisions` | Riwayat revisi + diff |
-| `GET` | `/api/v1/tasks?assignee=me` | Task approval milik user |
-| `POST` | `/api/v1/tasks/{id}/decision` | `{action, reason_code, notes, details}` |
+| `POST` | `/api/v1/submissions/{id}/submit` | Kirim ke workflow |
+| `POST` | `/api/v1/submissions/{id}/decision` | `{action, reason_code, notes}` |
+| `GET` | `/api/v1/submissions/{id}/revisions` | Riwayat revisi |
 | `GET` | `/api/v1/iku/{kode}/values?periode=2026-05` | Nilai IKU + status |
 | `GET` | `/api/v1/iku-values/{id}/detail` | Provenance komponen |
-| `GET` | `/api/v1/dashboard/spm?periode=2026-05` | Baris SPM + `iku_value_id`/`indicator_value_id` untuk drill-down |
-| `GET` | `/api/v1/dashboard/spm/{kode}/trace?periode=2026-05` | Rantai trace sampai `SUBMISSION_ROW` dan `FILE_OBJECT` |
+| `GET` | `/api/v1/dashboard/spm?periode=2026-05` | Baris SPM + ringkasan berbasis target |
+| `GET` | `/api/v1/dashboard/spm/export?format=xlsx\|pdf` | Export seluruh output SPM |
+| `GET` | `/api/v1/dashboard/spm/{kode}/detail?periode=2026-05` | Coverage faskes + provenance |
+| `GET` | `/api/v1/dashboard/iku-by-faskes` | Data chart multi-series |
+| `GET` | `/api/v1/dashboard/spm/{kode}/trace?periode=2026-05` | Rantai trace sampai `FILE_OBJECT` |
+| `GET/POST/PATCH/DELETE` | `/api/v1/master/capaian-tahunan` | Capaian tahun sebelumnya per Indikator/IKU (Admin) |
 | `GET` | `/api/v1/files/{id}` | Stream file dengan cek auth/scope |
+| `GET/POST/PATCH` | `/api/v1/admin/{users,faskes,positions}` | Administrasi user, faskes, jabatan |
 
 Aturan API:
 
@@ -741,7 +751,7 @@ Pemetaan error HTTP:
 | Fase | Fokus | Gate |
 | --- | --- | --- |
 | 0 | Keputusan domain + bersihkan master | Pohon IKU, kode, satuan, formula, PJ, target disepakati |
-| 1 | Master data + identity | Label many-to-many, versi, RBAC/scope, audit dasar, auth JWT |
+| 1 | Master data + identity | Label many-to-many, versi, RBAC/scope, audit dasar, auth PASETO |
 | 2 | Upload + klasifikasi + preview | Template, parser, validasi, preview, ubah IKU, submission/revision |
 | 3 | Workflow | 3 level default, catatan, delegasi, SLA, final lock |
 | 4 | Kalkulasi + dashboard | Formula engine, rollup, provenance, snapshot |
@@ -760,15 +770,15 @@ Pemetaan error HTTP:
 
 ---
 
-## 10. Contoh end-to-end
+## 10. Alur end-to-end
 
 Diagram lengkap:
 
 <img src="../assets/diagrams/alur-data-iku.png" alt="Alur data IKU end-to-end: upload BNBA, klasifikasi tiga baris ke IKU leaf .01/.02/.03, preview dan koreksi R3, approval tiga level, kalkulasi 90,00%, 95,00%, dan 100,00% menjadi 92,39%, dashboard dengan jejak angka, serta 3 baris output dashboard SPM yang dapat ditelusuri sampai file.">
 
-*Gambar 10 — Contoh end-to-end Mei 2026. Sumber HTML: [`../assets/diagrams/alur-data-iku.html`](../assets/diagrams/alur-data-iku.html). Diagram dihasilkan oleh [`../assets/diagrams/gen-end-to-end.py`](../assets/diagrams/gen-end-to-end.py); data contoh di bawah adalah data yang sama dengan yang tampil di diagram.*
+*Gambar 10 — Alur end-to-end Mei 2026. Sumber HTML: [`../assets/diagrams/alur-data-iku.html`](../assets/diagrams/alur-data-iku.html). Diagram dihasilkan oleh [`../assets/diagrams/gen-end-to-end.py`](../assets/diagrams/gen-end-to-end.py); data di bawah adalah data yang sama dengan yang tampil di diagram.*
 
-Panel dashboard di bagian bawah gambar memperlihatkan **3 baris contoh output dashboard SPM** dengan kolom target, capaian 2025/TW1/Mei 2026, dan status. Setiap baris diberi penanda `R1`/`R2`/`R3` yang dapat ditelusuri ke `SUBMISSION_ROW`, `INDICATOR_VALUE`, `IKU_VALUE`, lalu `FILE_OBJECT`. Tabel ini adalah lapisan tampilan; nilai IKU tetap dihitung dari pohon komponen di panel **Pohon IKU** pada bagian dashboard yang sama. Panel **Pimpinan** memuat arahan dan alur TL: masalah → rekomendasi → PJ → status. Rantai lengkap ada di §5.5. Tabel sumber lengkap 12 indikator tetap ada di [`03-contoh-data.md`](03-contoh-data.md); diagram sengaja memilih 3 baris yang datanya berasal dari upload contoh agar rantai trace-nya utuh.
+Panel dashboard di bagian bawah gambar memperlihatkan **3 baris acuan output dashboard SPM** dengan kolom target, capaian 2025/TW1/Mei 2026, dan status. Setiap baris diberi penanda `R1`/`R2`/`R3` yang dapat ditelusuri ke `SUBMISSION_ROW`, `INDICATOR_VALUE`, `IKU_VALUE`, lalu `FILE_OBJECT`. Tabel ini adalah lapisan tampilan; nilai IKU tetap dihitung dari pohon komponen di panel **Pohon IKU** pada bagian dashboard yang sama. Panel **Pimpinan** memuat arahan dan alur TL: masalah → rekomendasi → PJ → status. Rantai lengkap ada di §5.5. Tabel sumber lengkap 12 indikator tetap ada di [`03-contoh-data.md`](03-contoh-data.md); diagram sengaja memilih 3 baris yang datanya berasal dari upload awal agar rantai trace-nya utuh.
 
 Alur singkat: Siti (PKM Taliwang) upload BNBA 3 baris → API menyimpan file + job dan membalas `202` → worker memvalidasi dan mengklasifikasi → halaman loading polling job → preview mengoreksi R3 (IKU induk) ke `.03` → submit → verifikator Dinas approve → Kabid final + catatan penerimaan → kalkulasi `.01` 90,00%, `.02` 95,00%, `.03` 100,00%, induk 92,39% → 3 baris SPM → dashboard dengan drill-down provenance sampai `FILE_OBJECT`.
 
@@ -796,7 +806,7 @@ Angka kunci:
 | Induk | 850/920 = **92,39%** |
 | Target | 100% |
 | Gap | **-7,61 pp** |
-| Status | `PERLU PERHATIAN` (ambang contoh 90–94,99%) |
+| Status | `DI BAWAH TARGET` (target 100%) |
 
 Jejak tiga baris SPM mengikuti rantai `SPM → IKU_VALUE → INDICATOR_VALUE → SUBMISSION_ROW → SUBMISSION_REVISION → SUBMISSION → FILE_OBJECT`; diagram dan tabel trace lengkap ada di §5.5.
 

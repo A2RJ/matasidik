@@ -23,6 +23,7 @@
   - [A.7 IKU dinamis: dari upload ke dashboard](#a7-iku-dinamis-dari-upload-ke-dashboard)
 - [Bagian B — Untuk Developer](#bagian-b--untuk-developer-pelaksana-teknis)
   - [B.8 Arsitektur IKU dinamis (Go Gin + Svelte)](#b8-arsitektur-iku-dinamis-go-gin--svelte)
+  - [B.10 Menjalankan implementasi pilot](#b10-menjalankan-implementasi-pilot)
 
 ## Peta dokumentasi
 
@@ -34,6 +35,8 @@
 | [`docs/02-daftar-indikator-kinerja.md`](docs/02-daftar-indikator-kinerja.md) | Dinas, Developer | Katalog 58 baris indikator dan label |
 | [`docs/03-contoh-data.md`](docs/03-contoh-data.md) | Dinas, Developer | Contoh output dashboard SPM dan data absolut |
 | [`docs/04-arsitektur-iku.md`](docs/04-arsitektur-iku.md) | Developer | Rancangan IKU dinamis, upload, workflow, kalkulasi, arsitektur |
+| [`docs/schema.md`](docs/schema.md) | Developer | Skema database, relasi, enum, index, seed, dan catatan migrasi SQLite → PostgreSQL |
+| [`docs/implementation.md`](docs/implementation.md) | Developer | Struktur proyek, cara run, API pilot, repository pattern, dan batasan implementasi |
 | [`docs/rules.md`](docs/rules.md) | Agent, Developer | Aturan proyek yang mengikat dan daftar keputusan terbuka |
 | [`assets/diagrams/README.md`](assets/diagrams/README.md) | Developer | Katalog diagram dan cara regenerasi |
 
@@ -134,9 +137,9 @@ Katalog indikator tidak lagi diperlakukan sebagai daftar datar. IKU menjadi **la
 
 <img src="assets/diagrams/alur-data-iku.png" alt="Alur data IKU end-to-end: upload BNBA oleh Puskesmas, klasifikasi tiga baris ke IKU leaf .01/.02/.03, preview dengan akses ubah IKU, approval tiga level, kalkulasi IKU anak dan induk, dashboard yang bisa ditelusuri, serta 3 baris output dashboard SPM yang terhubung ke file.">
 
-*Gambar A.7 — Satu contoh utuh: upload 3 baris, koreksi IKU di preview, approval Puskesmas → Dinas → Kabid, kalkulasi induk–anak, dan dashboard. Sumber HTML: [`assets/diagrams/alur-data-iku.html`](assets/diagrams/alur-data-iku.html). Rancangan lengkap: [`docs/04-arsitektur-iku.md`](docs/04-arsitektur-iku.md).*
+*Gambar A.7 — Satu alur utuh: upload 3 baris, koreksi IKU di preview, approval Puskesmas → Dinas → Kabid, kalkulasi induk–anak, dan dashboard. Sumber HTML: [`assets/diagrams/alur-data-iku.html`](assets/diagrams/alur-data-iku.html). Rancangan lengkap: [`docs/04-arsitektur-iku.md`](docs/04-arsitektur-iku.md).*
 
-Tahap 5 ditempatkan di bagian bawah sebagai **dashboard final**, bukan di deretan proses. Panel ini menampilkan **3 baris contoh output dashboard SPM** (target, capaian 2025/TW1/Mei 2026, dan status capaian) beserta Pohon IKU, metadata, jejak angka, dan panel pimpinan. Panel pimpinan memuat arahan dan alur TL: masalah → rekomendasi → PJ → status. Setiap baris punya penanda `R1`/`R2`/`R3` yang bisa ditelusuri balik ke baris upload, `INDICATOR_VALUE`, `IKU_VALUE` leaf, lalu `FILE_OBJECT`.
+Tahap 5 ditempatkan di bagian bawah sebagai **dashboard final**, bukan di deretan proses. Panel ini menampilkan **3 baris acuan output dashboard SPM** (target, capaian 2025/TW1/Mei 2026, dan status capaian) beserta Pohon IKU, metadata, jejak angka, dan panel pimpinan. Panel pimpinan memuat arahan dan alur TL: masalah → rekomendasi → PJ → status. Setiap baris punya penanda `R1`/`R2`/`R3` yang bisa ditelusuri balik ke baris upload, `INDICATOR_VALUE`, `IKU_VALUE` leaf, lalu `FILE_OBJECT`.
 
 ### Cara membaca alurnya
 
@@ -198,6 +201,8 @@ Baris R3 pada contoh semula memakai kode IKU induk (rollup-only). Di preview, ba
 <img src="assets/diagrams/model-data.png" alt="Model data MATA SIDIK: entitas master (wilayah, faskes, user, role, periode, indikator) dipisahkan dari transaksi (laporan, target, faktor, audit log, TL), dengan relasi 1:N.">
 
 *Gambar B.3 — Pemisahan master/referensi dari transaksi, faktor, audit, dan TL. Sumber HTML: [`assets/diagrams/model-data.html`](assets/diagrams/model-data.html).*
+
+Skema database lengkap (30 tabel, kolom, relasi, index, enum, seed, dan catatan migrasi) ada di [`docs/schema.md`](docs/schema.md); diagram katalognya ada di [`assets/diagrams/schema-db.png`](assets/diagrams/schema-db.png).
 
 ### Field kunci per entitas
 
@@ -267,7 +272,7 @@ Setiap transisi tulis `AUDIT_LOG` (who/when/what + catatan).
 - Upload dinamis: wajib `kode_iku` + `kode_indikator` + periode; klasifikasi deterministik; baris ambigu/mismatch masuk karantina; IKU induk tidak menerima input langsung.
 - Agregasi wilayah: Desa → Puskesmas → Kecamatan → Kabupaten (kasus kematian ibu/balita wajib bisa di-drill-down; UHH hanya level kabupaten, input 1×/tahun).
 - Agregasi IKU induk: `RATIO_OF_SUMS` dari komponen eksplisit (`IKU_KOMPONEN`), bukan rata-rata persentase; simpan provenance di `IKU_VALUE_DETAIL`.
-- Dashboard: 9 kategori §A.4 sebagai facet; setiap kartu tampilkan Target, Capaian, Status, Tren; Status dihitung dari ambang Dinas (menunggu keputusan A.5 no.6).
+- Dashboard: 9 kategori §A.4 sebagai facet; setiap kartu tampilkan Target, Capaian, Status, Tren; Status dasar dihitung dari target periode; ambang warna formal menunggu keputusan A.5 no.6.
 - Ekspor: laporan periodik (PDF/Excel) + grafik; peta sebaran opsional tahap 2.
 
 ## B.7 Backlog dari gap analisis (prioritas)
@@ -296,7 +301,7 @@ Rancangan lengkap ada di [`docs/04-arsitektur-iku.md`](docs/04-arsitektur-iku.md
 | Tanpa object storage | File di volume lokal dengan nama `sha256`; metadata di `FILE_OBJECT`; backup volume wajib |
 | Go + Gin | `gin-gonic/gin` untuk router/middleware, `pgx`/`sqlc`, `goose`; parser Excel, engine kalkulasi, workflow dalam satu modul |
 | Svelte | Svelte 5 + Vite; build statis satu origin dengan API; halaman loading + preview + timeline |
-| Auth | JWT akses 15 menit + refresh rotasi (hash di DB), RBAC/scope, MFA TOTP untuk approver |
+| Auth | PASETO v4.local akses 30 menit + refresh rotasi (hash di DB), RBAC/scope, MFA TOTP untuk approver |
 | Observability | Log JSON ke stdout, rotasi log container, `/metrics`, `/healthz`, `/readyz`; tanpa APM |
 | Deployment | Docker Compose: `api`, `worker`, `postgres`, reverse proxy, volume `pgdata` + `files` |
 
@@ -307,6 +312,10 @@ Rancangan lengkap ada di [`docs/04-arsitektur-iku.md`](docs/04-arsitektur-iku.md
 **Preview:** dropdown “Ubah IKU” hanya berisi IKU leaf valid untuk indikator tersebut. Perubahan sebelum submit dicatat di audit; setelah submit, perubahan mengikuti revisi + approval.
 
 **Workflow:** default `DRAFT_PKM → VERIFY_DINAS → VALIDATE_KABID → FINAL`, dengan `SUBMISSION_GROUP` per pemilik data untuk submission lintas bidang. Versi workflow di-pin per submission. Catatan wajib saat return dan final; tidak ada auto-approve.
+
+<img src="assets/diagrams/alur-workflow.png" alt="Workflow approval berjenjang MATA SIDIK: DRAFT_PKM submit ke VERIFY_DINAS, approve ke VALIDATE_KABID, approve ke FINAL, dengan jalur return ke pengirim dan verifikator serta SPECIAL_CHANGE pasca-final.">
+
+*Gambar B.8b — State machine approval lengkap: tiga level approval, jalur return, dan `SPECIAL_CHANGE` pasca-final. Sumber HTML: [`assets/diagrams/alur-workflow.html`](assets/diagrams/alur-workflow.html); generator: [`assets/diagrams/gen-teknis.py`](assets/diagrams/gen-teknis.py).*
 
 **Kalkulasi:** `RATIO_OF_SUMS` untuk persentase (`Σ numerator / Σ denominator`), komponen induk eksplisit, provenance di `IKU_VALUE_DETAIL`, status `COMPLETE/PARTIAL/NO_DATA/STALE`. Contoh: `.01` 450/500 = 90,00%; `.02` 380/400 = 95,00%; `.03` 20/20 = 100,00%; induk 850/920 = 92,39%.
 
@@ -321,3 +330,34 @@ Gap/edge case P0–P2, acceptance criteria, dan roadmap ada di [`docs/04-arsitek
 - Contoh hitung + gambar: `docs/03-contoh-data.md:17-51`, `assets/output-dashboard-spm.png`.
 - Aturan proyek (mengikat): `docs/rules.md`.
 - Diagram (sumber HTML, PNG, cara regenerasi): `assets/diagrams/README.md`.
+- Skema database: [`docs/schema.md`](docs/schema.md).
+- Struktur & cara run implementasi: [`docs/implementation.md`](docs/implementation.md).
+
+## B.10 Menjalankan implementasi pilot
+
+Implementasi pilot memakai **Go Gin + SQLite + PASETO v4.local** dan **SvelteKit + shadcn-svelte/neobrutalism**. Login memakai username/password, refresh token HttpOnly, RBAC, dan actingAs admin. Database + data awal dibuat otomatis saat API pertama kali berjalan.
+
+```bash
+# terminal 1 — backend + worker inline
+cd backend
+go run ./cmd/api
+
+# terminal 2 — frontend
+cd frontend
+npm install
+npm run dev
+```
+
+- API: `http://localhost:8080` · frontend dev: `http://localhost:5173` (proxy `/api`).
+- Login awal: `admin`, `siti`, `rina`, `kabid`, `pimpinan`, `sekretaris`, `pjgizi` — password `password123` (ganti sebelum produksi).
+- Set `APP_AUTH_KEY` (64 hex chars = 32 byte) agar access token tetap valid setelah restart; jika kosong API memakai kunci acak sementara (refresh token di DB tetap bekerja).
+- Access token PASETO v4.local 30 menit; refresh token HttpOnly 7 hari; admin dapat memakai **ActingAs**.
+- Halaman login menampilkan fungsi aplikasi di kiri dan form di kanan; alur empat langkah ditampilkan sebagai satu baris ringkas tanpa label jabatan: upload → verifikasi → validasi → final.
+- Semua user dapat membuka **Profil** untuk mengubah nama tampilan dan password sendiri; peran, jabatan, dan faskes tetap diatur admin.
+- Admin mengisi **Capaian tahunan** di halaman Master. Dashboard periode 2026 otomatis memakai capaian 2025; ganti periode ke 2027 berarti memakai capaian 2026 tanpa menimpa histori.
+- Build frontend: `npm run build`; Go menyajikan `frontend/build` pada `APP_WEB_DIR`.
+- Test: `cd backend && go test ./...` · `cd frontend && npm run check`.
+- Data awal: submission final `S-2026-05-001`, 3 baris, induk 92,39%.
+- Reset data: hapus `backend/data/` lalu jalankan API lagi.
+
+Rincian struktur, endpoint, repository pattern, dan batasan ada di [`docs/implementation.md`](docs/implementation.md); skema database di [`docs/schema.md`](docs/schema.md).

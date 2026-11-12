@@ -84,7 +84,7 @@ Jangan mencampur opini dengan fakta. Jangan menyajikan rekomendasi sebagai keput
 Ini ringkasan; detail dan rasional ada di [`docs/rules.md`](docs/rules.md).
 
 - **Produk:** MATA SIDIK untuk Dinas Kesehatan Kab. Sumbawa Barat; output utama adalah dashboard SPM yang dapat ditelusuri sampai file upload.
-- **Stack:** backend **Go + Gin**, frontend **Svelte 5 + Vite**, database **PostgreSQL 16**, satu image dengan dua command (`api`, `worker`), **tanpa Redis**, **tanpa object storage**, **tanpa APM**.
+- **Stack:** backend **Go + Gin**, frontend **Svelte 5 + Vite**, database **PostgreSQL 16**, satu image dengan dua command (`api`, `worker`), **tanpa Redis**, **tanpa object storage**, **tanpa APM**. **Pilot Nov 2026:** SQLite + PASETO v4.local atas instruksi pemilik proyek; produksi tetap PostgreSQL + PASETO/RBAC/MFA.
 - **Upload:** background job di tabel `JOB` dengan `FOR UPDATE SKIP LOCKED`; file disimpan di volume lokal dengan nama `sha256`; API membalas `202 {submission_id, job_id}`; UI polling `GET /jobs/{id}`.
 - **Klasifikasi:** wajib `kode_iku` + `kode_indikator` + `periode`; deterministik; baris ambigu/mismatch masuk karantina; IKU induk tidak menerima upload langsung.
 - **Workflow:** default `DRAFT_PKM → VERIFY_DINAS → VALIDATE_KABID → FINAL`; dinamis tetapi versinya di-pin per submission; return wajib catatan; **tidak ada auto-approve**; final terkunci; perubahan pasca-final lewat `SPECIAL_CHANGE` + alasan + dual approval + audit.

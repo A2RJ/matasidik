@@ -1,0 +1,115 @@
+@import '@fontsource-variable/space-grotesk';
+@import '@fontsource/jetbrains-mono/400.css';
+@import '@fontsource/jetbrains-mono/600.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --nb-bg: #fdf6e3;
+  --nb-paper: #fffdf5;
+  --nb-ink: #111111;
+  --nb-muted: #5c5545;
+  --nb-yellow: #ffdb33;
+  --nb-blue: #90a8ff;
+  --nb-pink: #ff90e8;
+  --nb-green: #b8ff9f;
+  --nb-orange: #ffb86b;
+  --nb-red: #ff7a7a;
+}
+
+html {
+  background: var(--nb-bg);
+}
+
+body {
+  min-height: 100vh;
+  background:
+    linear-gradient(to right, rgba(17, 17, 17, 0.055) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(17, 17, 17, 0.055) 1px, transparent 1px),
+    var(--nb-bg);
+  background-size: 28px 28px;
+  color: var(--nb-ink);
+  font-family: 'Space Grotesk Variable', ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--nb-yellow);
+  color: var(--nb-ink);
+}
+
+@layer base {
+  h1, h2, h3, h4 {
+    @apply font-bold tracking-tight;
+  }
+  a {
+    @apply underline-offset-4;
+  }
+  button, input, select, textarea {
+    font: inherit;
+  }
+  :focus-visible {
+    outline: 3px solid var(--nb-ink);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  .nb-card {
+    @apply border-2 border-black bg-card shadow-nb;
+  }
+  .nb-panel {
+    @apply border-2 border-black bg-card;
+  }
+  .nb-input {
+    @apply h-10 w-full border-2 border-black bg-white px-3 font-mono text-sm text-foreground shadow-nbsm outline-none placeholder:text-muted-foreground focus:shadow-nb;
+  }
+  .nb-textarea {
+    @apply min-h-28 w-full border-2 border-black bg-white p-3 font-mono text-sm text-foreground shadow-nbsm outline-none placeholder:text-muted-foreground focus:shadow-nb;
+  }
+  .nb-select {
+    @apply h-10 w-full appearance-none border-2 border-black bg-white px-3 pr-9 font-mono text-sm text-foreground shadow-nbsm outline-none focus:shadow-nb;
+  }
+  .nb-label {
+    @apply mb-1 block font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground;
+  }
+  .nb-kicker {
+    @apply font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground;
+  }
+  .nb-link {
+    @apply font-bold underline decoration-2 underline-offset-4 hover:bg-primary;
+  }
+  .nb-table {
+    @apply w-full border-collapse font-mono text-xs;
+  }
+  .nb-table th {
+    @apply border-b-2 border-black bg-muted px-3 py-2 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground;
+  }
+  .nb-table td {
+    @apply border-b border-black/20 px-3 py-3 align-top;
+  }
+  .nb-table tbody tr:hover {
+    @apply bg-primary/20;
+  }
+  .nb-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: var(--nb-ink) transparent;
+  }
+  .nb-scroll::-webkit-scrollbar {
+    height: 10px;
+    width: 10px;
+  }
+  .nb-scroll::-webkit-scrollbar-thumb {
+    background: var(--nb-ink);
+    border: 2px solid var(--nb-bg);
+  }
+  .nb-sidebar-link {
+    @apply flex items-center gap-3 border-2 border-transparent px-3 py-2 font-mono text-xs font-bold uppercase tracking-wide text-foreground/80 transition-transform hover:border-black hover:bg-primary hover:shadow-nbsm;
+  }
+  .nb-sidebar-link.active {
+    @apply border-black bg-primary shadow-nbsm;
+  }
+}

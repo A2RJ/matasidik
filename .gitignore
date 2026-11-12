@@ -1,0 +1,11 @@
+backend/data/
+backend/bin/
+backend/*.db
+backend/*.db-shm
+backend/*.db-wal
+frontend/node_modules/
+frontend/.svelte-kit/
+frontend/build/
+frontend/.vite/
+.DS_Store
+*.log

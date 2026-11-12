@@ -39,12 +39,14 @@ export STACK_DIAGRAM_TEMPLATE="$STACK_DIR/assets/template.html"
 python3 gen.py
 python3 gen-end-to-end.py
 python3 gen-teknis.py
+python3 gen-schema.py
+python3 gen-login.py
 
 build_one() {
-  local name="$1" width="$2"
+  local name="$1" width="$2" height="${3:-}"
   python3 "$STACK_DIR/scripts/build.py" "drafts/$name.html" "$ICON_DIR" "$name.html" \
     --fonts "$STACK_DIR/assets/fonts"
-  NODE_PATH="$PW_NODE_PATH" node render.js "$PWD/$name.html" "$PWD/$name.png" "$width"
+  NODE_PATH="$PW_NODE_PATH" node render.js "$PWD/$name.html" "$PWD/$name.png" "$width" "$height"
 }
 
 build_one alur-bisnis 1340
@@ -57,6 +59,8 @@ build_one alur-workflow 1360
 build_one alur-provenance 1400
 build_one alur-trace-spm 1860
 build_one arsitektur-aplikasi 1440
+build_one schema-db 1920
+build_one alur-login 1200 220
 
 # Normalize generated HTML so trailing whitespace does not leak into diffs.
 python3 - <<'PY'

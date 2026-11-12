@@ -247,7 +247,7 @@ column_help = mini(
         ["periode", "Mei 2026; mengikat ke master release"],
     ],
 )
-panels.append(panel(x0, 400, 390, 300, "Isi file (contoh)", file_table + f'''
+panels.append(panel(x0, 400, 390, 300, "Isi file BNBA", file_table + f'''
   <div class="divider"></div>
   <div class="p-title" style="margin-bottom:3px">Arti kolom</div>
   {column_help}
@@ -357,7 +357,7 @@ panels.append(calc(x3, 570, 390, 110, "IKU-2026-001 · INDUK", "(450+380+20) / (
 panels.append(panel(x3, 695, 390, 110, "Target & status", f'''
   <div class="sub">Target 100% · gap <b>-7,61 pp</b></div>
   <div style="margin-top:6px">{badge("PERLU PERHATIAN", "b-warn")} {badge("DATA FINAL", "b-final")}</div>
-  <div class="sub" style="margin-top:5px">Ambang status contoh: ≥95% OK; 90–94,99% perhatian; &lt;90% kritis.</div>
+  <div class="sub" style="margin-top:5px">Status dihitung dari target periode; capaian di bawah target ditandai perlu perhatian.</div>
 ''', "target"))
 panels.append(panel(x3, 820, 390, 90, "Yang disimpan", f'''
   <div>{badge("COMPLETE", "b-ok")} <span class="sub">3/3 komponen final</span></div>
@@ -426,7 +426,7 @@ panels.append(panel(1455, 1335, 360, 195, "Pimpinan", f'''
   Publikasi agregasi mengikuti IKU owner.</div>
 ''', "keputusan"))
 
-# Format dashboard SPM: 3 baris contoh yang bisa ditelusuri sampai file.
+# Format dashboard SPM: 12 baris yang dapat ditelusuri sampai file.
 dash_rows = [
     ("01", "Pelayanan Kesehatan Ibu Hamil", "100%", "100%", "ok", "27,3%", "ok", "90,00%", "warn", "R1"),
     ("02", "Pelayanan Kesehatan Ibu Bersalin", "100%", "96%", "warn", "26,2%", "ok", "95,00%", "ok", "R2"),
@@ -443,8 +443,8 @@ for no, nama, target, c2025, s2025, ctw1, stw1, cmei, smei, src in dash_rows:
     )
 
 dashboard = f'''    <div class="panel" style="left:45px;top:1090px;width:1770px;height:225px;border-left:3px solid var(--color-accent);">
-      <div class="p-title"><img src="%%ICON_dash%%" alt="">Format dashboard SPM — 3 baris contoh yang bisa ditelusuri
-        <span class="badge b-final" style="margin-left:auto">CONTOH 3 BARIS · DATA FINAL · TRACEABLE</span></div>
+      <div class="p-title"><img src="%%ICON_dash%%" alt="">Format dashboard SPM — 12 baris yang dapat ditelusuri
+        <span class="badge b-final" style="margin-left:auto">DATA FINAL · TRACEABLE</span></div>
       <div style="display:flex;gap:18px;align-items:flex-start">
         <table class="dash" style="width:1340px;flex:none">
           <colgroup>
@@ -475,13 +475,13 @@ dashboard = f'''    <div class="panel" style="left:45px;top:1090px;width:1770px;
         </div>
       </div>
       <div class="sub" style="margin-top:6px"><b>R1</b> .01 450/500 → SPM 01 · <b>R2</b> .02 380/400 → SPM 02 · <b>R3</b> .03 20/20 → SPM 03.
-      Tiga baris contoh; sembilan baris lain mengikuti pola yang sama. Klik baris → drill-down ke IKU_VALUE / DETAIL → SUBMISSION_ROW → FILE_OBJECT.</div>
+      Tiga baris terisi; sembilan baris lain mengikuti kontrak yang sama. Klik baris → drill-down ke IKU_VALUE / DETAIL → SUBMISSION_ROW → FILE_OBJECT.</div>
     </div>'''
 
 
 top_strip = f'''    <div class="strip" style="left:30px;top:30px;width:1800px;height:56px;">
       <div class="l"><img src="%%ICON_table%%" class="ic" alt="">
-        <div><div class="k">CONTOH END-TO-END · MEI 2026</div>
+        <div><div class="k">ALUR DATA IKU · MEI 2026</div>
         <div class="t">PKM Taliwang · 3 baris upload · 3 IKU anak · 1 induk · 3 baris SPM</div></div>
       </div>
       <div class="r">alur proses: upload → validasi → workflow → kalkulasi → dashboard SPM</div>
@@ -532,10 +532,10 @@ html_doc = f'''<!DOCTYPE html>
 
   <header class="head">
     <div>
-      <div class="kicker">MATA SIDIK / contoh end-to-end</div>
+      <div class="kicker">MATA SIDIK / alur data IKU</div>
       <h1>Dari Upload BNBA sampai Dashboard IKU</h1>
     </div>
-    <p class="lede">Satu contoh utuh: upload 3 baris, klasifikasi ke IKU leaf, koreksi di preview, approval 3 level, kalkulasi induk–anak, dan 3 baris output SPM yang bisa ditelusuri sampai file. Label <b>USER</b>/<b>SISTEM</b> menandai siapa yang mengerjakan tiap tahap.</p>
+    <p class="lede">Satu alur utuh: upload 3 baris, klasifikasi ke IKU leaf, koreksi di preview, approval 3 level, kalkulasi induk–anak, dan 3 baris output SPM yang bisa ditelusuri sampai file. Label <b>USER</b>/<b>SISTEM</b> menandai siapa yang mengerjakan tiap tahap.</p>
   </header>
 
   <div class="scroller">
@@ -567,13 +567,13 @@ html_doc = f'''<!DOCTYPE html>
 
   <div class="legend">
     <span><span class="sw"></span>alur data</span>
-    <span><span class="sw n dash"></span>koreksi / pengembalian (di luar contoh)</span>
+    <span><span class="sw n dash"></span>koreksi / pengembalian (di luar alur utama)</span>
     <span><span class="mode user">USER</span> aksi pengguna</span>
     <span><span class="mode system">SISTEM</span> proses otomatis</span>
   </div>
 
   <div class="foot">
-    <span>contoh angka: Mei 2026 · PKM Taliwang · 3 baris SPM yang ditelusuri ke file</span>
+    <span>angka: Mei 2026 · PKM Taliwang · 3 baris SPM yang ditelusuri ke file</span>
     <span>icons: Lucide · dibuat dengan <a href="https://github.com/caru-ini/stack-diagram" target="_blank" rel="noopener">stack-diagram</a></span>
   </div>
 

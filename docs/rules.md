@@ -41,7 +41,7 @@ Tujuan yang tidak boleh digeser:
 - Informasi strategis bagi Kepala Dinas/pimpinan.
 - Fondasi analisis, integrasi, dan pemantauan tindak lanjut.
 
-**Output acuan:** dashboard SPM dengan **3 baris contoh** yang setiap barisnya dapat ditelusuri sampai `FILE_OBJECT`. Tiga baris ini adalah contoh penjelas, bukan pengganti tabel sumber 12 indikator di `docs/03-contoh-data.md`.
+**Output acuan:** dashboard SPM dengan **3 baris acuan** yang setiap barisnya dapat ditelusuri sampai `FILE_OBJECT`. Tiga baris ini adalah acuan, bukan pengganti tabel sumber 12 indikator di `docs/03-contoh-data.md`.
 
 ---
 
@@ -140,9 +140,11 @@ Aturan:
 | File | Volume lokal `/data/files`, nama `sha256`, metadata `FILE_OBJECT`, backup volume wajib | **Tanpa object storage** |
 | Observability | Log JSON ke stdout, rotasi log container, `/metrics`, `/healthz`, `/readyz` | **Tanpa APM**; jangan menambah layanan observability |
 | Deployment | Docker Compose: `api`, `worker`, `postgres`, reverse proxy, volume `pgdata` + `files` | Jangan menambah orchestrator/cloud service tanpa persetujuan |
-| Auth | JWT akses 15 menit + refresh rotasi (hash di DB), RBAC/scope, MFA TOTP untuk approver | Jangan memakai Keycloak atau auth provider eksternal tanpa persetujuan |
+| Auth | PASETO v4.local akses 30 menit + refresh rotasi (hash di DB), RBAC/scope, MFA TOTP untuk approver | Jangan memakai Keycloak atau auth provider eksternal tanpa persetujuan |
 | API | Route group `/api/v1`; SPA lewat `NoRoute` fallback; file hanya lewat handler `/api/v1/files/{id}` | Jangan menyajikan file sebagai static |
 | Worker | Worker tidak memakai Gin | Jangan mencampur HTTP handler ke worker |
+
+> **Pilot implementasi (Nov 2026):** atas instruksi pemilik proyek, pilot memakai **SQLite** dan **PASETO v4.local**. Produksi tetap wajib **PostgreSQL 16 + PASETO/RBAC/MFA** sesuai tabel di atas; migrasi dan hardening auth adalah pekerjaan sebelum produksi. Skema pilot: [`schema.md`](schema.md).
 
 **HTTP layer Gin:** `gin.New()` dengan middleware eksplisit (request ID, log JSON, recovery, metrics), binding DTO + validator, dan helper `respondError` untuk format `{code, message, details, request_id}`. Jangan menyimpan `*gin.Context` di service/worker; teruskan `c.Request.Context()`.
 
@@ -299,15 +301,16 @@ Sumber `docs/01-gambaran-umum.md` menyebut **9 kategori**:
 
 - Setiap kartu menampilkan **Target, Capaian, Status, Tren**.
 - Filter minimal: faskes, bidang, program, indikator, periode, wilayah.
-- Status dihitung dari ambang Dinas. Ambang contoh 90–94,99% untuk “perlu perhatian” di `docs/04` adalah **ilustrasi**, bukan keputusan produksi.
+- Status dashboard pilot dihitung dari **target periode**: capaian ≥ target = sesuai target; di bawah target = perlu perhatian. Ambang warna/status khusus belum diputuskan Dinas.
+- Capaian tahun sebelumnya diisi admin per indikator/IKU untuk scope kabupaten. Dashboard periode tahun Y membaca capaian tahun Y-1; nilai tidak disalin otomatis dan tidak menimpa histori.
 - Dashboard tidak boleh menampilkan angka yang tidak punya provenance.
 
 ### 8.3 Tiga baris SPM acuan
 
-| Baris | Indikator | IKU leaf | Baris file | Num/den | Capaian Mei 2026 | Status contoh |
+| Baris | Indikator | IKU leaf | Baris file | Num/den | Capaian Mei 2026 | Status |
 | --- | --- | --- | --- | ---: | ---: | --- |
-| SPM 01 | Pelayanan Kesehatan Ibu Hamil | `.01` | R1 | 450/500 | **90,00%** | perlu perhatian |
-| SPM 02 | Pelayanan Kesehatan Ibu Bersalin | `.02` | R2 | 380/400 | **95,00%** | sesuai target |
+| SPM 01 | Pelayanan Kesehatan Ibu Hamil | `.01` | R1 | 450/500 | **90,00%** | di bawah target |
+| SPM 02 | Pelayanan Kesehatan Ibu Bersalin | `.02` | R2 | 380/400 | **95,00%** | di bawah target |
 | SPM 03 | Pelayanan Kesehatan Bayi Baru Lahir | `.03` | R3 | 20/20 | **100,00%** | sesuai target |
 
 Ketiganya berasal dari satu file: `FILE_OBJECT` hash `9f2c…a71`, `SUBMISSION S-2026-05-001`, `REVISION 1`, uploader Siti (PKM Taliwang), periode Mei 2026.
@@ -383,9 +386,10 @@ Nilai SPM adalah **proyeksi** dari nilai terhitung, bukan angka yang diketik ula
 
 ### 10.2 Keamanan
 
-- JWT akses 15 menit + refresh rotasi; hash refresh token di DB.
+- PASETO v4.local akses 30 menit + refresh rotasi; hash refresh token di DB.
 - RBAC/scope di route group; cek kepemilikan submission untuk `/jobs`.
 - MFA TOTP untuk approver.
+- Semua user dapat mengganti password sendiri dengan verifikasi password lama; admin tetap dapat melakukan reset. Perubahan password mencabut seluruh refresh session user.
 - File hanya lewat handler dengan auth/scope; jangan static.
 - Validasi multipart dengan `http.MaxBytesReader`; tolak sebelum file disimpan.
 - Cegah formula injection saat parse Excel/CSV.
@@ -421,6 +425,7 @@ Setiap keputusan/transisi wajib mencatat: **siapa, kapan, apa, catatan, diff, ve
 | `alur-provenance` | `docs/04` §5.3 | Rollup IKU induk |
 | `alur-trace-spm` | `docs/04` §5.5 | Trace SPM sampai file |
 | `arsitektur-aplikasi` | `docs/04` §6.1, README B.8 | Arsitektur aplikasi |
+| `schema-db` | `docs/schema.md` | Katalog tabel, kolom, dan relasi database |
 
 ### 11.3 Aturan pembuatan dan pemeliharaan
 
@@ -481,7 +486,7 @@ Setiap keputusan/transisi wajib mencatat: **siapa, kapan, apa, catatan, diff, ve
 | # | Pertanyaan | Status | Tindakan |
 | --- | --- | --- | --- |
 | 1 | Kategori dashboard ke-9 (`........................`) | Belum diputuskan | Tanya Dinas; definisikan atau hapus |
-| 2 | Ambang status ✅/🟡/🔴 | Belum diputuskan | Tanya Dinas; jangan hardcode ambang contoh |
+| 2 | Ambang warna/status khusus (✅/🟡/🔴) | Belum diputuskan | Dashboard pilot memakai status dasar berbasis target (sesuai/di bawah target); ambang warna formal menunggu Dinas |
 | 3 | SLA input/verifikasi/validasi per periode | Belum diputuskan | Tanya Dinas; tanpa auto-approve |
 | 4 | Target sama untuk semua faskes atau berbeda per wilayah | Belum diputuskan | Tanya Dinas |
 | 5 | PII di BNBA dan kebijakan masking/enkripsi | Belum diputuskan | Tanya Dinas; batasi akses sementara |
@@ -544,5 +549,7 @@ Jika pekerjaan menyentuh salah satu item di atas, **berhenti dan tanyakan**. Jan
 - [`docs/02-daftar-indikator-kinerja.md`](02-daftar-indikator-kinerja.md) — katalog indikator.
 - [`docs/03-contoh-data.md`](03-contoh-data.md) — contoh dashboard SPM dan data absolut.
 - [`docs/04-arsitektur-iku.md`](04-arsitektur-iku.md) — rancangan teknis lengkap.
+- [`docs/schema.md`](schema.md) — skema database lengkap.
+- [`docs/implementation.md`](implementation.md) — struktur dan cara run implementasi pilot.
 - [`assets/diagrams/README.md`](../assets/diagrams/README.md) — katalog dan regenerasi diagram.
 - [`AGENTS.md`](../AGENTS.md) — aturan operasional agent.
