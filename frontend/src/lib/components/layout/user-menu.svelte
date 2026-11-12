@@ -6,7 +6,7 @@
   import Button from '$lib/components/ui/button/button.svelte';
   import Select from '$lib/components/ui/select.svelte';
   import Badge from '$lib/components/ui/badge.svelte';
-  import { LogOut, ShieldCheck, UserCog, UserRound } from '@lucide/svelte';
+  import { LogOut, ShieldCheck, UserCog } from '@lucide/svelte';
 
   let target = $state('');
   let busy = $state(false);
@@ -63,7 +63,6 @@
         {ROLE_LABELS[$currentActor.role]}{#if $currentActor.position_nama} · {$currentActor.position_nama}{/if}
       </div>
     </div>
-    <Button size="sm" variant="outline" onclick={() => goto('/profile')}><UserRound size={13} /> Profil</Button>
     {#if $actingAs}
       <Badge tone="warning">ActingAs · {$actingAs.nama}</Badge>
       <Button size="sm" variant="outline" disabled={busy} onclick={stop}><ShieldCheck size={13} /> Kembali</Button>

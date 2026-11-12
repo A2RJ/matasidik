@@ -1,6 +1,6 @@
 <script lang="ts">
   import { page } from '$app/stores';
-  import { X } from '@lucide/svelte';
+  import { UserRound, X } from '@lucide/svelte';
   import { APP_NAME, APP_REGION, APP_SUBTITLE, NAV_ITEMS } from '$lib/constants/labels';
   import { currentActor } from '$lib/stores/session';
   import { cn } from '$lib/utils';
@@ -54,7 +54,16 @@
   <div class="border-t-2 border-black p-3">
     <div class="border-2 border-black bg-secondary p-3 shadow-nbsm">
       <div class="font-mono text-[10px] font-bold uppercase tracking-[0.12em]">Sesi</div>
-      <p class="mt-1 text-xs">PASETO v4.local · RBAC aktif. ActingAs tersedia untuk admin.</p>
+      <a
+        href="/profile"
+        class="mt-2 flex items-center gap-2 border-2 border-black bg-card px-2 py-2 font-mono text-[10px] font-bold uppercase shadow-nbsm"
+        class:bg-primary={isActive('/profile', $page.url.pathname)}
+        onclick={onclose}
+      >
+        <UserRound size={14} />
+        Profil
+        <span class="ml-auto text-[9px] font-normal normal-case tracking-normal text-muted-foreground">Akun</span>
+      </a>
     </div>
   </div>
 </aside>

@@ -91,7 +91,7 @@
       </main>
 
       <footer class="border-t-2 border-black bg-card px-4 py-3 font-mono text-[10px] text-muted-foreground md:px-6">
-        MATA SIDIK · sesi PASETO v4.local · RBAC + actingAs · data periode aktif
+        MATA SIDIK · data periode aktif
       </footer>
     </div>
   </div>

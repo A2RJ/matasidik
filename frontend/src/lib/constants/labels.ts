@@ -5,8 +5,7 @@ import {
   Database,
   MessageSquare,
   ScrollText,
-  Users,
-  UserRound
+  Users
 } from '@lucide/svelte';
 import type { Role } from '$lib/types';
 
@@ -21,8 +20,7 @@ export const NAV_ITEMS: { href: string; label: string; icon: typeof LayoutDashbo
   { href: '/master', label: 'Master Data', icon: Database, description: 'Indikator, label, target', roles: ['kabid', 'sekretaris', 'admin'] },
   { href: '/factors', label: 'Faktor & TL', icon: MessageSquare, description: 'Analisis & tindak lanjut', roles: ['kabid', 'sekretaris', 'pimpinan', 'admin'] },
   { href: '/audit', label: 'Audit Log', icon: ScrollText, description: 'Jejak keputusan', roles: ['pimpinan', 'admin'] },
-  { href: '/admin', label: 'Administrasi', icon: Users, description: 'Faskes, user, posisi', roles: ['admin'] },
-  { href: '/profile', label: 'Profil', icon: UserRound, description: 'Data akun & password' }
+  { href: '/admin', label: 'Administrasi', icon: Users, description: 'Faskes, user, posisi', roles: ['admin'] }
 ];
 
 export const PAGE_COPY = {
