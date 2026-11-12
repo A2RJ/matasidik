@@ -1,6 +1,9 @@
 package handler
 
 import (
+	"strconv"
+	"time"
+
 	"github.com/gin-gonic/gin"
 
 	"matasidik/backend/internal/domain"
@@ -37,6 +40,39 @@ func (h *Handler) DashboardSPM(c *gin.Context) {
 		"items": items, "summary": summary,
 		"meta": gin.H{"status_basis": "target"},
 	})
+}
+
+func (h *Handler) DashboardMonthly(c *gin.Context) {
+	tahun, _ := strconv.Atoi(c.Query("tahun"))
+	if tahun == 0 {
+		tahun = time.Now().Year()
+	}
+	data, err := h.Dashboard.MonthlySPM(c.Request.Context(), tahun, h.scopedDashboardFilter(c))
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	response.OK(c, data)
+}
+
+func (h *Handler) ExportMonthlySPM(c *gin.Context) {
+	actor := h.actor(c)
+	if actor.Role != domain.RolePimpinan && actor.Role != domain.RoleKabid && actor.Role != domain.RoleSekretaris && actor.Role != domain.RoleVerifier && actor.Role != domain.RoleAdmin {
+		response.Error(c, domain.Forbidden("role tidak boleh export dashboard"))
+		return
+	}
+	tahun, _ := strconv.Atoi(c.Query("tahun"))
+	if tahun == 0 {
+		tahun = time.Now().Year()
+	}
+	file, err := h.Dashboard.ExportMonthlySPM(c.Request.Context(), tahun, h.scopedDashboardFilter(c), c.DefaultQuery("format", "xlsx"))
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	c.Header("Content-Type", file.ContentType)
+	c.Header("Content-Disposition", `attachment; filename="`+file.Filename+`"`)
+	c.Data(200, file.ContentType, file.Data)
 }
 
 func (h *Handler) DashboardCategory(c *gin.Context) {

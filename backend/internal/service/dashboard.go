@@ -121,6 +121,122 @@ func (s *DashboardService) SPM(ctx context.Context, f domain.DashboardFilter) ([
 	return filtered, summary, nil
 }
 
+func (s *DashboardService) MonthlySPM(ctx context.Context, tahun int, f domain.DashboardFilter) (*domain.MonthlySPMReport, error) {
+	if tahun < 2000 || tahun > 2100 {
+		return nil, domain.Validation("tahun laporan tidak valid", nil)
+	}
+	f, err := s.ResolveFilter(ctx, f)
+	if err != nil {
+		return nil, err
+	}
+	periods, err := s.master.ListPeriods(ctx)
+	if err != nil {
+		return nil, err
+	}
+	periodByID := map[string]domain.Periode{}
+	periodByMonth := map[int]domain.Periode{}
+	for _, period := range periods {
+		periodByID[period.ID] = period
+		if period.Tahun == tahun {
+			periodByMonth[period.Bulan] = period
+		}
+	}
+	rows, err := s.master.ListDashboardRows(ctx)
+	if err != nil {
+		return nil, err
+	}
+	targets, err := s.master.ListTargets(ctx, "")
+	if err != nil {
+		return nil, err
+	}
+	report := &domain.MonthlySPMReport{
+		Tahun: tahun, ScopeType: f.ScopeType, ScopeID: f.ScopeID,
+		Rows: make([]domain.MonthlySPMRow, 0, len(rows)),
+	}
+	for _, definition := range rows {
+		row := domain.MonthlySPMRow{
+			Kode: definition.Kode, Months: make([]domain.MonthlySPMCell, 0, 12),
+		}
+		if definition.LabelID != nil {
+			if label, err := s.master.GetLabelByID(ctx, *definition.LabelID); err == nil {
+				row.LabelKode = &label.Kode
+				row.Indikator = label.Nama
+			}
+		}
+		if row.Indikator == "" && definition.IndikatorID != nil {
+			if indicator, err := s.master.GetIndicatorByID(ctx, *definition.IndikatorID); err == nil {
+				row.Indikator = indicator.Nama
+			}
+		}
+		target := findAbsoluteTarget(targets, periodByID, definition, f, tahun)
+		if target != nil {
+			row.TargetTahunan = target.TargetLayananTahunan
+			row.TargetBulanan = target.TargetLayananBulanan
+			if row.TargetBulanan == nil && row.TargetTahunan != nil {
+				monthly := *row.TargetTahunan / 12
+				row.TargetBulanan = &monthly
+			}
+		}
+		for month := 1; month <= 12; month++ {
+			cell := domain.MonthlySPMCell{Bulan: month, Status: "NO_DATA"}
+			period, ok := periodByMonth[month]
+			if !ok || definition.LabelID == nil {
+				row.Months = append(row.Months, cell)
+				continue
+			}
+			value, err := s.values.GetIKUValue(ctx, *definition.LabelID, period.ID, f.ScopeType, f.ScopeID)
+			if err != nil || value == nil {
+				row.Months = append(row.Months, cell)
+				continue
+			}
+			numerator := value.Numerator
+			cell.Numerator = &numerator
+			cell.Status = "NO_TARGET"
+			if row.TargetBulanan != nil && *row.TargetBulanan > 0 {
+				if numerator >= *row.TargetBulanan {
+					cell.Status = "ON_TARGET"
+				} else {
+					cell.Status = "BELOW_TARGET"
+				}
+			}
+			row.Months = append(row.Months, cell)
+		}
+		report.Rows = append(report.Rows, row)
+	}
+	return report, nil
+}
+
+func findAbsoluteTarget(targets []domain.Target, periodByID map[string]domain.Periode, definition domain.DashboardRow, f domain.DashboardFilter, tahun int) *domain.Target {
+	var fallback *domain.Target
+	for i := range targets {
+		target := &targets[i]
+		if target.TargetLayananTahunan == nil {
+			continue
+		}
+		period, ok := periodByID[target.PeriodeID]
+		if !ok || period.Tahun != tahun {
+			continue
+		}
+		matchesRow := false
+		if definition.LabelID != nil && target.LabelID != nil && *definition.LabelID == *target.LabelID {
+			matchesRow = true
+		}
+		if !matchesRow && definition.IndikatorID != nil && target.IndikatorID != nil && *definition.IndikatorID == *target.IndikatorID {
+			matchesRow = true
+		}
+		if !matchesRow {
+			continue
+		}
+		if target.ScopeType == f.ScopeType && deref(target.ScopeID) == f.ScopeID {
+			return target
+		}
+		if target.ScopeType == "KABUPATEN" && fallback == nil {
+			fallback = target
+		}
+	}
+	return fallback
+}
+
 func (s *DashboardService) Category(ctx context.Context, kode string, f domain.DashboardFilter) (*domain.DashboardCategoryResult, error) {
 	f, err := s.ResolveFilter(ctx, f)
 	if err != nil {

@@ -133,6 +133,28 @@ type DashboardCategoryResult struct {
 	Summary  *DashboardSummary  `json:"summary"`
 }
 
+type MonthlySPMReport struct {
+	Tahun     int             `json:"tahun"`
+	ScopeType string          `json:"scope_type"`
+	ScopeID   string          `json:"scope_id,omitempty"`
+	Rows      []MonthlySPMRow `json:"rows"`
+}
+
+type MonthlySPMRow struct {
+	Kode          string           `json:"kode"`
+	Indikator     string           `json:"indikator"`
+	LabelKode     *string          `json:"label_kode,omitempty"`
+	TargetTahunan *float64         `json:"target_tahunan,omitempty"`
+	TargetBulanan *float64         `json:"target_bulanan,omitempty"`
+	Months        []MonthlySPMCell `json:"months"`
+}
+
+type MonthlySPMCell struct {
+	Bulan     int      `json:"bulan"`
+	Numerator *float64 `json:"numerator,omitempty"`
+	Status    string   `json:"status"`
+}
+
 type SPMFaskesDetail struct {
 	FaskesID       string   `json:"faskes_id"`
 	FaskesKode     string   `json:"faskes_kode"`

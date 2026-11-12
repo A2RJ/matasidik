@@ -243,6 +243,7 @@ Aturan:
 ### 7.1 Rumus dasar
 
 - `target_bulanan = target_tahunan / 12` (contoh 2000 → 166,67; target bulanan persentase = 8,33%).
+- Target layanan absolut disimpan terpisah di `target_layanan_tahunan`/`target_layanan_bulanan`; jangan mencampurnya dengan target capaian persentase.
 - `capaian_% = realisasi / target × 100` per periode.
 - Simpan **numerator dan denominator**, bukan hanya persentase.
 - Tampilkan pembulatan yang konsisten (contoh 2 desimal), tetapi **jangan membulatkan data mentah** yang dipakai kalkulasi.

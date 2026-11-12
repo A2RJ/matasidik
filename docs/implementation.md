@@ -157,6 +157,8 @@ Semua route di bawah `/api/v1`. Autentikasi memakai `Authorization: Bearer <PASE
 | GET | `/jobs/{id}` | Polling progress background |
 | GET | `/dashboard/spm` | Baris SPM + summary berbasis target |
 | GET | `/dashboard/category?kode=IKK&periode=2026-05` | Baris kategori dinamis (label atau owner); `kode=ALL` untuk semua kategori |
+| GET | `/dashboard/spm/monthly?tahun=2026` | Laporan absolut 12 bulan per indikator SPM |
+| GET | `/dashboard/spm/monthly/export?tahun=2026&format=xlsx\|pdf` | Export laporan absolut bulanan |
 | GET | `/dashboard/spm/export?format=xlsx\|pdf` | Export seluruh output SPM |
 | GET | `/dashboard/spm/{kode}/detail` | Detail faskes, upload coverage, provenance |
 | GET | `/dashboard/iku-by-faskes` | Data multi-series chart antar faskes |

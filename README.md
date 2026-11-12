@@ -361,6 +361,7 @@ npm run dev
 - Build frontend: `npm run build`; Go menyajikan `frontend/build` pada `APP_WEB_DIR`.
 - Test: `cd backend && go test ./...` · `cd frontend && npm run check`.
 - Template BNBA: `periode;kode_faskes;kode_kategori;kode_iku;...`; `kode_kategori` opsional, `kode_iku` adalah kode label/IKU leaf.
+- Laporan absolut bulanan: `GET /dashboard/spm/monthly?tahun=2026` dan ekspor XLSX/PDF; memakai target layanan tahunan (`target_layanan_tahunan`) dan status bulanan vs target bulanan.
 - Data awal: submission final `S-2026-05-001`, 3 baris, induk 92,39%.
 - Reset data: hapus `backend/data/` lalu jalankan API lagi.
 

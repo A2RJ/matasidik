@@ -587,12 +587,13 @@ func (s *MasterService) UpdateLabel(ctx context.Context, id string, in UpdateLab
 }
 
 type UpsertTargetInput struct {
-	LabelID       string  `json:"label_id"`
-	IndikatorID   string  `json:"indikator_id"`
-	PeriodeID     string  `json:"periode_id"`
-	ScopeType     string  `json:"scope_type"`
-	ScopeID       string  `json:"scope_id"`
-	TargetTahunan float64 `json:"target_tahunan"`
+	LabelID              string   `json:"label_id"`
+	IndikatorID          string   `json:"indikator_id"`
+	PeriodeID            string   `json:"periode_id"`
+	ScopeType            string   `json:"scope_type"`
+	ScopeID              string   `json:"scope_id"`
+	TargetTahunan        float64  `json:"target_tahunan"`
+	TargetLayananTahunan *float64 `json:"target_layanan_tahunan"`
 }
 
 func (s *MasterService) UpsertTarget(ctx context.Context, in UpsertTargetInput, actor *domain.User) (*domain.Target, error) {
@@ -608,10 +609,30 @@ func (s *MasterService) UpsertTarget(ctx context.Context, in UpsertTargetInput, 
 	if in.ScopeID == "" {
 		in.ScopeID = "wil-kab-swb"
 	}
+	layananTahunan := in.TargetLayananTahunan
+	if layananTahunan == nil {
+		if existing, err := s.repo.ListTargets(ctx, in.PeriodeID); err == nil {
+			for _, item := range existing {
+				if deref(item.LabelID) != in.LabelID || deref(item.IndikatorID) != in.IndikatorID {
+					continue
+				}
+				if item.ScopeType != in.ScopeType || deref(item.ScopeID) != in.ScopeID {
+					continue
+				}
+				layananTahunan = item.TargetLayananTahunan
+				break
+			}
+		}
+	}
 	target := &domain.Target{
 		ID: uuid.NewString(), LabelID: strPtr(in.LabelID), IndikatorID: strPtr(in.IndikatorID),
 		PeriodeID: in.PeriodeID, ScopeType: in.ScopeType, ScopeID: strPtr(in.ScopeID),
 		TargetTahunan: in.TargetTahunan, TargetBulanan: in.TargetTahunan / 12,
+		TargetLayananTahunan: layananTahunan,
+	}
+	if layananTahunan != nil {
+		monthly := *layananTahunan / 12
+		target.TargetLayananBulanan = &monthly
 	}
 	if err := s.repo.UpsertTarget(ctx, target); err != nil {
 		return nil, err

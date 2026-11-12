@@ -45,7 +45,7 @@
   });
   let categoryForm = $state({ kode: '', nama: '', jenis: 'LABEL', urutan: '0', aktif: true });
   let bidangForm = $state({ kode: '', nama: '', jenis: 'bidang', parentID: '', aktif: true });
-  let targetForm = $state({ labelID: '', periodID: '', target_tahunan: '100' });
+  let targetForm = $state({ labelID: '', periodID: '', target_tahunan: '100', target_layanan_tahunan: '' });
   let baselineForm = $state({ target: '', tahun: String(new Date().getFullYear() - 1), nilai: '', catatan: '' });
 
   let labels = $derived($bootstrap?.labels ?? []);
@@ -338,7 +338,10 @@
         periode_id: targetForm.periodID,
         scope_type: 'KABUPATEN',
         scope_id: 'wil-kab-swb',
-        target_tahunan: Number(targetForm.target_tahunan)
+        target_tahunan: Number(targetForm.target_tahunan),
+        target_layanan_tahunan: targetForm.target_layanan_tahunan
+          ? Number(targetForm.target_layanan_tahunan)
+          : undefined
       });
       targetOpen = false;
       message = 'Target disimpan.';
@@ -501,7 +504,7 @@
       {/snippet}
     </DataTable>
   {:else if activeTab === 'preview'}
-    <DataTable columns={previewColumns} rows={indicators} minWidth="1180px">
+    <DataTable columns={previewColumns} rows={indicators} minWidth="1400px" nowrap>
       {#snippet cell(item: Indicator, key)}
         {#if key === 'no'}<span class="font-mono">{indicators.indexOf(item) + 1}</span>
         {:else if key === 'nama'}
@@ -716,7 +719,8 @@
   <div class="grid gap-3 sm:grid-cols-2">
     <div><label class="nb-label" for="tl">Label</label><Select id="tl" bind:value={targetForm.labelID} options={labelOptions} placeholder="Pilih label" /></div>
     <div><label class="nb-label" for="tp">Periode</label><Select id="tp" bind:value={targetForm.periodID} options={periodOptions} placeholder="Pilih periode" /></div>
-    <div><label class="nb-label" for="tt">Target tahunan</label><Input id="tt" bind:value={targetForm.target_tahunan} type="number" /></div>
+    <div><label class="nb-label" for="tt">Target tahunan (%)</label><Input id="tt" bind:value={targetForm.target_tahunan} type="number" /></div>
+    <div><label class="nb-label" for="tlt">Target layanan tahunan</label><Input id="tlt" bind:value={targetForm.target_layanan_tahunan} type="number" placeholder="Opsional, mis. 2000" /></div>
   </div>
   <div class="mt-4 flex justify-end gap-2">
     <Button variant="outline" onclick={() => (targetOpen = false)}>Batal</Button>

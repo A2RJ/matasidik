@@ -97,6 +97,12 @@ body {
     word-break: break-word;
     white-space: normal;
   }
+  .nb-table.table-nowrap th,
+  .nb-table.table-nowrap td {
+    overflow-wrap: normal;
+    word-break: normal;
+    white-space: nowrap;
+  }
   .nb-table tbody tr:hover {
     @apply bg-primary/20;
   }

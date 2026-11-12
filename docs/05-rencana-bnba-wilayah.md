@@ -349,6 +349,8 @@ Aturan:
 - [x] Form indikator multi-label + label utama + PJ bidang/timker.
 - [x] Tombol header **Pratinjau Pemetaan** (indikator + label/kategori + PJ), terpisah dari tab CRUD.
 - [x] Filter dashboard per kategori + opsi **Semua** + query owner.
+- [x] Laporan absolut bulanan dari IKU/SPM + target layanan + ekspor XLSX/PDF.
+- [x] Field target layanan tahunan di Master Target.
 - [x] Template BNBA menambahkan `kode_kategori` opsional dan validasi classifier.
 - [ ] Audit/isi label sheet 2 untuk kategori selain IKU/SPM.
 - [ ] Target per kategori/label selain SPM.

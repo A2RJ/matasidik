@@ -272,8 +272,12 @@ Target per periode/scope. `target_bulanan = target_tahunan / 12`.
 | `periode_id` | TEXT | FK → `periode.id` | Periode |
 | `scope_type` | TEXT | NOT NULL | `KABUPATEN`, `FASKES`, `KECAMATAN`, `DESA` |
 | `scope_id` | TEXT |  | ID scope |
-| `target_tahunan` | REAL | NOT NULL | Target tahunan |
-| `target_bulanan` | REAL | NOT NULL | Dihitung |
+| `target_tahunan` | REAL | NOT NULL | Target capaian/persentase tahunan |
+| `target_bulanan` | REAL | NOT NULL | `target_tahunan / 12` |
+| `target_layanan_tahunan` | REAL |  | Target layanan absolut tahunan (mis. 2000 ibu hamil) |
+| `target_layanan_bulanan` | REAL |  | `target_layanan_tahunan / 12` |
+
+> Target layanan absolut dipisahkan dari target capaian persentase. Laporan bulanan absolut memakai `target_layanan_*`; dashboard persentase memakai `target`/`dashboard_row`.
 
 ### 5.6 `capaian_tahunan`
 

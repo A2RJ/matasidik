@@ -16,6 +16,7 @@ import type {
   IKUValueDetail,
   Job,
   Label,
+  MonthlySPMReport,
   Periode,
   Position,
   SPMDetail,
@@ -119,6 +120,28 @@ export const api = {
     request<{ items: DashboardItem[]; summary: DashboardSummary; meta: Record<string, unknown> }>(
       `/dashboard/spm${query(params)}`
     ),
+  spmMonthly: (tahun: number) => request<MonthlySPMReport>(`/dashboard/spm/monthly${query({ tahun: String(tahun) })}`),
+  spmMonthlyExport: async (tahun: number, format: 'xlsx' | 'pdf'): Promise<{ blob: Blob; filename: string }> => {
+    const doFetch = async (token: string | null) => {
+      try {
+        return await fetch(`${BASE}/dashboard/spm/monthly/export${query({ tahun: String(tahun), format })}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          credentials: 'include'
+        });
+      } catch {
+        throw new ApiError(0, 'NETWORK_ERROR', NETWORK_MESSAGE);
+      }
+    };
+    let response = await doFetch(getAccessToken());
+    if (response.status === 401) {
+      const fresh = await tryRefresh();
+      if (fresh) response = await doFetch(fresh);
+    }
+    if (!response.ok) throw new ApiError(response.status, 'EXPORT_FAILED', 'Export laporan bulanan gagal.');
+    const disposition = response.headers.get('content-disposition') ?? '';
+    const match = disposition.match(/filename="([^"]+)"/);
+    return { blob: await response.blob(), filename: match?.[1] ?? `mata-sidik-bulanan-${tahun}.${format}` };
+  },
   trace: (kode: string, periode: string) => request<SPMTrace>(`/dashboard/spm/${kode}/trace${query({ periode })}`),
   spmDetail: (kode: string, params: { periode?: string; faskes_id?: string } = {}) =>
     request<SPMDetail>(`/dashboard/spm/${kode}/detail${query(params)}`),

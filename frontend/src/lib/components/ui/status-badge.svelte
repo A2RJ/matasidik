@@ -1,5 +1,6 @@
 <script lang="ts">
   import Badge from '$lib/components/ui/badge.svelte';
+  import { Check, X } from '@lucide/svelte';
   import {
     CLASSIFICATION_LABELS,
     CLASSIFICATION_TONE,
@@ -46,4 +47,20 @@
   );
 </script>
 
-<Badge {tone}>{label}</Badge>
+{#if kind === 'display'}
+  <span
+    class={`inline-flex h-6 w-6 items-center justify-center border-2 border-black ${
+      value === 'ON_TARGET' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
+    }`}
+    title={label}
+    aria-label={label}
+  >
+    {#if value === 'ON_TARGET'}
+      <Check size={14} strokeWidth={3} />
+    {:else}
+      <X size={14} strokeWidth={3} />
+    {/if}
+  </span>
+{:else}
+  <Badge {tone}>{label}</Badge>
+{/if}

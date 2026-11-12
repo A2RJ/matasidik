@@ -52,6 +52,8 @@ Tabel sumber baris 22–35. Kolom `Status` di file sumber masih kosong. Kolom `T
 
 Detail baris contoh terisi (baris 1): Target 2026 = 2000, Target Bulanan = 166,67, Januari = 155, Februari = 120.
 
+> Implementasi: tabel ini diturunkan dari nilai IKU/SPM per periode, bukan input baru. `Target 2026` disimpan sebagai `target_layanan_tahunan`; `Target Bulanan` = target layanan tahunan / 12. Status bulanan membandingkan jumlah layanan bulan itu dengan target bulanan. Bulan tanpa data = `NO_DATA`, bukan nol.
+
 ## 3. Data Absolut Inputan Puskesmas
 
 Tabel sumber baris 39 (1 baris contoh). Kolom C:N merge di file sumber digabung menjadi satu kolom Keterangan.

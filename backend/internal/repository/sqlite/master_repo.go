@@ -295,7 +295,8 @@ func (s *Store) ListIKUComponents(ctx context.Context, parentLabelID string) ([]
 func (s *Store) ListTargets(ctx context.Context, periodeID string) ([]domain.Target, error) {
 	var out []domain.Target
 	q := `SELECT id, label_id, indikator_id, periode_id, scope_type,
-		scope_id, target_tahunan, target_bulanan FROM target`
+		scope_id, target_tahunan, target_bulanan, target_layanan_tahunan,
+		target_layanan_bulanan FROM target`
 	args := []any{}
 	if periodeID != "" {
 		q += ` WHERE periode_id = ?`
@@ -397,17 +398,21 @@ func (s *Store) UpsertTarget(ctx context.Context, target *domain.Target) error {
 	}
 	if existingID != "" {
 		target.ID = existingID
-		_, err = s.db.ExecContext(ctx, `UPDATE target SET target_tahunan = ?, target_bulanan = ? WHERE id = ?`,
-			target.TargetTahunan, target.TargetBulanan, target.ID)
+		_, err = s.db.ExecContext(ctx, `UPDATE target SET target_tahunan = ?, target_bulanan = ?,
+			target_layanan_tahunan = ?, target_layanan_bulanan = ? WHERE id = ?`,
+			target.TargetTahunan, target.TargetBulanan, nullFloat(target.TargetLayananTahunan),
+			nullFloat(target.TargetLayananBulanan), target.ID)
 		return err
 	}
 	if target.ID == "" {
 		target.ID = uuid.NewString()
 	}
 	_, err = s.db.ExecContext(ctx, `INSERT INTO target
-		(id, label_id, indikator_id, periode_id, scope_type, scope_id, target_tahunan, target_bulanan)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+		(id, label_id, indikator_id, periode_id, scope_type, scope_id, target_tahunan, target_bulanan,
+		 target_layanan_tahunan, target_layanan_bulanan)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		target.ID, target.LabelID, target.IndikatorID, target.PeriodeID, target.ScopeType,
-		target.ScopeID, target.TargetTahunan, target.TargetBulanan)
+		target.ScopeID, target.TargetTahunan, target.TargetBulanan,
+		nullFloat(target.TargetLayananTahunan), nullFloat(target.TargetLayananBulanan))
 	return err
 }

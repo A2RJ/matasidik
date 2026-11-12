@@ -70,6 +70,8 @@ func NewRouter(cfg config.Config, h *handler.Handler) *gin.Engine {
 		api.GET("/jobs/:id", h.Job)
 
 		api.GET("/dashboard/spm", h.DashboardSPM)
+		api.GET("/dashboard/spm/monthly", h.DashboardMonthly)
+		api.GET("/dashboard/spm/monthly/export", h.ExportMonthlySPM)
 		api.GET("/dashboard/category", h.DashboardCategory)
 		api.GET("/dashboard/spm/export", h.ExportSPM)
 		api.GET("/dashboard/spm/:kode/detail", h.DashboardDetail)

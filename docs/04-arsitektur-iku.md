@@ -648,6 +648,7 @@ Jika nanti butuh analisis log terpusat, kirim stdout container ke Loki/ELK tanpa
 | `GET` | `/api/v1/iku-values/{id}/detail` | Provenance komponen |
 | `GET` | `/api/v1/dashboard/spm?periode=2026-05` | Baris SPM + ringkasan berbasis target |
 | `GET` | `/api/v1/dashboard/category?kode=IKK&periode=2026-05` | Baris kategori dinamis (label/owner); `kode=ALL` menggabungkan semua kategori |
+| `GET` | `/api/v1/dashboard/spm/monthly?tahun=2026` | Laporan absolut 12 bulan per indikator SPM |
 | `GET` | `/api/v1/dashboard/spm/export?format=xlsx\|pdf` | Export seluruh output SPM |
 | `GET` | `/api/v1/dashboard/spm/{kode}/detail?periode=2026-05` | Coverage faskes + provenance |
 | `GET` | `/api/v1/dashboard/iku-by-faskes` | Data chart multi-series |

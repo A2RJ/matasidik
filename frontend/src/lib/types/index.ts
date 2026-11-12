@@ -242,6 +242,28 @@ export interface DashboardCategoryResult {
   summary: DashboardSummary;
 }
 
+export interface MonthlySPMCell {
+  bulan: number;
+  numerator?: number;
+  status: string;
+}
+
+export interface MonthlySPMRow {
+  kode: string;
+  indikator: string;
+  label_kode?: string;
+  target_tahunan?: number;
+  target_bulanan?: number;
+  months: MonthlySPMCell[];
+}
+
+export interface MonthlySPMReport {
+  tahun: number;
+  scope_type: string;
+  scope_id?: string;
+  rows: MonthlySPMRow[];
+}
+
 export interface SPMFaskesDetail {
   faskes_id: string;
   faskes_kode: string;

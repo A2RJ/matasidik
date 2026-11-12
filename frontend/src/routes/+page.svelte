@@ -17,7 +17,7 @@
   import { PAGE_COPY, TABLE_LABELS, EMPTY_STATE } from '$lib/constants/labels';
   import { DISPLAY_STATUS_LABELS, STATUS_TARGET_NOTE } from '$lib/constants/enums';
   import { formatPercent, formatNumber } from '$lib/utils';
-  import type { DashboardItem, DashboardSummary, IKUChart } from '$lib/types';
+  import type { DashboardItem, DashboardSummary, IKUChart, MonthlySPMReport, MonthlySPMRow } from '$lib/types';
   import { Download, RefreshCw, Target, Activity, AlertTriangle, Database, Network, FileSpreadsheet, FileText } from '@lucide/svelte';
 
   let items = $state<DashboardItem[]>([]);
@@ -26,6 +26,10 @@
   let loading = $state(true);
   let exporting = $state('');
   let error = $state('');
+  let monthlyReport = $state<MonthlySPMReport | null>(null);
+  let monthlyLoading = $state(true);
+  let monthlyError = $state('');
+  let monthlyExporting = $state('');
   let filterFaskes = $state('');
   let filterStatus = $state('');
   let filterCategory = $state('SPM');
@@ -45,6 +49,20 @@
   );
   let isSPM = $derived(filterCategory === 'SPM');
   let isAll = $derived(filterCategory === 'ALL');
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+  let monthlyYear = $derived(
+    Number($periods.find((p) => p.id === $selectedPeriod)?.tahun ?? new Date().getFullYear())
+  );
+  let monthlyColumns = $derived([
+    { key: 'kode', label: 'No', width: '56px' },
+    { key: 'indikator', label: 'Indikator', width: '30%' },
+    { key: 'target_tahunan', label: `Target ${monthlyYear}`, class: 'text-right', width: '110px' },
+    { key: 'target_bulanan', label: 'Target Bulanan', class: 'text-right', width: '100px' },
+    ...monthNames.flatMap((name, index) => [
+      { key: `m${index + 1}`, label: name, class: 'text-right', width: '64px' },
+      { key: `s${index + 1}`, label: 'Status', width: '112px' }
+    ])
+  ]);
 
   let columns = $derived(isSPM ? [
     { key: 'kode', label: 'No', width: '56px' },
@@ -105,6 +123,42 @@
     const category = filterCategory;
     if (period) void load();
   });
+
+  async function loadMonthly() {
+    if (!monthlyYear) return;
+    monthlyLoading = true;
+    monthlyError = '';
+    try {
+      monthlyReport = await api.spmMonthly(monthlyYear);
+    } catch (err) {
+      monthlyError = err instanceof Error ? err.message : 'Gagal memuat laporan bulanan.';
+    } finally {
+      monthlyLoading = false;
+    }
+  }
+
+  $effect(() => {
+    const year = monthlyYear;
+    if (year) void loadMonthly();
+  });
+
+  async function exportMonthly(format: 'xlsx' | 'pdf') {
+    monthlyExporting = format;
+    monthlyError = '';
+    try {
+      const result = await api.spmMonthlyExport(monthlyYear, format);
+      const url = URL.createObjectURL(result.blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = result.filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      monthlyError = err instanceof Error ? err.message : 'Export laporan bulanan gagal.';
+    } finally {
+      monthlyExporting = '';
+    }
+  }
 
   function openDetail(kode: string) {
     const params = new URLSearchParams({ periode: $selectedPeriod });
@@ -296,6 +350,58 @@
     </DataTable>
     <div class="border-t-2 border-black bg-card px-4 py-2 font-mono text-[10px] text-muted-foreground">
       {isSPM ? 'Klik baris untuk melihat provenance per puskesmas, cakupan upload, dan chart performa.' : 'Data mengikuti kategori dan filter yang dipilih; nilai tetap berasal dari label/indikator master.'}
+    </div>
+  {/if}
+</Card>
+
+<Card class="mt-6">
+  <div class="flex flex-wrap items-center justify-between gap-3 border-b-2 border-black bg-card px-4 py-3">
+    <div>
+      <div class="nb-kicker">Laporan turunan IKU/SPM</div>
+      <h2 class="mt-1 text-xl">Data Absolut Kabupaten {monthlyYear}</h2>
+      <p class="mt-1 text-xs text-muted-foreground">
+        Target layanan tahunan, target bulanan, jumlah layanan per bulan, dan status bulanan terhadap target bulanan.
+      </p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <Button variant="secondary" disabled={monthlyExporting !== '' || monthlyLoading} onclick={() => exportMonthly('xlsx')}>
+        <FileSpreadsheet size={14} /> Excel
+      </Button>
+      <Button variant="secondary" disabled={monthlyExporting !== '' || monthlyLoading} onclick={() => exportMonthly('pdf')}>
+        <FileText size={14} /> PDF
+      </Button>
+    </div>
+  </div>
+
+  {#if monthlyError}
+    <div class="border-b-2 border-black bg-destructive px-4 py-2 font-mono text-xs font-bold">{monthlyError}</div>
+  {/if}
+  {#if monthlyLoading}
+    <div class="flex items-center justify-center py-12"><Spinner label="Memuat laporan bulanan…" /></div>
+  {:else if !monthlyReport || monthlyReport.rows.length === 0}
+    <div class="p-4"><EmptyState title="Laporan bulanan kosong" description="Belum ada data IKU/SPM final untuk tahun ini." /></div>
+  {:else}
+    <DataTable columns={monthlyColumns} rows={monthlyReport.rows} minWidth="2600px" nowrap>
+      {#snippet cell(row: MonthlySPMRow, key)}
+        {#if key === 'kode'}
+          <span class="font-bold">{row.kode}</span>
+        {:else if key === 'indikator'}
+          <span class="font-semibold">{row.indikator}</span>
+        {:else if key === 'target_tahunan'}
+          {formatNumber(row.target_tahunan, 0)}
+        {:else if key === 'target_bulanan'}
+          {formatNumber(row.target_bulanan, 2)}
+        {:else if key.startsWith('m')}
+          {@const index = Number(key.slice(1)) - 1}
+          {formatNumber(row.months[index]?.numerator, 0)}
+        {:else if key.startsWith('s')}
+          {@const index = Number(key.slice(1)) - 1}
+          <StatusBadge kind="display" value={row.months[index]?.status ?? 'NO_DATA'} />
+        {/if}
+      {/snippet}
+    </DataTable>
+    <div class="border-t-2 border-black bg-card px-4 py-2 font-mono text-[10px] text-muted-foreground">
+      Status bulanan memakai perbandingan jumlah layanan bulan itu dengan target bulanan. Bulan tanpa data ditandai NO_DATA.
     </div>
   {/if}
 </Card>

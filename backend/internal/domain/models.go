@@ -160,14 +160,16 @@ type IKUComponent struct {
 }
 
 type Target struct {
-	ID            string  `db:"id" json:"id"`
-	LabelID       *string `db:"label_id" json:"label_id,omitempty"`
-	IndikatorID   *string `db:"indikator_id" json:"indikator_id,omitempty"`
-	PeriodeID     string  `db:"periode_id" json:"periode_id"`
-	ScopeType     string  `db:"scope_type" json:"scope_type"`
-	ScopeID       *string `db:"scope_id" json:"scope_id,omitempty"`
-	TargetTahunan float64 `db:"target_tahunan" json:"target_tahunan"`
-	TargetBulanan float64 `db:"target_bulanan" json:"target_bulanan"`
+	ID                   string   `db:"id" json:"id"`
+	LabelID              *string  `db:"label_id" json:"label_id,omitempty"`
+	IndikatorID          *string  `db:"indikator_id" json:"indikator_id,omitempty"`
+	PeriodeID            string   `db:"periode_id" json:"periode_id"`
+	ScopeType            string   `db:"scope_type" json:"scope_type"`
+	ScopeID              *string  `db:"scope_id" json:"scope_id,omitempty"`
+	TargetTahunan        float64  `db:"target_tahunan" json:"target_tahunan"`
+	TargetBulanan        float64  `db:"target_bulanan" json:"target_bulanan"`
+	TargetLayananTahunan *float64 `db:"target_layanan_tahunan" json:"target_layanan_tahunan,omitempty"`
+	TargetLayananBulanan *float64 `db:"target_layanan_bulanan" json:"target_layanan_bulanan,omitempty"`
 }
 
 type CapaianTahunan struct {

@@ -11,6 +11,7 @@
     rowClass = () => '',
     onrowclick,
     fixed = false,
+    nowrap = false,
     minWidth = ''
   }: {
     columns: { key: string; label: string; class?: string; width?: string }[];
@@ -21,12 +22,16 @@
     rowClass?: (row: any) => string;
     onrowclick?: (row: any) => void;
     fixed?: boolean;
+    nowrap?: boolean;
     minWidth?: string;
   } = $props();
 </script>
 
 <div class="overflow-x-auto nb-scroll">
-  <table class={cn('nb-table', fixed && 'table-fixed')} style={minWidth ? `min-width:${minWidth}` : undefined}>
+  <table
+    class={cn('nb-table', fixed && 'table-fixed', nowrap && 'table-nowrap')}
+    style={minWidth ? `min-width:${minWidth}` : undefined}
+  >
     <colgroup>
       {#each columns as column (column.key)}
         <col style={column.width ? `width:${column.width}` : undefined} />
