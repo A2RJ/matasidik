@@ -58,7 +58,7 @@ Tujuan yang tidak boleh digeser:
 - **Jangan mengklaim sudah diuji** tanpa menjalankan pemeriksaan.
 - **Jangan menyembunyikan error, konflik, atau keterbatasan.**
 - **Jangan memakai Mermaid, Graphviz, atau ASCII art untuk flow.**
-- **Jangan mengedit HTML/PNG diagram secara manual**; edit generator lalu rebuild.
+- **Jangan mengedit HTML/WebP diagram secara manual**; edit generator lalu rebuild.
 - **Jangan mengarang API, tabel, kolom, atau enum baru** tanpa persetujuan.
 
 ### 2.2 Wajib bertanya (ASK)
@@ -435,12 +435,12 @@ Setiap keputusan/transisi wajib mencatat: **siapa, kapan, apa, catatan, diff, ve
 ### 11.3 Aturan pembuatan dan pemeliharaan
 
 - Diagram alur wajib memperlihatkan: **upload → validasi/klasifikasi → preview → workflow → kalkulasi → output SPM**, dengan 3 baris SPM yang dapat ditelusuri ke file.
-- Setiap diagram punya satu HTML mandiri + satu PNG.
+- Setiap diagram punya satu HTML mandiri + satu WebP.
 - Sertakan caption, alt text, dan tautan ke HTML sumber.
 - Dari `docs/`, gambar memakai `../assets/diagrams/...`; dari README, `assets/diagrams/...`.
 - Generator: `gen.py` (alur bisnis, status, peran, model data), `gen-end-to-end.py` (alur data IKU), `gen-teknis.py` (lima diagram teknis).
-- Build: `build.sh` (fetch ikon → generate → inline font/ikon → render PNG).
-- **Jangan mengedit HTML/PNG hasil render manual.** Edit generator lalu jalankan build.
+- Build: `build.sh` (fetch ikon → generate → inline font/ikon → render PNG sementara → konversi WebP lossless).
+- **Jangan mengedit HTML/WebP hasil render manual.** Edit generator lalu jalankan build.
 - Jangan mengubah diagram tanpa memperbarui dokumen yang memakainya, dan sebaliknya.
 - Ikon memakai Lucide; font Geist + JetBrains Mono; jangan mencampur gaya diagram lain.
 - Setelah render, periksa label terpotong, panah menabrak teks, dan kontras/keterbacaan.
@@ -517,7 +517,7 @@ Jika pekerjaan menyentuh salah satu item di atas, **berhenti dan tanyakan**. Jan
 - [ ] Tautan file, anchor, dan gambar valid.
 - [ ] Tabel konsisten jumlah kolom.
 - [ ] Tidak ada Mermaid/Graphviz/ASCII flow baru.
-- [ ] Diagram dirender ulang bila generator berubah; PNG ada.
+- [ ] Diagram dirender ulang bila generator berubah; WebP ada.
 - [ ] Kalkulasi sesuai §7 dan traceability sesuai §8.
 - [ ] Build/tes yang relevan dijalankan.
 - [ ] `git diff --check` bersih.

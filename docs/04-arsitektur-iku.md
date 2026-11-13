@@ -4,7 +4,7 @@
 > Terkait: [`README.md`](../README.md) bagian A.7 dan B.8, [`01-gambaran-umum.md`](01-gambaran-umum.md), [`02-daftar-indikator-kinerja.md`](02-daftar-indikator-kinerja.md), [`03-contoh-data.md`](03-contoh-data.md).
 > Aturan proyek yang mengikat: [`rules.md`](rules.md).
 > Skema database implementasi: [`schema.md`](schema.md).
-> Diagram end-to-end: [`../assets/diagrams/alur-data-iku.png`](../assets/diagrams/alur-data-iku.png).
+> Diagram end-to-end: [`../assets/diagrams/alur-data-iku.webp`](../assets/diagrams/alur-data-iku.webp).
 
 ---
 
@@ -172,7 +172,7 @@ Aturan:
 
 ### 3.2 Pipa proses background
 
-<img src="../assets/diagrams/alur-upload.png" alt="Pipa upload background MATA SIDIK: Svelte mengirim multipart ke Gin API, API menyimpan file dan job ke PostgreSQL, worker mengambil job dengan SKIP LOCKED, menulis baris dan nilai, browser polling status sampai preview tampil.">
+<img src="../assets/diagrams/alur-upload.webp" alt="Pipa upload background MATA SIDIK: Svelte mengirim multipart ke Gin API, API menyimpan file dan job ke PostgreSQL, worker mengambil job dengan SKIP LOCKED, menulis baris dan nilai, browser polling status sampai preview tampil.">
 
 *Gambar 3.2 — Pipa upload: API hanya menerima file dan membuat job; worker memproses parsing, validasi, dan klasifikasi di background. Sumber HTML: [`../assets/diagrams/alur-upload.html`](../assets/diagrams/alur-upload.html); generator: [`../assets/diagrams/gen-teknis.py`](../assets/diagrams/gen-teknis.py).*
 
@@ -246,7 +246,7 @@ Baris R3 salah karena memakai IKU induk. Di preview, Siti memilih ulang `.03` (B
 
 Alur utama:
 
-<img src="../assets/diagrams/alur-workflow.png" alt="Workflow approval berjenjang MATA SIDIK: DRAFT_PKM submit ke VERIFY_DINAS, approve ke VALIDATE_KABID, approve ke FINAL, dengan jalur return ke pengirim dan verifikator serta SPECIAL_CHANGE pasca-final.">
+<img src="../assets/diagrams/alur-workflow.webp" alt="Workflow approval berjenjang MATA SIDIK: DRAFT_PKM submit ke VERIFY_DINAS, approve ke VALIDATE_KABID, approve ke FINAL, dengan jalur return ke pengirim dan verifikator serta SPECIAL_CHANGE pasca-final.">
 
 *Gambar 4.1 — State machine default tiga level. FINAL mengunci data dan memicu kalkulasi; perubahan pasca-final hanya lewat `SPECIAL_CHANGE` dengan alasan dan dual approval. Sumber HTML: [`../assets/diagrams/alur-workflow.html`](../assets/diagrams/alur-workflow.html).*
 
@@ -348,7 +348,7 @@ Ini memperlihatkan mengapa preview dan pemilihan IKU harus eksplisit: satu baris
 
 Setiap `IKU_VALUE` induk punya baris `IKU_VALUE_DETAIL`:
 
-<img src="../assets/diagrams/alur-provenance.png" alt="Provenance IKU induk: IKU-2026-001 92,39% dari 850/920, dengan tiga anak .01 450/500 90,00%, .02 380/400 95,00%, dan .03 20/20 100,00%, masing-masing bobot 1 dan dipetakan ke SPM 01/02/03.">
+<img src="../assets/diagrams/alur-provenance.webp" alt="Provenance IKU induk: IKU-2026-001 92,39% dari 850/920, dengan tiga anak .01 450/500 90,00%, .02 380/400 95,00%, dan .03 20/20 100,00%, masing-masing bobot 1 dan dipetakan ke SPM 01/02/03.">
 
 *Gambar 5.3 — Induk dihitung `RATIO_OF_SUMS` dari komponen eksplisit; setiap anak menyimpan numerator, denominator, dan bobot di `IKU_VALUE_DETAIL`. Sumber HTML: [`../assets/diagrams/alur-provenance.html`](../assets/diagrams/alur-provenance.html).*
 
@@ -386,7 +386,7 @@ Status kelengkapan:
 
 Setiap sel dashboard SPM adalah **proyeksi** dari nilai yang sudah dihitung, bukan angka yang diketik ulang. Rantai minimalnya:
 
-<img src="../assets/diagrams/alur-trace-spm.png" alt="Trace output SPM ke file: DASHBOARD_ROW SPM 01 menunjuk IKU_VALUE .01 90,00%, INDICATOR_VALUE IND-001 450/500, SUBMISSION_ROW R1, SUBMISSION_REVISION 1, SUBMISSION S-2026-05-001, dan FILE_OBJECT 9f2c…a71; tabel tiga baris SPM 01/02/03 memperlihatkan rantai yang sama.">
+<img src="../assets/diagrams/alur-trace-spm.webp" alt="Trace output SPM ke file: DASHBOARD_ROW SPM 01 menunjuk IKU_VALUE .01 90,00%, INDICATOR_VALUE IND-001 450/500, SUBMISSION_ROW R1, SUBMISSION_REVISION 1, SUBMISSION S-2026-05-001, dan FILE_OBJECT 9f2c…a71; tabel tiga baris SPM 01/02/03 memperlihatkan rantai yang sama.">
 
 *Gambar 5.5 — Rantai trace dari baris SPM sampai file upload. Tujuh tabel dihubungkan oleh ID kontrak; tabel di bawahnya memetakan tiga baris SPM ke tiga IKU leaf dari satu file BNBA. Sumber HTML: [`../assets/diagrams/alur-trace-spm.html`](../assets/diagrams/alur-trace-spm.html).*
 
@@ -432,7 +432,7 @@ Dengan kontrak ini, pertanyaan “angka 90,00% di baris 01 berasal dari file dan
 
 **Modular monolith + worker**, satu image dengan dua entrypoint:
 
-<img src="../assets/diagrams/arsitektur-aplikasi.png" alt="Arsitektur aplikasi MATA SIDIK: Svelte 5 di browser, reverse proxy, Gin API dan Go worker dalam satu image, PostgreSQL 16 sebagai data dan job queue, serta volume lokal untuk file.">
+<img src="../assets/diagrams/arsitektur-aplikasi.webp" alt="Arsitektur aplikasi MATA SIDIK: Svelte 5 di browser, reverse proxy, Gin API dan Go worker dalam satu image, PostgreSQL 16 sebagai data dan job queue, serta volume lokal untuk file.">
 
 *Gambar 6.1 — Satu host Docker Compose: `api` dan `worker` memakai image yang sama, PostgreSQL menyimpan data + job queue + outbox, dan file asli berada di volume lokal. Tanpa Redis dan tanpa object storage. Sumber HTML: [`../assets/diagrams/arsitektur-aplikasi.html`](../assets/diagrams/arsitektur-aplikasi.html).*
 
@@ -778,7 +778,7 @@ Pemetaan error HTTP:
 
 Diagram lengkap:
 
-<img src="../assets/diagrams/alur-data-iku.png" alt="Alur data IKU end-to-end: upload BNBA, klasifikasi tiga baris ke IKU leaf .01/.02/.03, preview dan koreksi R3, approval tiga level, kalkulasi 90,00%, 95,00%, dan 100,00% menjadi 92,39%, dashboard dengan jejak angka, serta 3 baris output dashboard SPM yang dapat ditelusuri sampai file.">
+<img src="../assets/diagrams/alur-data-iku.webp" alt="Alur data IKU end-to-end: upload BNBA, klasifikasi tiga baris ke IKU leaf .01/.02/.03, preview dan koreksi R3, approval tiga level, kalkulasi 90,00%, 95,00%, dan 100,00% menjadi 92,39%, dashboard dengan jejak angka, serta 3 baris output dashboard SPM yang dapat ditelusuri sampai file.">
 
 *Gambar 10 — Alur end-to-end Mei 2026. Sumber HTML: [`../assets/diagrams/alur-data-iku.html`](../assets/diagrams/alur-data-iku.html). Diagram dihasilkan oleh [`../assets/diagrams/gen-end-to-end.py`](../assets/diagrams/gen-end-to-end.py); data di bawah adalah data yang sama dengan yang tampil di diagram.*
 

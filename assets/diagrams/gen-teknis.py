@@ -174,107 +174,107 @@ def page(title, kicker, lede, w, h, groups, nodes, edges, legend, foot, extra=""
 w, h = 1280, 620
 groups = []
 nodes = [
-    node(150, 160, "Upload BNBA", "Svelte · multipart", "upload"),
-    node(470, 160, "Gin API", "auth · scope · SHA-256", "server"),
+    node(150, 160, "Unggah BNBA", "Svelte · multipart", "upload"),
+    node(470, 160, "Gin API", "autentikasi · cakupan", "server"),
     node(790, 160, "PostgreSQL 16", "SUBMISSION · FILE_OBJECT · JOB", "engine"),
-    node(1110, 160, "Go worker", "parse · validasi · klasifikasi", "klasifikasi"),
-    node(470, 450, "Preview & polling", "2 dtk · ubah IKU", "check"),
+    node(1110, 160, "Worker Go", "urai · validasi · klasifikasi", "klasifikasi"),
+    node(470, 450, "Pratinjau & pemantauan", "2 dtk · ubah IKU", "check"),
     node(790, 450, "Volume lokal", "/data/files · sha256", "disk"),
 ]
 edges = [
     edge("M184 190 H436", "e", "POST · 202 job_id", 305, 182),
-    edge("M504 190 H756", "e", "tx: SUBMISSION + FILE_OBJECT + JOB", 630, 182),
+    edge("M504 190 H756", "e", "transaksi: 3 tabel", 630, 182),
     edge("M824 190 H1076", "e", "JOB · SKIP LOCKED", 950, 182),
     edge("M470 264 V446", "e", "halaman hasil", 462, 350, anchor="end"),
-    edge("M500 446 V264", "n dash", "polling GET /jobs/{id}", 508, 350, anchor="start"),
-    edge("M1096 264 V320 H790 V264", "n", "ROW + VALUE + progress", 943, 312),
-    edge("M504 220 H680 V480 H756", "n", "simpan file sha256", 672, 472, anchor="end"),
-    edge("M1124 264 V480 H824", "n", "baca file", 970, 472),
+    edge("M500 446 V264", "n dash", "pemantauan GET /jobs/{id}", 508, 350, anchor="start"),
+    edge("M1096 264 V320 H790 V264", "n", "BARIS + NILAI + progres", 943, 312),
+    edge("M504 220 H680 V480 H756", "n", "simpan berkas sha256", 672, 472, anchor="end"),
+    edge("M1124 264 V480 H824", "n", "baca berkas", 970, 472),
 ]
-legend = [("", "alur utama"), ("n dash", "polling / respons")]
+legend = [("", "alur utama"), ("n dash", "pemantauan / respons")]
 open(f"{OUT}/alur-upload.html", "w").write(page(
-    "Pipa Upload Background",
-    "MATA SIDIK / ingest",
-    "Dari multipart ke baris terklasifikasi: API menyimpan file + job, worker memproses di background, browser polling status.",
+    "Pipa Unggah Latar Belakang",
+    "MATA SIDIK / penerimaan data",
+    "Dari multipart ke baris terklasifikasi: API menyimpan berkas + job, worker memproses di latar belakang, peramban memantau status.",
     w, h, groups, nodes, edges, legend,
-    "contoh: BNBA Mei 2026 · 3 baris · tanpa Redis · job table PostgreSQL · tanpa object storage"))
+    "contoh: BNBA Mei 2026 · 3 baris · tanpa Redis · tabel job PostgreSQL · tanpa penyimpanan objek"))
 
 
 # ------------------------------------------------------------------ 2. WORKFLOW
 w, h = 1360, 620
 groups = [
-    group(70, 100, 1020, 260, "Alur utama submission", "gb", "workflow"),
+    group(70, 100, 1020, 260, "Alur utama pengajuan", "gb", "workflow"),
     group(960, 370, 200, 180, "Pasca-final", "ga", "audit"),
 ]
 nodes = [
     node(160, 160, "DRAFT_PKM", "Puskesmas / PJ", "draf"),
     node(460, 160, "VERIFY_DINAS", "Verifikator Dinas", "verif"),
     node(760, 160, "VALIDATE_KABID", "Kabid / Sekretaris", "valid"),
-    node(1060, 160, "FINAL", "lock + calculate", "final"),
+    node(1060, 160, "FINAL", "kunci + hitung", "final"),
     node(1060, 430, "SPECIAL_CHANGE", "Kabid + Admin", "ubah"),
 ]
 edges = [
-    edge("M194 190 H426", "e", "submit", 310, 182),
-    edge("M494 190 H726", "e", "approve", 610, 182),
-    edge("M794 190 H1026", "e", "approve + catatan", 910, 182),
-    edge("M1060 264 V426", "n dash", "override + alasan", 1052, 345, anchor="end"),
+    edge("M194 190 H426", "e", "kirim", 310, 182),
+    edge("M494 190 H726", "e", "setujui", 610, 182),
+    edge("M794 190 H1026", "e", "setujui + catatan", 910, 182),
+    edge("M1060 264 V426", "n dash", "ubah paksa + alasan", 1052, 345, anchor="end"),
     edge("M1090 426 V264", "n dash", "versi baru", 1098, 345, anchor="start"),
-    edge("M460 264 V330 H160 V264", "n dash", "return + catatan", 310, 322),
-    edge("M760 264 V400 H460 V264", "n dash", "return", 610, 392),
+    edge("M460 264 V330 H160 V264", "n dash", "revisi + catatan", 310, 322),
+    edge("M760 264 V400 H460 V264", "n dash", "revisi", 610, 392),
 ]
 legend = [("", "alur utama"), ("n dash", "pengembalian / pasca-final")]
 open(f"{OUT}/alur-workflow.html", "w").write(page(
-    "Workflow Approval Berjenjang",
-    "MATA SIDIK / workflow",
-    "Default tiga level dengan jalur pengembalian eksplisit; final mengunci data, perubahan pasca-final lewat kewenangan khusus.",
+    "Alur Persetujuan Berjenjang",
+    "MATA SIDIK / alur kerja",
+    "Bawaan tiga tingkat dengan jalur pengembalian eksplisit; final mengunci data, perubahan pasca-final lewat kewenangan khusus.",
     w, h, groups, nodes, edges, legend,
-    "versi workflow di-pin per submission · tidak ada auto-approve saat SLA lewat"))
+    "versi alur kerja dipatok per pengajuan · tidak ada persetujuan otomatis saat SLA lewat"))
 
 
 # --------------------------------------------------------------- 3. PROVENANCE
 w, h = 1400, 560
 extra = [
     card(530, 110, 340, 130, "IKU-2026-001 · INDUK", "92,39%", "850 / 920 · target 100%",
-         "COMPLETE · gap -7,61 pp", parent=True,
-         badges=f'<div style="margin-top:5px">{badge("PERHATIAN", "b-warn")} {badge("3 CHILD_IKU", "b-final")}</div>'),
+         "LENGKAP · gap -7,61 pp", parent=True,
+         badges=f'<div style="margin-top:5px">{badge("PERHATIAN", "b-warn")} {badge("3 IKU ANAK", "b-final")}</div>'),
     card(90, 350, 330, 130, "IKU-2026-001.01 · Ibu Hamil", "90,00%", "450 / 500 · bobot 1",
          "SPM 01 · perlu perhatian",
          badges=f'<div style="margin-top:5px">{badge("PERHATIAN", "b-warn")}</div>'),
     card(535, 350, 330, 130, "IKU-2026-001.02 · Ibu Bersalin", "95,00%", "380 / 400 · bobot 1",
          "SPM 02 · sesuai target",
-         badges=f'<div style="margin-top:5px">{badge("OK", "b-ok")}</div>'),
+         badges=f'<div style="margin-top:5px">{badge("SESUAI", "b-ok")}</div>'),
     card(980, 350, 330, 130, "IKU-2026-001.03 · Bayi Baru Lahir", "100,00%", "20 / 20 · bobot 1",
          "SPM 03 · setelah reklasifikasi",
-         badges=f'<div style="margin-top:5px">{badge("OK", "b-ok")} {badge("EX-INDUK", "b-final")}</div>'),
+         badges=f'<div style="margin-top:5px">{badge("SESUAI", "b-ok")} {badge("DARI INDUK", "b-final")}</div>'),
     f'''    <div class="strip" style="left:30px;top:500px;width:1340px;height:45px;">
       <div class="k">RATIO_OF_SUMS · BUKAN RATA-RATA PERSENTASE</div>
       <div class="t">(450 + 380 + 20) / (500 + 400 + 20) = 850 / 920 = 92,39% &nbsp;·&nbsp;
-      tiap anak disimpan di <b>IKU_VALUE_DETAIL</b> (component_type CHILD_IKU, numerator, denominator, bobot) &nbsp;·&nbsp;
+      tiap anak disimpan di <b>IKU_VALUE_DETAIL</b> (component_type IKU anak, pembilang, penyebut, bobot) &nbsp;·&nbsp;
       .01 → SPM 01 · .02 → SPM 02 · .03 → SPM 03</div>
     </div>''',
 ]
 edges = [
-    edge("M600 240 V300 H255 V344", "n", "CHILD_IKU · bobot 1", 420, 292),
+    edge("M600 240 V300 H255 V344", "n", "IKU anak · bobot 1", 420, 292),
     edge("M700 240 V344", "n", "bobot 1", 708, 300, anchor="start"),
-    edge("M800 240 V300 H1145 V344", "n", "CHILD_IKU · bobot 1", 975, 292),
+    edge("M800 240 V300 H1145 V344", "n", "IKU anak · bobot 1", 975, 292),
 ]
 legend = [("n", "komponen rollup IKU")]
 open(f"{OUT}/alur-provenance.html", "w").write(page(
-    "Provenance Nilai IKU Induk",
+    "Jejak Angka Nilai IKU Induk",
     "MATA SIDIK / kalkulasi",
     "Nilai induk dihitung dari komponen eksplisit; setiap anak menyumbang numerator dan denominator, bukan rata-rata persentase.",
     w, h, [], [], edges, legend,
-    "contoh: Mei 2026 · IKU-2026-001 · tiga IKU leaf · target 100%", extra="\n".join(extra)))
+    "contoh: Mei 2026 · IKU-2026-001 · tiga IKU anak · target 100%", extra="\n".join(extra)))
 
 
 # ------------------------------------------------------------------ 4. TRACE
 w, h = 1860, 660
 chain = [
     ("DASHBOARD_ROW", "SPM 01", "Ibu Hamil · target 100%", "iku_value_id", "table"),
-    ("IKU_VALUE", "90,00%", "450/500 · COMPLETE", "iku_value_id + source_hash", "calc"),
+    ("IKU_VALUE", "90,00%", "450/500 · LENGKAP", "iku_value_id + source_hash", "calc"),
     ("INDICATOR_VALUE", "IND-001", "450/500 · FINAL", "indicator_value_id", "check"),
-    ("SUBMISSION_ROW", "R1 · MATCHED", "row_no 1 · scope PKM", "submission_row_id", "upload"),
-    ("SUBMISSION_REVISION", "REV 1", "immutable · file_id", "revision_id", "audit"),
+    ("SUBMISSION_ROW", "R1 · COCOK", "row_no 1 · cakupan PKM", "submission_row_id", "upload"),
+    ("SUBMISSION_REVISION", "REV 1", "tidak berubah · file_id", "revision_id", "audit"),
     ("SUBMISSION", "S-2026-05-001", "Mei 2026 · PKM Taliwang", "submission_id", "laporan"),
     ("FILE_OBJECT", "9f2c…a71", "BNBA_2026-05.xlsx", "file_id + uploaded_by", "disk"),
 ]
@@ -289,9 +289,9 @@ for i, (tname, tval, tmeta, tid, icon) in enumerate(chain):
 ''', icon, step=str(i + 1)))
 
 rows = [
-    ("01", "Pelayanan Kesehatan Ibu Hamil", ".01", "R1", "IND-001", "450/500", "90,00%", "warn", "FILE R1 → SPM 01"),
-    ("02", "Pelayanan Kesehatan Ibu Bersalin", ".02", "R2", "IND-002", "380/400", "95,00%", "ok", "FILE R2 → SPM 02"),
-    ("03", "Pelayanan Kesehatan Bayi Baru Lahir", ".03", "R3", "IND-003", "20/20", "100,00%", "ok", "FILE R3 → SPM 03"),
+    ("01", "Pelayanan Kesehatan Ibu Hamil", ".01", "R1", "IND-001", "450/500", "90,00%", "warn", "BERKAS R1 → SPM 01"),
+    ("02", "Pelayanan Kesehatan Ibu Bersalin", ".02", "R2", "IND-002", "380/400", "95,00%", "ok", "BERKAS R2 → SPM 02"),
+    ("03", "Pelayanan Kesehatan Bayi Baru Lahir", ".03", "R3", "IND-003", "20/20", "100,00%", "ok", "BERKAS R3 → SPM 03"),
 ]
 trs = ""
 for no, nama, leaf, baris, ind, nd, val, st, trace in rows:
@@ -300,25 +300,25 @@ for no, nama, leaf, baris, ind, nd, val, st, trace in rows:
             f'<td class="num">{baris}</td><td class="num">{ind}</td><td class="num">{nd}</td>'
             f'<td class="num">{val}</td><td class="c">{st_html}</td><td>{html.escape(trace)}</td></tr>')
 
-extra.append(panel(30, 280, 1800, 210, "3 baris SPM — satu file, tiga IKU leaf", f'''
+extra.append(panel(30, 280, 1800, 210, "3 baris SPM — satu berkas, tiga IKU anak", f'''
       <table class="dash">
         <colgroup><col style="width:44px"><col><col style="width:70px"><col style="width:60px">
         <col style="width:90px"><col style="width:90px"><col style="width:90px"><col style="width:52px"><col style="width:190px"></colgroup>
         <thead><tr>
-          <th class="num">SPM</th><th>Indikator</th><th class="num">IKU leaf</th><th class="num">Baris</th>
+          <th class="num">SPM</th><th>Indikator</th><th class="num">IKU anak</th><th class="num">Baris</th>
           <th class="num">Indikator</th><th class="num">Num/den</th><th class="num">Capaian</th>
-          <th class="c">Status</th><th>Trace</th>
+          <th class="c">Status</th><th>Penelusuran</th>
         </tr></thead>
         <tbody>{trs}</tbody>
       </table>
       <div class="divider"></div>
       <div class="sub">Sumber sama untuk ketiganya: <b>FILE_OBJECT 9f2c…a71</b> → <b>SUBMISSION S-2026-05-001</b> →
-      <b>REVISION 1</b> · uploader Siti (PKM Taliwang) · periode Mei 2026. R3 semula <b>IKU_ROLLUP_ONLY</b>,
-      dikoreksi ke <b>.03</b> di preview dan tercatat di <b>AUDIT_LOG</b>.</div>
+      <b>REVISION 1</b> · pengunggah Siti (PKM Taliwang) · periode Mei 2026. R3 semula <b>IKU_ROLLUP_ONLY</b>,
+      dikoreksi ke <b>.03</b> di pratinjau dan tercatat di <b>AUDIT_LOG</b>.</div>
 ''', "tree"))
 
 extra.append(f'''    <div class="strip" style="left:30px;top:520px;width:1800px;height:90px;">
-      <div class="k">KONTRAK DRILL-DOWN</div>
+      <div class="k">KONTRAK PENELUSURAN</div>
       <div class="t"><b>iku_value_id</b> · <b>indicator_value_id</b> · <b>source_hash</b> · <b>data_version</b> · <b>calculation_run_id</b>
       &nbsp;·&nbsp; rollup induk: 92,39% = 850/920 ← .01 450/500 + .02 380/400 + .03 20/20</div>
       <div class="t">API: <span class="mono">GET /api/v1/dashboard/spm?periode=2026-05</span> →
@@ -333,47 +333,47 @@ for i in range(6):
     x2 = x1 + 36
     edges.append(edge(f"M{x1} 185 H{x2}"))
 
-legend = [("", "rantai trace antar tabel")]
+legend = [("", "rantai penelusuran antar tabel")]
 open(f"{OUT}/alur-trace-spm.html", "w").write(page(
-    "Trace Output SPM ke File",
+    "Penelusuran Output SPM sampai Berkas",
     "MATA SIDIK / lineage",
-    "Setiap sel SPM adalah proyeksi nilai terhitung: telusuri dari baris dashboard sampai file upload aslinya.",
+    "Setiap sel SPM adalah proyeksi nilai terhitung: telusuri dari baris dashboard sampai berkas unggahan aslinya.",
     w, h, [], [], edges, legend,
-    "contoh: Mei 2026 · 3 baris SPM · satu file BNBA · drill-down lewat ID kontrak", extra="\n".join(extra)))
+    "contoh: Mei 2026 · 3 baris SPM · satu berkas BNBA · penelusuran lewat ID kontrak", extra="\n".join(extra)))
 
 
 # ------------------------------------------------------------- 5. ARCHITECTURE
 w, h = 1440, 760
 groups = [
-    group(20, 100, 240, 260, "Browser", "ga", "user"),
+    group(20, 100, 240, 260, "Peramban", "ga", "user"),
     group(300, 70, 1100, 640, "Docker Compose · satu host", "gb", "container"),
-    group(590, 110, 180, 560, "Go image", "ga", "code"),
-    group(960, 110, 180, 220, "Database", "ga", "engine"),
-    group(960, 430, 180, 220, "Penyimpanan file", "ga", "disk"),
+    group(590, 110, 180, 560, "Image Go", "ga", "code"),
+    group(960, 110, 180, 220, "Basis data", "ga", "engine"),
+    group(960, 430, 180, 220, "Penyimpanan berkas", "ga", "disk"),
 ]
 nodes = [
-    node(140, 170, "Svelte 5", "static build · satu origin", "code"),
-    node(400, 170, "Reverse proxy", "TLS · static + /api/v1", "shield"),
+    node(140, 170, "Svelte 5", "build statis · satu origin", "code"),
+    node(400, 170, "Proxy balik", "TLS · static + /api/v1", "shield"),
     node(680, 170, "Gin API", "cmd/api · REST", "server"),
     node(1050, 170, "PostgreSQL 16", "data + JOB + outbox", "engine"),
-    node(680, 490, "Go worker", "cmd/worker · job loop", "workflow"),
+    node(680, 490, "Worker Go", "cmd/worker · siklus job", "workflow"),
     node(1050, 490, "Volume lokal", "/data/files · sha256", "disk"),
 ]
 edges = [
     edge("M184 200 H356", "e", "HTTPS", 270, 192),
     edge("M444 200 H616", "e", "/api/v1 + static", 530, 192),
     edge("M724 200 H976", "e", "SQL · pgx", 850, 192),
-    edge("M724 220 H860 V500 H1016", "n", "stream file", 868, 450, anchor="start"),
+    edge("M724 220 H860 V500 H1016", "n", "alirkan berkas", 868, 450, anchor="start"),
     edge("M1050 264 V360 H680 V486", "n", "JOB · SKIP LOCKED", 800, 352),
-    edge("M724 540 H900 V220 H1016", "n", "ROW + VALUE + audit", 906, 380, anchor="start"),
-    edge("M724 540 H1016", "n", "file I/O", 870, 532),
+    edge("M724 540 H900 V220 H1016", "n", "BARIS + NILAI + audit", 906, 380, anchor="start"),
+    edge("M724 540 H1016", "n", "baca/tulis berkas", 870, 532),
 ]
 legend = [("", "alur utama"), ("n", "koneksi internal")]
 open(f"{OUT}/arsitektur-aplikasi.html", "w").write(page(
     "Arsitektur Aplikasi",
-    "MATA SIDIK / deployment",
-    "Modular monolith + worker dalam satu image: dua command, PostgreSQL sebagai data + job queue, file di volume lokal.",
+    "MATA SIDIK / penerapan",
+    "Monolit modular + worker dalam satu image: dua perintah, PostgreSQL sebagai basis data + antrean job, berkas di volume lokal.",
     w, h, groups, nodes, edges, legend,
-    "tanpa Redis · tanpa object storage · Docker Compose: api, worker, postgres, reverse proxy"))
+    "tanpa Redis · tanpa penyimpanan objek · Docker Compose: api, worker, postgres, reverse proxy"))
 
 print("technical drafts written")

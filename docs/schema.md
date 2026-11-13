@@ -4,9 +4,9 @@
 >
 > Cakupan: **31 tabel domain** + `schema_migrations`, mencakup master, submission, kalkulasi, faktor/TL, audit, auth, jabatan struktural, dan kategori dashboard dinamis.
 >
-> Diagram tabel, kolom, dan relasi: [`../assets/diagrams/schema-db.png`](../assets/diagrams/schema-db.png) · sumber HTML: [`../assets/diagrams/schema-db.html`](../assets/diagrams/schema-db.html) · generator: [`../assets/diagrams/gen-schema.py`](../assets/diagrams/gen-schema.py).
+> Diagram tabel, kolom, dan relasi: [`../assets/diagrams/schema-db.webp`](../assets/diagrams/schema-db.webp) · sumber HTML: [`../assets/diagrams/schema-db.html`](../assets/diagrams/schema-db.html) · generator: [`../assets/diagrams/gen-schema.py`](../assets/diagrams/gen-schema.py).
 >
-> **Catatan:** diagram `schema-db` belum diregenerasi setelah penambahan `dashboard_category`, `label.category_id`, `bidang.jenis`, dan `indikator.pj_timker_id`; generator sudah diperbarui, PNG menunggu build ulang.
+> **Catatan:** diagram `schema-db` belum diregenerasi setelah penambahan `dashboard_category`, `label.category_id`, `bidang.jenis`, dan `indikator.pj_timker_id`; generator sudah diperbarui, WebP menunggu build ulang.
 
 ## 1. Prinsip
 

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Workflow Approval Berjenjang</title>
+<title>Alur Persetujuan Berjenjang</title>
 <style>
 /* engineered-paper theme (cool near-white, one accent, mono labels)
  * All colors/fonts flow through the :root tokens — tweak tokens, not scattered values. */
@@ -217,17 +217,17 @@ path.aws { stroke: var(--color-ink); stroke-width:1.6; fill:none; }
 
   <header class="head">
     <div>
-      <div class="kicker">MATA SIDIK / workflow</div>
-      <h1>Workflow Approval Berjenjang</h1>
+      <div class="kicker">MATA SIDIK / alur kerja</div>
+      <h1>Alur Persetujuan Berjenjang</h1>
     </div>
-    <p class="lede">Default tiga level dengan jalur pengembalian eksplisit; final mengunci data, perubahan pasca-final lewat kewenangan khusus.</p>
+    <p class="lede">Bawaan tiga tingkat dengan jalur pengembalian eksplisit; final mengunci data, perubahan pasca-final lewat kewenangan khusus.</p>
   </header>
 
   <div class="scroller">
   <div class="canvas" style="width:1360px;height:620px;">
 
     <div class="group gb" style="left:70px;top:100px;width:1020px;height:260px;">
-      <div class="g-label"><img src="data:image/svg+xml;base64,PCEtLSBAbGljZW5zZSBsdWNpZGUtc3RhdGljIHYxLjcyLjAgLSBJU0MgLS0+CjxzdmcKICBjbGFzcz0ibHVjaWRlIGx1Y2lkZS13b3JrZmxvdyIKICB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciCiAgd2lkdGg9IjI0IgogIGhlaWdodD0iMjQiCiAgdmlld0JveD0iMCAwIDI0IDI0IgogIGZpbGw9Im5vbmUiCiAgc3Ryb2tlPSIjM2Q0NjYwIgogIHN0cm9rZS13aWR0aD0iMS43IgogIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIKICBzdHJva2UtbGluZWpvaW49InJvdW5kIgo+CiAgPHJlY3Qgd2lkdGg9IjgiIGhlaWdodD0iOCIgeD0iMyIgeT0iMyIgcng9IjIiIC8+CiAgPHBhdGggZD0iTTcgMTF2NGEyIDIgMCAwIDAgMiAyaDQiIC8+CiAgPHJlY3Qgd2lkdGg9IjgiIGhlaWdodD0iOCIgeD0iMTMiIHk9IjEzIiByeD0iMiIgLz4KPC9zdmc+Cg==" alt="">Alur utama submission</div>
+      <div class="g-label"><img src="data:image/svg+xml;base64,PCEtLSBAbGljZW5zZSBsdWNpZGUtc3RhdGljIHYxLjcyLjAgLSBJU0MgLS0+CjxzdmcKICBjbGFzcz0ibHVjaWRlIGx1Y2lkZS13b3JrZmxvdyIKICB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciCiAgd2lkdGg9IjI0IgogIGhlaWdodD0iMjQiCiAgdmlld0JveD0iMCAwIDI0IDI0IgogIGZpbGw9Im5vbmUiCiAgc3Ryb2tlPSIjM2Q0NjYwIgogIHN0cm9rZS13aWR0aD0iMS43IgogIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIKICBzdHJva2UtbGluZWpvaW49InJvdW5kIgo+CiAgPHJlY3Qgd2lkdGg9IjgiIGhlaWdodD0iOCIgeD0iMyIgeT0iMyIgcng9IjIiIC8+CiAgPHBhdGggZD0iTTcgMTF2NGEyIDIgMCAwIDAgMiAyaDQiIC8+CiAgPHJlY3Qgd2lkdGg9IjgiIGhlaWdodD0iOCIgeD0iMTMiIHk9IjEzIiByeD0iMiIgLz4KPC9zdmc+Cg==" alt="">Alur utama pengajuan</div>
     </div>
     <div class="group ga" style="left:960px;top:370px;width:200px;height:180px;">
       <div class="g-label"><img src="data:image/svg+xml;base64,PCEtLSBAbGljZW5zZSBsdWNpZGUtc3RhdGljIHYxLjcyLjAgLSBJU0MgLS0+CjxzdmcKICBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1zY3JvbGwtdGV4dCIKICB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciCiAgd2lkdGg9IjI0IgogIGhlaWdodD0iMjQiCiAgdmlld0JveD0iMCAwIDI0IDI0IgogIGZpbGw9Im5vbmUiCiAgc3Ryb2tlPSIjM2Q0NjYwIgogIHN0cm9rZS13aWR0aD0iMS43IgogIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIKICBzdHJva2UtbGluZWpvaW49InJvdW5kIgo+CiAgPHBhdGggZD0iTTE1IDEyaC01IiAvPgogIDxwYXRoIGQ9Ik0xNSA4aC01IiAvPgogIDxwYXRoIGQ9Ik0xOSAxN1Y1YTIgMiAwIDAgMC0yLTJINCIgLz4KICA8cGF0aCBkPSJNOCAyMWgxMmEyIDIgMCAwIDAgMi0ydi0xYTEgMSAwIDAgMC0xLTFIMTFhMSAxIDAgMCAwLTEgMXYxYTIgMiAwIDEgMS00IDBWNWEyIDIgMCAxIDAtNCAwdjJhMSAxIDAgMCAwIDEgMWgzIiAvPgo8L3N2Zz4K" alt="">Pasca-final</div>
@@ -240,27 +240,27 @@ path.aws { stroke: var(--color-ink); stroke-width:1.6; fill:none; }
         </marker>
       </defs>
       <path class="e" d="M194 190 H426" marker-end="url(#ar)"/>
-      <text class="el a" x="310" y="182" text-anchor="middle">submit</text>
+      <text class="el a" x="310" y="182" text-anchor="middle">kirim</text>
       <path class="e" d="M494 190 H726" marker-end="url(#ar)"/>
-      <text class="el a" x="610" y="182" text-anchor="middle">approve</text>
+      <text class="el a" x="610" y="182" text-anchor="middle">setujui</text>
       <path class="e" d="M794 190 H1026" marker-end="url(#ar)"/>
-      <text class="el a" x="910" y="182" text-anchor="middle">approve + catatan</text>
+      <text class="el a" x="910" y="182" text-anchor="middle">setujui + catatan</text>
       <path class="n dash" d="M1060 264 V426" marker-end="url(#ar)"/>
-      <text class="el" x="1052" y="345" text-anchor="end">override + alasan</text>
+      <text class="el" x="1052" y="345" text-anchor="end">ubah paksa + alasan</text>
       <path class="n dash" d="M1090 426 V264" marker-end="url(#ar)"/>
       <text class="el" x="1098" y="345" text-anchor="start">versi baru</text>
       <path class="n dash" d="M460 264 V330 H160 V264" marker-end="url(#ar)"/>
-      <text class="el" x="310" y="322" text-anchor="middle">return + catatan</text>
+      <text class="el" x="310" y="322" text-anchor="middle">revisi + catatan</text>
       <path class="n dash" d="M760 264 V400 H460 V264" marker-end="url(#ar)"/>
-      <text class="el" x="610" y="392" text-anchor="middle">return</text>
+      <text class="el" x="610" y="392" text-anchor="middle">revisi</text>
     </svg>
 
     <div class="node" style="left:94px;top:160px">
-      <div class="tile "><img src="data:image/svg+xml;base64,PCEtLSBAbGljZW5zZSBsdWNpZGUtc3RhdGljIHYxLjcxLjAgLSBJU0MgLS0+CjxzdmcKICBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1maWxlLXBlbi1saW5lIgogIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIKICB3aWR0aD0iMjQiCiAgaGVpZ2h0PSIyNCIKICB2aWV3Qm94PSIwIDAgMjQgMjQiCiAgZmlsbD0ibm9uZSIKICBzdHJva2U9IiMzZDQ2NjAiCiAgc3Ryb2tlLXdpZHRoPSIxLjciCiAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogIHN0cm9rZS1saW5lam9pbj0icm91bmQiCj4KICA8cGF0aCBkPSJNMTQuMzY0IDEzLjYzNGEyIDIgMCAwIDAtLjUwNi44NTRsLS44MzcgMi44N2EuNS41IDAgMCAwIC42Mi42MmwyLjg3LS44MzdhMiAyIDAgMCAwIC44NTQtLjUwNmw0LjAxMy00LjAwOWExIDEgMCAwIDAtMy4wMDQtMy4wMDR6IiAvPgogIDxwYXRoIGQ9Ik0xNC40ODcgNy44NThBMSAxIDAgMCAxIDE0IDdWMiIgLz4KICA8cGF0aCBkPSJNMjAgMTkuNjQ1VjIwYTIgMiAwIDAgMS0yIDJINmEyIDIgMCAwIDEtMi0yVjRhMiAyIDAgMCAxIDItMmg4YTIuNCAyLjQgMCAwIDEgMS43MDQuNzA2bDIuNTE2IDIuNTE2IiAvPgogIDxwYXRoIGQ9Ik04IDE4aDEiIC8+Cjwvc3ZnPgo=" alt=""></div>
+      <div class="tile "><img src="data:image/svg+xml;base64,PCEtLSBAbGljZW5zZSBsdWNpZGUtc3RhdGljIHYxLjcyLjAgLSBJU0MgLS0+CjxzdmcKICBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1maWxlLXBlbi1saW5lIgogIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIKICB3aWR0aD0iMjQiCiAgaGVpZ2h0PSIyNCIKICB2aWV3Qm94PSIwIDAgMjQgMjQiCiAgZmlsbD0ibm9uZSIKICBzdHJva2U9IiMzZDQ2NjAiCiAgc3Ryb2tlLXdpZHRoPSIxLjciCiAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogIHN0cm9rZS1saW5lam9pbj0icm91bmQiCj4KICA8cGF0aCBkPSJNMTQuMzY0IDEzLjYzNGEyIDIgMCAwIDAtLjUwNi44NTRsLS44MzcgMi44N2EuNS41IDAgMCAwIC42Mi42MmwyLjg3LS44MzdhMiAyIDAgMCAwIC44NTQtLjUwNmw0LjAxMy00LjAwOWExIDEgMCAwIDAtMy4wMDQtMy4wMDR6IiAvPgogIDxwYXRoIGQ9Ik0xNC40ODcgNy44NThBMSAxIDAgMCAxIDE0IDdWMiIgLz4KICA8cGF0aCBkPSJNMjAgMTkuNjQ1VjIwYTIgMiAwIDAgMS0yIDJINmEyIDIgMCAwIDEtMi0yVjRhMiAyIDAgMCAxIDItMmg4YTIuNCAyLjQgMCAwIDEgMS43MDQuNzA2bDIuNTE2IDIuNTE2IiAvPgogIDxwYXRoIGQ9Ik04IDE4aDEiIC8+Cjwvc3ZnPgo=" alt=""></div>
       <div class="name"><span>DRAFT_PKM</span></div><div class="role"><span>Puskesmas / PJ</span></div>
     </div>
     <div class="node" style="left:394px;top:160px">
-      <div class="tile "><img src="data:image/svg+xml;base64,PCEtLSBAbGljZW5zZSBsdWNpZGUtc3RhdGljIHYxLjcxLjAgLSBJU0MgLS0+CjxzdmcKICBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1zZWFyY2gtY2hlY2siCiAgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIgogIHdpZHRoPSIyNCIKICBoZWlnaHQ9IjI0IgogIHZpZXdCb3g9IjAgMCAyNCAyNCIKICBmaWxsPSJub25lIgogIHN0cm9rZT0iIzNkNDY2MCIKICBzdHJva2Utd2lkdGg9IjEuNyIKICBzdHJva2UtbGluZWNhcD0icm91bmQiCiAgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIKPgogIDxwYXRoIGQ9Im04IDExIDIgMiA0LTQiIC8+CiAgPGNpcmNsZSBjeD0iMTEiIGN5PSIxMSIgcj0iOCIgLz4KICA8cGF0aCBkPSJtMjEgMjEtNC4zLTQuMyIgLz4KPC9zdmc+Cg==" alt=""></div>
+      <div class="tile "><img src="data:image/svg+xml;base64,PCEtLSBAbGljZW5zZSBsdWNpZGUtc3RhdGljIHYxLjcyLjAgLSBJU0MgLS0+CjxzdmcKICBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1zZWFyY2gtY2hlY2siCiAgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIgogIHdpZHRoPSIyNCIKICBoZWlnaHQ9IjI0IgogIHZpZXdCb3g9IjAgMCAyNCAyNCIKICBmaWxsPSJub25lIgogIHN0cm9rZT0iIzNkNDY2MCIKICBzdHJva2Utd2lkdGg9IjEuNyIKICBzdHJva2UtbGluZWNhcD0icm91bmQiCiAgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIKPgogIDxwYXRoIGQ9Im04IDExIDIgMiA0LTQiIC8+CiAgPGNpcmNsZSBjeD0iMTEiIGN5PSIxMSIgcj0iOCIgLz4KICA8cGF0aCBkPSJtMjEgMjEtNC4zLTQuMyIgLz4KPC9zdmc+Cg==" alt=""></div>
       <div class="name"><span>VERIFY_DINAS</span></div><div class="role"><span>Verifikator Dinas</span></div>
     </div>
     <div class="node" style="left:694px;top:160px">
@@ -269,10 +269,10 @@ path.aws { stroke: var(--color-ink); stroke-width:1.6; fill:none; }
     </div>
     <div class="node" style="left:994px;top:160px">
       <div class="tile "><img src="data:image/svg+xml;base64,PCEtLSBAbGljZW5zZSBsdWNpZGUtc3RhdGljIHYxLjcyLjAgLSBJU0MgLS0+CjxzdmcKICBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1sb2NrIgogIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIKICB3aWR0aD0iMjQiCiAgaGVpZ2h0PSIyNCIKICB2aWV3Qm94PSIwIDAgMjQgMjQiCiAgZmlsbD0ibm9uZSIKICBzdHJva2U9IiMzZDQ2NjAiCiAgc3Ryb2tlLXdpZHRoPSIxLjciCiAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogIHN0cm9rZS1saW5lam9pbj0icm91bmQiCj4KICA8cmVjdCB3aWR0aD0iMTgiIGhlaWdodD0iMTEiIHg9IjMiIHk9IjExIiByeD0iMiIgcnk9IjIiIC8+CiAgPHBhdGggZD0iTTcgMTFWN2E1IDUgMCAwIDEgMTAgMHY0IiAvPgo8L3N2Zz4K" alt=""></div>
-      <div class="name"><span>FINAL</span></div><div class="role"><span>lock + calculate</span></div>
+      <div class="name"><span>FINAL</span></div><div class="role"><span>kunci + hitung</span></div>
     </div>
     <div class="node" style="left:994px;top:430px">
-      <div class="tile "><img src="data:image/svg+xml;base64,PCEtLSBAbGljZW5zZSBsdWNpZGUtc3RhdGljIHYxLjcxLjAgLSBJU0MgLS0+CjxzdmcKICBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1rZXktcm91bmQiCiAgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIgogIHdpZHRoPSIyNCIKICBoZWlnaHQ9IjI0IgogIHZpZXdCb3g9IjAgMCAyNCAyNCIKICBmaWxsPSJub25lIgogIHN0cm9rZT0iIzNkNDY2MCIKICBzdHJva2Utd2lkdGg9IjEuNyIKICBzdHJva2UtbGluZWNhcD0icm91bmQiCiAgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIKPgogIDxwYXRoIGQ9Ik0yLjU4NiAxNy40MTRBMiAyIDAgMCAwIDIgMTguODI4VjIxYTEgMSAwIDAgMCAxIDFoM2ExIDEgMCAwIDAgMS0xdi0xYTEgMSAwIDAgMSAxLTFoMWExIDEgMCAwIDAgMS0xdi0xYTEgMSAwIDAgMSAxLTFoLjE3MmEyIDIgMCAwIDAgMS40MTQtLjU4NmwuODE0LS44MTRhNi41IDYuNSAwIDEgMC00LTR6IiAvPgogIDxjaXJjbGUgY3g9IjE2LjUiIGN5PSI3LjUiIHI9Ii41IiBmaWxsPSJjdXJyZW50Q29sb3IiIC8+Cjwvc3ZnPgo=" alt=""></div>
+      <div class="tile "><img src="data:image/svg+xml;base64,PCEtLSBAbGljZW5zZSBsdWNpZGUtc3RhdGljIHYxLjcyLjAgLSBJU0MgLS0+CjxzdmcKICBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1rZXktcm91bmQiCiAgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIgogIHdpZHRoPSIyNCIKICBoZWlnaHQ9IjI0IgogIHZpZXdCb3g9IjAgMCAyNCAyNCIKICBmaWxsPSJub25lIgogIHN0cm9rZT0iIzNkNDY2MCIKICBzdHJva2Utd2lkdGg9IjEuNyIKICBzdHJva2UtbGluZWNhcD0icm91bmQiCiAgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIKPgogIDxwYXRoIGQ9Ik0yLjU4NiAxNy40MTRBMiAyIDAgMCAwIDIgMTguODI4VjIxYTEgMSAwIDAgMCAxIDFoM2ExIDEgMCAwIDAgMS0xdi0xYTEgMSAwIDAgMSAxLTFoMWExIDEgMCAwIDAgMS0xdi0xYTEgMSAwIDAgMSAxLTFoLjE3MmEyIDIgMCAwIDAgMS40MTQtLjU4NmwuODE0LS44MTRhNi41IDYuNSAwIDEgMC00LTR6IiAvPgogIDxjaXJjbGUgY3g9IjE2LjUiIGN5PSI3LjUiIHI9Ii41IiBmaWxsPSJjdXJyZW50Q29sb3IiIC8+Cjwvc3ZnPgo=" alt=""></div>
       <div class="name"><span>SPECIAL_CHANGE</span></div><div class="role"><span>Kabid + Admin</span></div>
     </div>
 
@@ -287,7 +287,7 @@ path.aws { stroke: var(--color-ink); stroke-width:1.6; fill:none; }
   </div>
 
   <div class="foot">
-    <span>versi workflow di-pin per submission · tidak ada auto-approve saat SLA lewat</span>
+    <span>versi alur kerja dipatok per pengajuan · tidak ada persetujuan otomatis saat SLA lewat</span>
     <span>dibuat dengan <a href="https://github.com/caru-ini/stack-diagram" target="_blank" rel="noopener">stack-diagram</a></span>
   </div>
 

@@ -72,7 +72,7 @@ frontend/
 
 assets/diagrams/
   gen-schema.py                 # generator diagram skema database
-  schema-db.html / .png         # hasil diagram
+  schema-db.html / .webp        # hasil diagram
 docs/
   schema.md                     # penjelasan database lengkap
   implementation.md             # dokumen ini
@@ -199,7 +199,7 @@ Error konsisten: `{code, message, details, request_id}`.
 - Role efektif diambil dari `positions.role` (fallback `users.role`). Admin dapat mengganti posisi user tanpa mengubah kode workflow; approval berikutnya langsung memakai role baru.
 - Faskes dan user adalah entitas terpisah. User Puskesmas punya `faskes_id`; user Dinas tidak. Admin mengelola keduanya di `/admin`.
 - Password awal pilot: `password123` (bcrypt cost 12). Wajib diganti sebelum produksi.
-- Halaman login menampilkan fungsi aplikasi di kiri dan form login di kanan. Alur empat langkah ditampilkan sebagai satu baris ringkas di kiri (HTML, tanpa gambar) dan tanpa label jabatan. State machine approval lengkap tetap ada di `assets/diagrams/alur-workflow.png` dan ditampilkan di README B.8b.
+- Halaman login menampilkan fungsi aplikasi di kiri dan form login di kanan. Alur empat langkah ditampilkan sebagai satu baris ringkas di kiri (HTML, tanpa gambar) dan tanpa label jabatan. State machine approval lengkap tetap ada di `assets/diagrams/alur-workflow.webp` dan ditampilkan di README B.8b.
 
 ### 4.2 Capaian tahun sebelumnya
 

@@ -109,7 +109,7 @@ STAGE_W = 420
 XS = [30, 490, 950, 1410]
 
 
-MODE_LABEL = {"user": "USER", "system": "SISTEM"}
+MODE_LABEL = {"user": "PENGGUNA", "system": "SISTEM"}
 
 
 def group(x, y, w, h, label, cls="gb", icon=None, modes=()):
@@ -196,26 +196,26 @@ def edge_down(x, y1, y2, label):
 
 
 groups = [
-    group(XS[0], STAGE_TOP, STAGE_W, STAGE_H, "1 · Upload Puskesmas", "ga", "upload", ("user",)),
-    group(XS[1], STAGE_TOP, STAGE_W, STAGE_H, "2 · Validasi & Preview", "gb", "klasifikasi", ("system", "user")),
-    group(XS[2], STAGE_TOP, STAGE_W, STAGE_H, "3 · Workflow 3 Level", "gb", "workflow", ("user", "system")),
+    group(XS[0], STAGE_TOP, STAGE_W, STAGE_H, "1 · Unggah Puskesmas", "ga", "upload", ("user",)),
+    group(XS[1], STAGE_TOP, STAGE_W, STAGE_H, "2 · Validasi & Pratinjau", "gb", "klasifikasi", ("system", "user")),
+    group(XS[2], STAGE_TOP, STAGE_W, STAGE_H, "3 · Alur Kerja 3 Tingkat", "gb", "workflow", ("user", "system")),
     group(XS[3], STAGE_TOP, STAGE_W, STAGE_H, "4 · Kalkulasi IKU", "gb", "calc", ("system",)),
     group(30, 970, 1800, 580, "5 · Dashboard IKU & SPM", "gb", "dash", ("system", "user")),
 ]
 
 nodes = [
-    node(XS[0] + STAGE_W / 2, 142, "Upload BNBA", "Siti · PKM Taliwang", "upload"),
-    node(XS[1] + STAGE_W / 2, 142, "Validasi + Klasifikasi", "sistem → user", "klasifikasi"),
-    node(XS[2] + STAGE_W / 2, 142, "Approval Berjenjang", "user + lock sistem", "workflow"),
+    node(XS[0] + STAGE_W / 2, 142, "Unggah BNBA", "Siti · PKM Taliwang", "upload"),
+    node(XS[1] + STAGE_W / 2, 142, "Validasi + Klasifikasi", "sistem → pengguna", "klasifikasi"),
+    node(XS[2] + STAGE_W / 2, 142, "Persetujuan Berjenjang", "pengguna + kunci sistem", "workflow"),
     node(XS[3] + STAGE_W / 2, 142, "Hitung Nilai IKU", "otomatis · FINAL", "calc"),
-    node(930, 985, "Dashboard SPM", "sistem → user", "dash"),
+    node(930, 985, "Dashboard SPM", "sistem → pengguna", "dash"),
 ]
 
 edges = [
-    edge(XS[0] + STAGE_W, XS[1], 560, "upload"),
-    edge(XS[1] + STAGE_W, XS[2], 560, "submit"),
+    edge(XS[0] + STAGE_W, XS[1], 560, "unggah"),
+    edge(XS[1] + STAGE_W, XS[2], 560, "kirim"),
     edge(XS[2] + STAGE_W, XS[3], 560, "final"),
-    edge_down(XS[3] + STAGE_W / 2, 930, 970, "publish"),
+    edge_down(XS[3] + STAGE_W / 2, 930, 970, "terbitkan"),
 ]
 
 x0 = XS[0] + 15
@@ -224,9 +224,9 @@ x2 = XS[2] + 15
 x3 = XS[3] + 15
 
 panels = []
-panels.append(panel(x0, 270, 390, 112, "File upload", f'''
+panels.append(panel(x0, 270, 390, 112, "Berkas unggahan", f'''
   <div class="big">BNBA_2026-05.xlsx</div>
-  <div class="sub">Mei 2026 · 3 baris · 18 KB<br>uploader: Siti (PKM Taliwang)<br>hash: 9f2c…a71</div>
+  <div class="sub">Mei 2026 · 3 baris · 18 KB<br>pengunggah: Siti (PKM Taliwang)<br>hash: 9f2c…a71</div>
 ''', "upload"))
 file_table = mini(
     ["row", "kode_iku", "indikator", "num", "den", "periode"],
@@ -247,78 +247,78 @@ column_help = mini(
         ["periode", "Mei 2026; mengikat ke master release"],
     ],
 )
-panels.append(panel(x0, 400, 390, 300, "Isi file BNBA", file_table + f'''
+panels.append(panel(x0, 400, 390, 300, "Isi berkas BNBA", file_table + f'''
   <div class="divider"></div>
   <div class="p-title" style="margin-bottom:3px">Arti kolom</div>
   {column_help}
   <div class="divider"></div>
   <div class="sub">R1–R2: IKU anak (leaf), valid.<br>
-  R3: IKU induk (rollup-only) — tidak boleh input langsung.<br>
+  R3: IKU induk (rollup-only) — tidak boleh masuk langsung.<br>
   <b>Kunci:</b> kode_iku + kode_indikator + periode.<br>
   Kode tidak dikenal → karantina, bukan auto-create.</div>
 ''', "laporan"))
 panels.append(panel(x0, 720, 390, 80, "Hasil awal", f'''
   <div>{badge("2 VALID", "b-ok")} {badge("1 PERLU KOREKSI", "b-warn")}</div>
-  <div class="sub" style="margin-top:5px">File tetap tersimpan; belum masuk workflow.</div>
+  <div class="sub" style="margin-top:5px">Berkas tetap tersimpan; belum masuk alur kerja.</div>
 ''', "check"))
-panels.append(panel(x0, 820, 390, 90, "File asli", f'''
-  <div class="sub">Hash + file asli disimpan. Upload ulang<br>dibuat sebagai revisi baru, bukan timpa.</div>
+panels.append(panel(x0, 820, 390, 90, "Berkas asli", f'''
+  <div class="sub">Hash + berkas asli disimpan. Unggah ulang<br>dibuat sebagai revisi baru, bukan timpa.</div>
 ''', "disk"))
 
-panels.append(panel(x1, 270, 390, 142, "State 1 · Halaman hasil (proses)", f'''
+panels.append(panel(x1, 270, 390, 142, "Tahap 1 · Halaman hasil (proses)", f'''
   <div style="display:flex;align-items:center;gap:8px">
     <span class="spin"></span><span class="big" style="font-size:12px">Sedang dikerjakan…</span>
   </div>
-  <div class="sub" style="margin-top:7px">Validasi file ✓ &nbsp; Klasifikasi ✓<br>
-  Simpan sementara ✓ &nbsp; Siapkan preview <span style="color:var(--color-accent)">berjalan</span></div>
+  <div class="sub" style="margin-top:7px">Validasi berkas ✓ &nbsp; Klasifikasi ✓<br>
+  Simpan sementara ✓ &nbsp; Siapkan pratinjau <span style="color:var(--color-accent)">berjalan</span></div>
   <div class="sub">Halaman hasil refresh otomatis (polling 2 dtk).</div>
 ''', "loading"))
-panels.append(panel(x1, 427, 390, 280, "State 2 · Preview — IKU bisa diubah", mini(
-    ["row", "IKU leaf", "nilai", "status"],
+panels.append(panel(x1, 427, 390, 280, "Tahap 2 · Pratinjau — IKU bisa diubah", mini(
+    ["baris", "IKU anak", "nilai", "status"],
     [
-        ["R1", ".01 Ibu Hamil", "450/500", badge("MATCHED", "b-ok")],
-        ["R2", ".02 Ibu Bersalin", "380/400", badge("MATCHED", "b-ok")],
-        ["R3", ".03 Bayi Baru Lahir", "20/20", badge("MATCHED", "b-ok")],
+        ["R1", ".01 Ibu Hamil", "450/500", badge("COCOK", "b-ok")],
+        ["R2", ".02 Ibu Bersalin", "380/400", badge("COCOK", "b-ok")],
+        ["R3", ".03 Bayi Baru Lahir", "20/20", badge("COCOK", "b-ok")],
     ],
 ) + f'''
   <div class="divider"></div>
   <div class="sub">R3 semula terdeteksi IKU induk; dipilih ulang ke <b>.03</b>.<br>
   Nilai 20/20 masuk ke .03. Dropdown hanya berisi<br>
-  IKU leaf yang valid untuk indikator tersebut.</div>
-  <div style="margin-top:5px"><span class="pick">Ubah IKU ▾</span> <span class="sub">hanya saat preview</span></div>
+  IKU anak yang valid untuk indikator tersebut.</div>
+  <div style="margin-top:5px"><span class="pick">Ubah IKU ▾</span> <span class="sub">hanya saat pratinjau</span></div>
   <div class="divider"></div>
-  <div class="sub"><b>Status:</b> MATCHED masuk preview; MISMATCH,<br>
-  AMBIGUOUS, DUPLIKAT → karantina. IKU_ROLLUP_ONLY<br>
-  tidak boleh input langsung.</div>
+  <div class="sub"><b>Status:</b> COCOK masuk pratinjau; TIDAK COCOK,<br>
+  AMBIGU, DUPLIKAT → karantina. IKU_ROLLUP_ONLY<br>
+  tidak boleh masuk langsung.</div>
 ''', "tree"))
 panels.append(panel(x1, 722, 390, 80, "Aksi", f'''
   <div>{badge("SEMUA BARIS VALID", "b-ok")}</div>
-  <div class="sub" style="margin-top:4px">Tombol <b>Kirim</b> aktif setelah tidak ada blocker.</div>
+  <div class="sub" style="margin-top:4px">Tombol <b>Kirim</b> aktif setelah tidak ada penghalang.</div>
 ''', "check"))
-panels.append(panel(x1, 817, 390, 93, "Batas preview", f'''
-  <div class="sub">Ubah IKU hanya di preview. Setelah submit,<br>perubahan mengikuti revisi + approval.</div>
+panels.append(panel(x1, 817, 390, 93, "Batas pratinjau", f'''
+  <div class="sub">Ubah IKU hanya di pratinjau. Setelah dikirim,<br>perubahan mengikuti revisi + persetujuan.</div>
 ''', "warning"))
 
 flow_rows = [
     ("DRAFT_PKM", "Siti · Puskesmas/PJ", "simpan / kirim", badge("TERKIRIM"), "10:02", "VERIFY_DINAS"),
-    ("VERIFY_DINAS", "Rina · Dinas", "approve / return", badge("DISETUJUI", "b-ok"), "10:15", "VALIDATE_KABID"),
-    ("VALIDATE_KABID", "dr. Ahmad · Kabid", "approve / return", badge("FINAL", "b-final"), "10:30", "FINAL · sistem"),
-    ("FINAL", "Sistem", "lock + hitung", badge("TERKUNCI", "b-final"), "10:31", "Kalkulasi IKU"),
+    ("VERIFY_DINAS", "Rina · Dinas", "setujui / revisi", badge("DISETUJUI", "b-ok"), "10:15", "VALIDATE_KABID"),
+    ("VALIDATE_KABID", "dr. Ahmad · Kabid", "setujui / revisi", badge("FINAL", "b-final"), "10:30", "FINAL · sistem"),
+    ("FINAL", "Sistem", "kunci + hitung", badge("TERKUNCI", "b-final"), "10:31", "Kalkulasi IKU"),
 ]
 panels.append(panel(x2, 270, 390, 240, "Alur status & tahap berikutnya", flow_table(flow_rows) + f'''
   <div class="divider"></div>
-  <div class="sub">Urutan = alur normal. Return → kembali ke pengirim<br>
+  <div class="sub">Urutan = alur normal. Revisi → kembali ke pengirim<br>
   dengan catatan wajib. Contoh: R3 dikoreksi ke .03<br>
   sebelum dikirim, lalu disetujui hingga FINAL.</div>
 ''', "workflow"))
-panels.append(panel(x2, 525, 390, 110, "Hasil workflow", f'''
+panels.append(panel(x2, 525, 390, 110, "Hasil alur kerja", f'''
   <div>{badge("FINAL · TERKUNCI", "b-final")}</div>
   <div class="sub" style="margin-top:6px">Setiap aksi menyimpan aktor, waktu, catatan,<br>
   diff baris, dan audit log. Koreksi setelah final<br>
-  hanya lewat <b>special change</b> + dual approval.</div>
+  hanya lewat <b>perubahan khusus</b> + persetujuan ganda.</div>
 ''', "audit"))
 panels.append(panel(x2, 650, 390, 100, "Faktor & narasi (Kabid)", f'''
-  <div>{badge("INPUT KABID", "b-muted")} {badge("PASCA-FINAL", "b-final")}</div>
+  <div>{badge("MASUKAN KABID", "b-muted")} {badge("PASCA-FINAL", "b-final")}</div>
   <div class="sub" style="margin-top:5px">Faktor pendukung/penghambat = analisis kualitatif; bukan TL.<br>
   Diisi Kabid/Sekretaris setelah data final; bukan input angka.<br>
   Tidak mengubah kalkulasi.</div>
@@ -329,7 +329,7 @@ panels.append(panel(x2, 765, 390, 140, "Jika ditolak", f'''
   menjadi revisi baru dengan diff lama vs baru.<br>
   Catatan revisi wajib per baris/field.</div>
   <div class="divider"></div>
-  <div>{badge("SPECIAL CHANGE", "b-muted")} <span class="sub">alasan + dual approval</span></div>
+  <div>{badge("SPECIAL_CHANGE", "b-muted")} <span class="sub">alasan + persetujuan ganda</span></div>
 ''', "kembali"))
 
 panels.append(panel(x3, 270, 390, 120, "Langkah otomatis", f'''
@@ -338,7 +338,7 @@ panels.append(panel(x3, 270, 390, 120, "Langkah otomatis", f'''
     <div class="step"><span class="n">2</span><div>Hitung tiap anak: 450/500, 380/400, 20/20 → 90,00%, 95,00%, 100,00%.</div></div>
     <div class="step"><span class="n">3</span><div>Jumlahkan untuk induk: <b>850/920 × 100 = 92,39%</b>; bukan rata-rata persen.</div></div>
   </div>
-  <div style="margin-top:6px">{badge("TANPA INPUT MANUAL", "b-final")}</div>
+  <div style="margin-top:6px">{badge("TANPA MASUKAN MANUAL", "b-final")}</div>
 ''', "calc"))
 panels.append(panel(x3, 405, 390, 150, "Rincian komponen", mini(
     ["Komponen", "Num / Den", "Capaian"],
@@ -360,7 +360,7 @@ panels.append(panel(x3, 695, 390, 110, "Target & status", f'''
   <div class="sub" style="margin-top:5px">Status dihitung dari target periode; capaian di bawah target ditandai perlu perhatian.</div>
 ''', "target"))
 panels.append(panel(x3, 820, 390, 90, "Yang disimpan", f'''
-  <div>{badge("COMPLETE", "b-ok")} <span class="sub">3/3 komponen final</span></div>
+  <div>{badge("LENGKAP", "b-ok")} <span class="sub">3/3 komponen final</span></div>
   <div class="sub" style="margin-top:5px">Simpan 850/920 + calculation_run_id + source_hash.<br>
   Komponen kurang → PARTIAL, bukan nol.</div>
 ''', "disk"))
@@ -384,7 +384,7 @@ panels.append(panel(45, 1335, 590, 195, "Pohon IKU", f'''
       .01 → SPM 01<br>.02 → SPM 02<br>.03 → SPM 03</div>
     </div>
   </div>
-  <div class="sub" style="margin-top:6px">Nilai final dibaca dari IKU_VALUE; drill-down menuju file.</div>
+  <div class="sub" style="margin-top:6px">Nilai final dibaca dari IKU_VALUE; penelusuran menuju berkas.</div>
 ''', "tree"))
 panels.append(panel(655, 1335, 380, 195, "Metadata dashboard", f'''
   <div class="sub">data version: <b>v2026-05-001</b><br>
@@ -396,17 +396,17 @@ panels.append(panel(655, 1335, 380, 195, "Metadata dashboard", f'''
   indicator_value_id, source_hash, data_version,<br>
   calculation_run_id.</div>
   <div class="sub" style="margin-top:4px">Dashboard membaca nilai materialized,<br>
-  bukan menghitung ulang saat request.</div>
+  bukan menghitung ulang saat permintaan.</div>
 ''', "dash"))
 panels.append(panel(1055, 1335, 380, 195, "Jejak angka", f'''
   <div class="sub">92,39% ← 850/920 ← 3 IKU anak ←<br>
-  file hash 9f2c…a71 ← uploader Siti.</div>
+  hash berkas 9f2c…a71 ← pengunggah Siti.</div>
   <div class="divider"></div>
   <div class="sub"><b>R1</b> .01 450/500 → SPM 01<br>
   <b>R2</b> .02 380/400 → SPM 02<br>
   <b>R3</b> .03 20/20 → SPM 03</div>
   <div class="divider"></div>
-  <div class="sub">Klik baris SPM → drill-down sampai file.</div>
+  <div class="sub">Klik baris SPM → telusuri sampai berkas.</div>
 ''', "audit"))
 panels.append(panel(1455, 1335, 360, 195, "Pimpinan", f'''
   <div>{badge("ARAHAN + TL", "b-final")}</div>
@@ -422,11 +422,11 @@ panels.append(panel(1455, 1335, 360, 195, "Pimpinan", f'''
   <div class="sub" style="margin-top:4px">Ditetapkan pimpinan; ditindaklanjuti<br>
   Kabid/Sekretaris; dipantau.</div>
   <div class="divider"></div>
-  <div class="sub">Klik baris SPM → telusuri sampai file.<br>
-  Publikasi agregasi mengikuti IKU owner.</div>
+  <div class="sub">Klik baris SPM → telusuri sampai berkas.<br>
+  Publikasi agregasi mengikuti pemilik IKU.</div>
 ''', "keputusan"))
 
-# Format dashboard SPM: 12 baris yang dapat ditelusuri sampai file.
+# Format dashboard SPM: 12 baris yang dapat ditelusuri sampai berkas.
 dash_rows = [
     ("01", "Pelayanan Kesehatan Ibu Hamil", "100%", "100%", "ok", "27,3%", "ok", "90,00%", "warn", "R1"),
     ("02", "Pelayanan Kesehatan Ibu Bersalin", "100%", "96%", "warn", "26,2%", "ok", "95,00%", "ok", "R2"),
@@ -469,44 +469,44 @@ dashboard = f'''    <div class="panel" style="left:45px;top:1090px;width:1770px;
             <span class="st bad">●</span> kritis
           </div>
           <div class="divider"></div>
-          <div class="sub"><b>R1/R2/R3</b> = baris file BNBA.<br>
-          Capaian MEI 2026 = hasil kalkulasi IKU leaf.<br>
+          <div class="sub"><b>R1/R2/R3</b> = baris berkas BNBA.<br>
+          Capaian MEI 2026 = hasil kalkulasi IKU anak.<br>
           Capaian 2025/TW1 = baseline dashboard SPM.</div>
         </div>
       </div>
       <div class="sub" style="margin-top:6px"><b>R1</b> .01 450/500 → SPM 01 · <b>R2</b> .02 380/400 → SPM 02 · <b>R3</b> .03 20/20 → SPM 03.
-      Tiga baris terisi; sembilan baris lain mengikuti kontrak yang sama. Klik baris → drill-down ke IKU_VALUE / DETAIL → SUBMISSION_ROW → FILE_OBJECT.</div>
+      Tiga baris terisi; sembilan baris lain mengikuti kontrak yang sama. Klik baris → telusuri ke IKU_VALUE / DETAIL → SUBMISSION_ROW → FILE_OBJECT.</div>
     </div>'''
 
 
 top_strip = f'''    <div class="strip" style="left:30px;top:30px;width:1800px;height:56px;">
       <div class="l"><img src="%%ICON_table%%" class="ic" alt="">
         <div><div class="k">ALUR DATA IKU · MEI 2026</div>
-        <div class="t">PKM Taliwang · 3 baris upload · 3 IKU anak · 1 induk · 3 baris SPM</div></div>
+        <div class="t">PKM Taliwang · 3 baris unggahan · 3 IKU anak · 1 induk · 3 baris SPM</div></div>
       </div>
-      <div class="r">alur proses: upload → validasi → workflow → kalkulasi → dashboard SPM</div>
+      <div class="r">alur proses: unggah → validasi → alur kerja → kalkulasi → dashboard SPM</div>
     </div>'''
 
 lineage = f'''    <div class="panel" style="left:30px;top:1570px;width:1800px;height:200px;">
-      <div class="p-title"><img src="%%ICON_audit%%" alt="">Jejak 3 baris SPM — dari file upload ke dashboard</div>
+      <div class="p-title"><img src="%%ICON_audit%%" alt="">Jejak 3 baris SPM — dari berkas unggahan ke dashboard</div>
       <div class="trace" style="margin-top:3px">
         <div class="line"><span class="tag">SPM 01</span>
-          <span class="box">FILE R1</span><span class="ar">→</span>
-          <span class="box">SUB_ROW R1 · MATCHED</span><span class="ar">→</span>
+          <span class="box">BERKAS R1</span><span class="ar">→</span>
+          <span class="box">SUB_ROW R1 · COCOK</span><span class="ar">→</span>
           <span class="box">IND-001 · 450/500</span><span class="ar">→</span>
           <span class="box">IKU .01 · 90,00%</span><span class="ar">→</span>
           <span class="box hi">SPM 01 · 90,00%</span>
         </div>
         <div class="line"><span class="tag">SPM 02</span>
-          <span class="box">FILE R2</span><span class="ar">→</span>
-          <span class="box">SUB_ROW R2 · MATCHED</span><span class="ar">→</span>
+          <span class="box">BERKAS R2</span><span class="ar">→</span>
+          <span class="box">SUB_ROW R2 · COCOK</span><span class="ar">→</span>
           <span class="box">IND-002 · 380/400</span><span class="ar">→</span>
           <span class="box">IKU .02 · 95,00%</span><span class="ar">→</span>
           <span class="box hi">SPM 02 · 95,00%</span>
         </div>
         <div class="line"><span class="tag">SPM 03</span>
-          <span class="box">FILE R3</span><span class="ar">→</span>
-          <span class="box">SUB_ROW R3 · MATCHED <span class="badge b-warn">EX-INDUK</span></span><span class="ar">→</span>
+          <span class="box">BERKAS R3</span><span class="ar">→</span>
+          <span class="box">SUB_ROW R3 · COCOK <span class="badge b-warn">DARI INDUK</span></span><span class="ar">→</span>
           <span class="box">IND-003 · 20/20</span><span class="ar">→</span>
           <span class="box">IKU .03 · 100,00%</span><span class="ar">→</span>
           <span class="box hi">SPM 03 · 100,00%</span>
@@ -516,7 +516,7 @@ lineage = f'''    <div class="panel" style="left:30px;top:1570px;width:1800px;he
       <div class="sub"><b>Rollup induk:</b> IKU-2026-001 · 92,39% · 850/920 ← .01 450/500 + .02 380/400 + .03 20/20.
       &nbsp; <b>Sumber:</b> FILE_OBJECT 9f2c…a71 → SUBMISSION S-2026-05-001 → REVISION 1.</div>
       <div class="sub"><b>Tabel:</b> SUBMISSION_ROW · INDICATOR_VALUE · IKU_VALUE · IKU_VALUE_DETAIL · AUDIT_LOG &nbsp;·&nbsp;
-      <b>Aktor:</b> uploader Siti · verifikator Rina · Kabid dr. Ahmad.</div>
+      <b>Aktor:</b> pengunggah Siti · verifikator Rina · Kabid dr. Ahmad.</div>
     </div>'''
 
 html_doc = f'''<!DOCTYPE html>
@@ -533,9 +533,9 @@ html_doc = f'''<!DOCTYPE html>
   <header class="head">
     <div>
       <div class="kicker">MATA SIDIK / alur data IKU</div>
-      <h1>Dari Upload BNBA sampai Dashboard IKU</h1>
+      <h1>Dari Unggah BNBA sampai Dashboard IKU</h1>
     </div>
-    <p class="lede">Satu alur utuh: upload 3 baris, klasifikasi ke IKU leaf, koreksi di preview, approval 3 level, kalkulasi induk–anak, dan 3 baris output SPM yang bisa ditelusuri sampai file. Label <b>USER</b>/<b>SISTEM</b> menandai siapa yang mengerjakan tiap tahap.</p>
+    <p class="lede">Satu alur utuh: unggah 3 baris, klasifikasi ke IKU anak, koreksi di pratinjau, persetujuan 3 tingkat, kalkulasi induk–anak, dan 3 baris keluaran SPM yang bisa ditelusuri sampai berkas. Label <b>PENGGUNA</b>/<b>SISTEM</b> menandai siapa yang mengerjakan tiap tahap.</p>
   </header>
 
   <div class="scroller">
@@ -568,12 +568,12 @@ html_doc = f'''<!DOCTYPE html>
   <div class="legend">
     <span><span class="sw"></span>alur data</span>
     <span><span class="sw n dash"></span>koreksi / pengembalian (di luar alur utama)</span>
-    <span><span class="mode user">USER</span> aksi pengguna</span>
+    <span><span class="mode user">PENGGUNA</span> aksi pengguna</span>
     <span><span class="mode system">SISTEM</span> proses otomatis</span>
   </div>
 
   <div class="foot">
-    <span>angka: Mei 2026 · PKM Taliwang · 3 baris SPM yang ditelusuri ke file</span>
+    <span>angka: Mei 2026 · PKM Taliwang · 3 baris SPM yang ditelusuri ke berkas</span>
     <span>icons: Lucide · dibuat dengan <a href="https://github.com/caru-ini/stack-diagram" target="_blank" rel="noopener">stack-diagram</a></span>
   </div>
 

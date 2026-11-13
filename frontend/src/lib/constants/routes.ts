@@ -1,5 +1,6 @@
 export const ROUTES = {
   dashboard: '/',
+  userGuide: '/user-guide',
   upload: '/upload',
   submissions: '/submissions',
   submission: (id: string) => `/submissions/${id}`,

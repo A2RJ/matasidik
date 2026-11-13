@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Regenerate the stack-diagram HTML sources and single PNG exports used by README.md and the docs.
+# Regenerate the stack-diagram HTML sources and single WebP exports used by README.md and the docs.
 #
 # Requires:
-#   - Python 3.9+
+#   - Python 3.9+ dan Pillow (konversi PNG sementara -> WebP lossless)
 #   - stack-diagram clone:  STACK_DIR=/path/to/stack-diagram/skills/stack-diagram
 #   - Node + Playwright:    PW_NODE_PATH=/path/to/node_modules (contains playwright)
 #   - Google Chrome (the renderer uses channel "chrome")
@@ -33,7 +33,7 @@ python3 "$STACK_DIR/scripts/fetch_icons.py" "$ICON_DIR" \
   "calc:lucide/calculator" "check:lucide/circle-check" "loading:lucide/loader-circle" \
   "warning:lucide/triangle-alert" "clock:lucide/clock" "tree:lucide/list-tree" \
   "disk:lucide/hard-drive" "container:lucide/container" "server:lucide/server" \
-  "code:lucide/braces" "arrow:lucide/arrow-right"
+  "code:lucide/braces" "arrow:lucide/arrow-right" "panduan:lucide/book-open"
 
 export STACK_DIAGRAM_TEMPLATE="$STACK_DIR/assets/template.html"
 python3 gen.py
@@ -41,12 +41,24 @@ python3 gen-end-to-end.py
 python3 gen-teknis.py
 python3 gen-schema.py
 python3 gen-login.py
+python3 gen-panduan.py
 
 build_one() {
   local name="$1" width="$2" height="${3:-}"
   python3 "$STACK_DIR/scripts/build.py" "drafts/$name.html" "$ICON_DIR" "$name.html" \
     --fonts "$STACK_DIR/assets/fonts"
-  NODE_PATH="$PW_NODE_PATH" node render.js "$PWD/$name.html" "$PWD/$name.png" "$width" "$height"
+  NODE_PATH="$PW_NODE_PATH" node render.js "$PWD/$name.html" "$PWD/drafts/$name.png" "$width" "$height"
+  python3 to-webp.py "$PWD/drafts/$name.png" "$PWD/$name.webp"
+  rm -f "$PWD/drafts/$name.png"
+}
+
+build_canvas() {
+  local name="$1" width="$2" height="$3"
+  python3 "$STACK_DIR/scripts/build.py" "drafts/$name.html" "$ICON_DIR" "$name.html" \
+    --fonts "$STACK_DIR/assets/fonts"
+  NODE_PATH="$PW_NODE_PATH" node render-canvas.js "$PWD/$name.html" "$PWD/drafts/$name.png" "$width" "$height"
+  python3 to-webp.py "$PWD/drafts/$name.png" "$PWD/$name.webp"
+  rm -f "$PWD/drafts/$name.png"
 }
 
 build_one alur-bisnis 1340
@@ -61,6 +73,10 @@ build_one alur-trace-spm 1860
 build_one arsitektur-aplikasi 1440
 build_one schema-db 1920
 build_one alur-login 1200 220
+build_canvas alur-panduan 1680 440
+
+mkdir -p ../../frontend/static/user-guide
+cp alur-panduan.webp ../../frontend/static/user-guide/alur-panduan.webp
 
 # Normalize generated HTML so trailing whitespace does not leak into diffs.
 python3 - <<'PY'
@@ -73,4 +89,4 @@ for p in sorted(Path('.').glob('*.html')):
         print(f'normalized {p}')
 PY
 
-echo "Done. HTML sources and PNG exports refreshed in $PWD"
+echo "Done. HTML sources and WebP exports refreshed in $PWD"

@@ -49,12 +49,12 @@ COL_HEAD = ["MASTER INTI", "TAKSONOMI & SUBMISSION", "SUBMISSION DETAIL & NILAI"
 
 # (column, type, note)
 TABLES = {
-    "users": (0, "Pengguna, username, password hash, dan posisi struktural.", [
+    "users": (0, "Pengguna, nama pengguna, hash kata sandi, dan posisi struktural.", [
         ("id", "TEXT", "PK"),
         ("nama", "TEXT", "nama tampilan"),
-        ("username", "TEXT", "UNIQUE · login"),
+        ("username", "TEXT", "UNIQUE · masuk"),
         ("password_hash", "TEXT", "bcrypt"),
-        ("role", "TEXT", "role dasar"),
+        ("role", "TEXT", "peran dasar"),
         ("faskes_id", "TEXT", "FK → faskes"),
         ("bidang_id", "TEXT", "FK → bidang"),
         ("position_id", "TEXT", "FK → positions"),
@@ -62,12 +62,12 @@ TABLES = {
         ("aktif", "INTEGER", "soft delete"),
         ("created_at", "TEXT", "RFC3339"),
     ]),
-    "positions": (0, "Jabatan struktural; role efektif user.", [
+    "positions": (0, "Jabatan struktural; peran efektif pengguna.", [
         ("id", "TEXT", "PK"),
         ("kode", "TEXT", "UNIQUE"),
         ("nama", "TEXT", "nama jabatan"),
-        ("role", "TEXT", "role efektif"),
-        ("level", "INTEGER", "level approval"),
+        ("role", "TEXT", "peran efektif"),
+        ("level", "INTEGER", "tingkat persetujuan"),
         ("bidang_id", "TEXT", "FK → bidang"),
         ("faskes_id", "TEXT", "FK → faskes"),
         ("aktif", "INTEGER", ""),
@@ -89,7 +89,7 @@ TABLES = {
         ("level", "TEXT", "desa|kecamatan|kabupaten"),
         ("parent_id", "TEXT", "FK → wilayah"),
     ]),
-    "faskes": (0, "Puskesmas/faskes pengupload.", [
+    "faskes": (0, "Puskesmas/faskes pengunggah.", [
         ("id", "TEXT", "PK"),
         ("kode", "TEXT", "UNIQUE"),
         ("nama", "TEXT", ""),
@@ -105,7 +105,7 @@ TABLES = {
         ("parent_id", "TEXT", "FK → bidang"),
         ("aktif", "INTEGER", "soft delete"),
     ]),
-    "periode": (0, "Bulan pelaporan; mengikat upload.", [
+    "periode": (0, "Bulan pelaporan; mengikat unggahan.", [
         ("id", "TEXT", "PK"),
         ("tahun", "INTEGER", ""),
         ("bulan", "INTEGER", "1–12"),
@@ -113,14 +113,14 @@ TABLES = {
         ("status", "TEXT", "open|locked"),
         ("is_late_allowed", "INTEGER", "late policy"),
     ]),
-    "master_release": (0, "Bundel master per tahun.", [
+    "master_release": (0, "Bundel data induk per tahun.", [
         ("id", "TEXT", "PK"),
         ("tahun", "INTEGER", ""),
         ("status", "TEXT", "draft|published|archived"),
         ("published_at", "TEXT", ""),
         ("published_by", "TEXT", "FK → users"),
     ]),
-    "workflow_version": (0, "Versi workflow yang di-pin ke submission.", [
+    "workflow_version": (0, "Versi alur kerja yang dipatok ke pengajuan.", [
         ("id", "TEXT", "PK"),
         ("kode", "TEXT", "default_3_level"),
         ("version_no", "INTEGER", ""),
@@ -128,7 +128,7 @@ TABLES = {
         ("status", "TEXT", "published"),
         ("published_at", "TEXT", ""),
     ]),
-    "file_object": (0, "Metadata file asli di volume lokal.", [
+    "file_object": (0, "Metadata berkas asli di volume lokal.", [
         ("id", "TEXT", "PK"),
         ("original_name", "TEXT", ""),
         ("sha256", "TEXT", "hash konten"),
@@ -140,7 +140,7 @@ TABLES = {
         ("created_at", "TEXT", ""),
     ]),
 
-    "dashboard_category": (1, "Kategori filter dashboard; CRUD admin.", [
+    "dashboard_category": (1, "Kategori filter dashboard; dikelola administrator.", [
         ("id", "TEXT", "PK"),
         ("kode", "TEXT", "UNIQUE · IKU|IKK|SPM|…"),
         ("nama", "TEXT", ""),
@@ -152,7 +152,7 @@ TABLES = {
         ("created_at", "TEXT", ""),
         ("updated_at", "TEXT", ""),
     ]),
-    "label": (1, "Taksonomi + node IKU; hierarki lewat parent_id.", [
+    "label": (1, "Taksonomi + simpul IKU; hierarki lewat parent_id.", [
         ("id", "TEXT", "PK"),
         ("kode", "TEXT", "UNIQUE per release"),
         ("nama", "TEXT", ""),
@@ -161,7 +161,7 @@ TABLES = {
         ("parent_id", "TEXT", "FK → label"),
         ("master_release_id", "TEXT", "FK → master_release"),
         ("aggregation_method", "TEXT", "RATIO_OF_SUMS|…"),
-        ("allow_direct_input", "INTEGER", "leaf input"),
+        ("allow_direct_input", "INTEGER", "masukan langsung"),
         ("is_rollup_only", "INTEGER", "induk rollup"),
         ("pj_bidang_id", "TEXT", "FK → bidang"),
         ("iku_owner_id", "TEXT", "FK → users"),
@@ -186,7 +186,7 @@ TABLES = {
         ("pj_timker", "TEXT", "nama legacy"),
         ("aktif", "INTEGER", ""),
     ]),
-    "indikator_label": (1, "Many-to-many indikator ↔ label.", [
+    "indikator_label": (1, "Relasi banyak-ke-banyak indikator ↔ label.", [
         ("indikator_id", "TEXT", "PK/FK → indikator"),
         ("label_id", "TEXT", "PK/FK → label"),
         ("bobot", "REAL", "default 1"),
@@ -200,7 +200,7 @@ TABLES = {
         ("bobot", "REAL", ""),
         ("sort", "INTEGER", ""),
     ]),
-    "target": (1, "Target periode/scope; bulanan = tahunan/12.", [
+    "target": (1, "Target periode/cakupan; bulanan = tahunan/12.", [
         ("id", "TEXT", "PK"),
         ("label_id", "TEXT", "FK → label"),
         ("indikator_id", "TEXT", "FK → indikator"),
@@ -233,7 +233,7 @@ TABLES = {
         ("baseline_json", "TEXT", "capaian TW1"),
         ("format_json", "TEXT", "format tampilan"),
     ]),
-    "submission": (1, "Satu pengajuan BNBA; status workflow.", [
+    "submission": (1, "Satu pengajuan BNBA; status alur kerja.", [
         ("id", "TEXT", "PK"),
         ("kode", "TEXT", "UNIQUE · S-2026-05-001"),
         ("tipe", "TEXT", "BNBA"),
@@ -251,7 +251,7 @@ TABLES = {
         ("updated_at", "TEXT", ""),
     ]),
 
-    "submission_revision": (2, "Revisi immutable; file lama tidak ditimpa.", [
+    "submission_revision": (2, "Revisi tidak berubah; berkas lama tidak ditimpa.", [
         ("id", "TEXT", "PK"),
         ("submission_id", "TEXT", "FK → submission"),
         ("revision_no", "INTEGER", "UNIQUE per submission"),
@@ -260,7 +260,7 @@ TABLES = {
         ("created_by", "TEXT", "FK → users"),
         ("created_at", "TEXT", ""),
     ]),
-    "submission_group": (2, "Pecahan approval per pemilik data.", [
+    "submission_group": (2, "Pecahan persetujuan per pemilik data.", [
         ("id", "TEXT", "PK"),
         ("submission_id", "TEXT", "FK → submission"),
         ("owner_bidang_id", "TEXT", "FK → bidang"),
@@ -273,8 +273,8 @@ TABLES = {
         ("submission_id", "TEXT", "FK → submission"),
         ("group_id", "TEXT", "FK → submission_group"),
         ("row_no", "INTEGER", "UNIQUE per submission"),
-        ("kode_iku_raw", "TEXT", "dari file"),
-        ("kode_indikator_raw", "TEXT", "dari file"),
+        ("kode_iku_raw", "TEXT", "dari berkas"),
+        ("kode_indikator_raw", "TEXT", "dari berkas"),
         ("matched_indikator_id", "TEXT", "FK → indikator"),
         ("matched_label_id", "TEXT", "FK → label"),
         ("scope_type", "TEXT", "FASKES|DESA|…"),
@@ -286,18 +286,18 @@ TABLES = {
         ("error_message", "TEXT", "pesan per baris"),
         ("created_at", "TEXT", ""),
     ]),
-    "submission_review": (2, "Keputusan tiap level approval.", [
+    "submission_review": (2, "Keputusan tiap tingkat persetujuan.", [
         ("id", "TEXT", "PK"),
         ("submission_id", "TEXT", "FK → submission"),
         ("group_id", "TEXT", "FK → submission_group"),
         ("step", "TEXT", "VERIFY_DINAS|…"),
         ("reviewer_id", "TEXT", "FK → users"),
         ("action", "TEXT", "submit|approve|return"),
-        ("notes", "TEXT", "wajib saat return"),
+        ("notes", "TEXT", "wajib saat revisi"),
         ("details_json", "TEXT", "diff/komentar"),
         ("created_at", "TEXT", ""),
     ]),
-    "job": (2, "Antrean background SQLite tanpa Redis.", [
+    "job": (2, "Antrean latar belakang SQLite tanpa Redis.", [
         ("id", "TEXT", "PK"),
         ("type", "TEXT", "parse_submission"),
         ("payload_json", "TEXT", "submission_id/file_id"),
@@ -306,7 +306,7 @@ TABLES = {
         ("attempts", "INTEGER", ""),
         ("max_attempts", "INTEGER", "default 5"),
         ("run_after", "TEXT", "backoff"),
-        ("locked_by", "TEXT", "worker id"),
+        ("locked_by", "TEXT", "id worker"),
         ("locked_at", "TEXT", ""),
         ("heartbeat_at", "TEXT", ""),
         ("last_error", "TEXT", ""),
@@ -341,7 +341,7 @@ TABLES = {
         ("finished_at", "TEXT", ""),
         ("error", "TEXT", ""),
     ]),
-    "iku_value": (3, "Nilai IKU materialized per label/periode/scope.", [
+    "iku_value": (3, "Nilai IKU tersimpan per label/periode/cakupan.", [
         ("id", "TEXT", "PK"),
         ("label_id", "TEXT", "FK → label"),
         ("periode_id", "TEXT", "FK → periode"),
@@ -353,12 +353,12 @@ TABLES = {
         ("status", "TEXT", "COMPLETE|PARTIAL|NO_DATA|STALE"),
         ("formula_version", "TEXT", "v1"),
         ("calculation_run_id", "TEXT", "FK → calculation_run"),
-        ("source_hash", "TEXT", "hash file sumber"),
+        ("source_hash", "TEXT", "hash berkas sumber"),
         ("data_version", "TEXT", "v2026-05-xxxx"),
         ("updated_at", "TEXT", ""),
         ("UNIQUE", "—", "label+periode+scope"),
     ]),
-    "iku_value_detail": (3, "Provenance komponen angka induk.", [
+    "iku_value_detail": (3, "Jejak angka komponen induk.", [
         ("id", "TEXT", "PK"),
         ("iku_value_id", "TEXT", "FK → iku_value"),
         ("component_type", "TEXT", "CHILD_IKU|INDIKATOR"),
@@ -401,21 +401,21 @@ TABLES = {
         ("after_json", "TEXT", "diff"),
         ("reason", "TEXT", ""),
         ("request_id", "TEXT", "korelasi log"),
-        ("impersonator_id", "TEXT", "FK → users · actingAs"),
+        ("impersonator_id", "TEXT", "FK → users · bertindak sebagai"),
         ("created_at", "TEXT", ""),
     ]),
 }
 
 RELATIONS = [
     ("positions", "users", "position_id"),
-    ("users", "auth_session", "refresh"),
+    ("users", "auth_session", "segarkan"),
     ("faskes", "submission", "faskes_id"),
     ("periode", "submission", "periode_id"),
     ("file_object", "submission", "file_id"),
     ("master_release", "label", "release"),
     ("dashboard_category", "label", "kategori"),
     ("bidang", "bidang", "parent"),
-    ("bidang", "label", "owner"),
+    ("bidang", "label", "pemilik"),
     ("bidang", "indikator", "PJ"),
     ("label", "label", "parent"),
     ("indikator", "indikator_label", "label"),
@@ -423,7 +423,7 @@ RELATIONS = [
     ("label", "iku_komponen", "parent"),
     ("label", "capaian_tahunan", "capaian"),
     ("indikator", "capaian_tahunan", "capaian"),
-    ("users", "capaian_tahunan", "update"),
+    ("users", "capaian_tahunan", "perbarui"),
     ("label", "dashboard_row", "iku"),
     ("submission", "submission_row", "baris"),
     ("submission", "submission_review", "review"),
@@ -543,10 +543,10 @@ html_doc = f'''<!DOCTYPE html>
   </div>
   <div class="legend">
     <span><span class="sw"></span>relasi kunci</span>
-    <span>SQLite pilot · repository pattern · siap migrasi PostgreSQL</span>
+    <span>SQLite pilot · pola repositori · siap migrasi PostgreSQL</span>
   </div>
   <div class="foot">
-    <span>schema.md · 31 tabel · 1 file SQLite + volume file lokal</span>
+    <span>schema.md · 31 tabel · 1 berkas SQLite + volume berkas lokal</span>
     <span>icons: Lucide · dibuat dengan <a href="https://github.com/caru-ini/stack-diagram" target="_blank" rel="noopener">stack-diagram</a></span>
   </div>
 </div>

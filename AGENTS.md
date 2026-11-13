@@ -29,7 +29,7 @@ Jangan mengandalkan ringkasan sesi sebelumnya, ingatan model, atau potongan file
 - **Jangan mengklaim sudah diuji/diverifikasi** tanpa benar-benar menjalankan pemeriksaan yang relevan.
 - **Jangan menyembunyikan error atau konflik.** Laporkan kegagalan, keterbatasan, dan ketidakpastian apa adanya.
 - **Jangan memakai Mermaid, Graphviz, atau ASCII art untuk visualisasi alur/flow.** Semua flow wajib memakai stack-diagram sesuai `docs/rules.md`.
-- **Jangan mengedit HTML/PNG diagram secara manual.** Edit generator (`gen.py`, `gen-end-to-end.py`, `gen-teknis.py`), lalu rebuild.
+- **Jangan mengedit HTML/WebP diagram secara manual.** Edit generator (`gen.py`, `gen-end-to-end.py`, `gen-teknis.py`), lalu rebuild.
 - **Jangan mengarang API atau skema database.** Ikuti kontrak yang ada di `docs/04-arsitektur-iku.md`; jika butuh yang baru, ajukan usulan dan minta persetujuan.
 
 ## 3. ASK — kapan wajib bertanya
@@ -91,7 +91,7 @@ Ini ringkasan; detail dan rasional ada di [`docs/rules.md`](docs/rules.md).
 - **Kalkulasi:** `target_bulanan = target_tahunan / 12`; `capaian = realisasi / target × 100`; simpan numerator/denominator; IKU induk memakai `RATIO_OF_SUMS` dari komponen eksplisit, **bukan rata-rata persentase**; provenance di `IKU_VALUE_DETAIL`; komponen hilang = `PARTIAL`, bukan nol.
 - **Traceability:** `DASHBOARD_ROW → IKU_VALUE → IKU_VALUE_DETAIL → INDICATOR_VALUE → SUBMISSION_ROW → SUBMISSION_REVISION → SUBMISSION → FILE_OBJECT`; setiap baris SPM membawa `iku_value_id`, `indicator_value_id`, `source_hash`, `data_version`, dan `calculation_run_id`.
 - **Dokumentasi:** `README.md` wajib di root; dokumen proyek lain di `docs/`; README memuat bagian Dinas dan Developer; semua tautan dan gambar harus valid.
-- **Diagram:** semua flow memakai stack-diagram; sumber HTML + PNG; caption dan alt text; jangan mengedit hasil render manual.
+- **Diagram:** semua flow memakai stack-diagram; sumber HTML + WebP; caption dan alt text; jangan mengedit hasil render manual.
 - **Git:** jangan commit sebelum diminta; jangan campur perubahan yang tidak terkait.
 
 ## 7. Definition of done

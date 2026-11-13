@@ -8,11 +8,11 @@
 > Disusun dari ekstraksi `Proses Bisnis Mata Sidik.xlsx`:
 > - [`docs/01-gambaran-umum.md`](docs/01-gambaran-umum.md) — Sheet Gambaran Umum (A1:F52)
 > - [`docs/02-daftar-indikator-kinerja.md`](docs/02-daftar-indikator-kinerja.md) — Sheet Daftar Indikator Kinerja (A1:H62, 58 baris data)
-> - [`docs/03-contoh-data.md`](docs/03-contoh-data.md) — Sheet Contoh Data (A1:V39) + `assets/output-dashboard-spm.png`
+> - [`docs/03-contoh-data.md`](docs/03-contoh-data.md) — Sheet Contoh Data (A1:V39) + `assets/output-dashboard-spm.webp`
 > - [`docs/04-arsitektur-iku.md`](docs/04-arsitektur-iku.md) — rancangan IKU dinamis, upload terklasifikasi, workflow, dan kalkulasi
 > - [`docs/rules.md`](docs/rules.md) — aturan proyek yang mengikat; jangan dilanggar tanpa keputusan eksplisit
 >
-> Diagram alur, status, peran, model data, dan arsitektur IKU dibuat dengan [stack-diagram](https://github.com/caru-ini/stack-diagram). Sumber HTML + skrip regenerasi ada di [`assets/diagrams/README.md`](assets/diagrams/README.md).
+> Diagram alur, status, peran, model data, dan arsitektur IKU dibuat dengan stack-diagram. Sumber HTML + skrip regenerasi ada di [`assets/diagrams/README.md`](assets/diagrams/README.md).
 
 ---
 
@@ -21,6 +21,7 @@
 - [Peta dokumentasi](#peta-dokumentasi)
 - [Bagian A — Untuk Dinas](#bagian-a--untuk-dinas-pengguna-bisnis)
   - [A.7 IKU dinamis: dari upload ke dashboard](#a7-iku-dinamis-dari-upload-ke-dashboard)
+  - [A.8 Panduan penggunaan per peran di aplikasi](#a8-panduan-penggunaan-per-peran-di-aplikasi)
 - [Bagian B — Untuk Developer](#bagian-b--untuk-developer-pelaksana-teknis)
   - [B.8 Arsitektur IKU dinamis (Go Gin + Svelte)](#b8-arsitektur-iku-dinamis-go-gin--svelte)
   - [B.10 Menjalankan implementasi pilot](#b10-menjalankan-implementasi-pilot)
@@ -76,9 +77,9 @@ Ruang lingkup (`docs/01-gambaran-umum.md:37-41`):
 
 ## A.2 Alur bisnis + peran tiap tahap
 
-<img src="assets/diagrams/alur-bisnis.png" alt="Alur bisnis MATA SIDIK enam tahap: input Puskesmas, verifikasi Dinas, validasi Kabid/Sekretaris, pengolahan sistem + faktor, dashboard, keputusan Kepala Dinas + TL, dengan jalur pengembalian serta monitoring faktor dan TL.">
+<img src="assets/diagrams/alur-bisnis.webp" alt="Alur bisnis MATA SIDIK enam tahap: input Puskesmas, verifikasi Dinas, validasi Kabid/Sekretaris, pengolahan sistem + faktor, dashboard, keputusan Kepala Dinas + TL, dengan jalur pengembalian serta monitoring faktor dan TL.">
 
-*Gambar A.2 — Enam tahap proses bisnis dari input Puskesmas sampai keputusan pimpinan. Garis putus-putus adalah jalur pengembalian serta monitoring faktor dan TL. Diagram dibuat dengan [stack-diagram](https://github.com/caru-ini/stack-diagram); sumber HTML ada di [`assets/diagrams/alur-bisnis.html`](assets/diagrams/alur-bisnis.html).*
+*Gambar A.2 — Enam tahap proses bisnis dari input Puskesmas sampai keputusan pimpinan. Garis putus-putus adalah jalur pengembalian serta monitoring faktor dan TL. Diagram dibuat dengan stack-diagram; sumber HTML ada di [`assets/diagrams/alur-bisnis.html`](assets/diagrams/alur-bisnis.html).*
 
 ### Tabel peran × aksi × data
 
@@ -95,7 +96,7 @@ Ruang lingkup (`docs/01-gambaran-umum.md:37-41`):
 
 Siklus status data — lima status inti dengan dua jalur pengembalian eksplisit:
 
-<img src="assets/diagrams/status-data.png" alt="Siklus status data MATA SIDIK: Draf, Dikirim, Diverifikasi, Final, dan Diubah Khusus, dengan jalur pengembalian ke pengirim dan ke verifikator serta perubahan pasca-final lewat kewenangan khusus.">
+<img src="assets/diagrams/status-data.webp" alt="Siklus status data MATA SIDIK: Draf, Dikirim, Diverifikasi, Final, dan Diubah Khusus, dengan jalur pengembalian ke pengirim dan ke verifikator serta perubahan pasca-final lewat kewenangan khusus.">
 
 *Gambar A.2b — Dua status pengembalian (`dikembalikan_petugas`, `dikembalikan_verifikator`) ditampilkan sebagai jalur panah agar alur utama tetap ringkas; enum lengkap ada di [B.5](#b5-skema-master-indikator-dinamis--raci-per-label). Sumber HTML: [`assets/diagrams/status-data.html`](assets/diagrams/status-data.html).*
 
@@ -105,7 +106,7 @@ Jejak audit wajib catat (sumber `docs/01-gambaran-umum.md:61`): **siapa** mengir
 
 Contoh `docs/03-contoh-data.md:19-30` — target 100%, capaian 2025, TW1 2026, Mei 2026 untuk 12 indikator (Ibu Hamil s.d. Risiko HIV). Detail angka absolut (`docs/03-contoh-data.md:40`): Target 2026 = 2000, Target Bulanan = 166,67 (`2000/12`), Januari = 155, Februari = 120.
 
-![Output Dashboard SPM](assets/output-dashboard-spm.png)
+![Output Dashboard SPM](assets/output-dashboard-spm.webp)
 
 Input Puskesmas (`docs/03-contoh-data.md:61`): yang diinput adalah data ibu hamil dilayani sesuai standar + file BNBA; sistem diharapkan memetakan sebaran per desa/puskesmas/kecamatan dan menandai wilayah yang banyak tidak terlayani standar.
 
@@ -136,7 +137,7 @@ Konsekuensi praktis bagi Dinas: tiap tambah indikator baru wajib melengkapi 6 fi
 
 Katalog indikator tidak lagi diperlakukan sebagai daftar datar. IKU menjadi **label many-to-many** yang dapat memiliki anak dinamis, dan nilai IKU induk dihitung dari komponen yang eksplisit — bukan sekadar merata-ratakan persentase anak.
 
-<img src="assets/diagrams/alur-data-iku.png" alt="Alur data IKU end-to-end: upload BNBA oleh Puskesmas, klasifikasi tiga baris ke IKU leaf .01/.02/.03, preview dengan akses ubah IKU, approval tiga level, kalkulasi IKU anak dan induk, dashboard yang bisa ditelusuri, serta 3 baris output dashboard SPM yang terhubung ke file.">
+<img src="assets/diagrams/alur-data-iku.webp" alt="Alur data IKU end-to-end: upload BNBA oleh Puskesmas, klasifikasi tiga baris ke IKU leaf .01/.02/.03, preview dengan akses ubah IKU, approval tiga level, kalkulasi IKU anak dan induk, dashboard yang bisa ditelusuri, serta 3 baris output dashboard SPM yang terhubung ke file.">
 
 *Gambar A.7 — Satu alur utuh: upload 3 baris, koreksi IKU di preview, approval Puskesmas → Dinas → Kabid, kalkulasi induk–anak, dan dashboard. Sumber HTML: [`assets/diagrams/alur-data-iku.html`](assets/diagrams/alur-data-iku.html). Rancangan lengkap: [`docs/04-arsitektur-iku.md`](docs/04-arsitektur-iku.md).*
 
@@ -175,6 +176,21 @@ Baris R3 pada contoh semula memakai kode IKU induk (rollup-only). Di preview, ba
 
 > Detail teknis (skema, job background, auth, kalkulasi, gap/edge case, roadmap) ada di [`docs/04-arsitektur-iku.md`](docs/04-arsitektur-iku.md).
 
+## A.8 Panduan penggunaan per peran di aplikasi
+
+Halaman **`/user-guide`** adalah panduan in-app yang dapat dibuka dari **dashboard** dan **halaman login** (tanpa login). Selain alur per peran, halaman ini memuat **katalog menu/fitur**, **hak akses per menu**, serta **keterkaitan fitur/menu/flow/data**. Modul per peran/level:
+
+| Modul | Role | Titik mulai |
+| --- | --- | --- |
+| Puskesmas & PJ Program | `pkm_operator`, `pkm_pj` | Input BNBA |
+| Verifikator Dinas | `dinas_verifier` | Verifikasi |
+| Kabid / Sekretaris | `kabid`, `sekretaris` | Validasi final |
+| Pimpinan | `pimpinan` | Dashboard SPM |
+
+Setiap modul memakai **satu WebP alur lengkap** yang sama (`assets/diagrams/alur-panduan.webp`, dibuat dengan stack-diagram) dengan **kotak hijau** pada titik mulai role. Keterkaitan antarrole dijelaskan pada tabel di modul terkait. Screenshot form/tabel diambil dari aplikasi pilot; tabel tetap ditampilkan penuh dan aksi role ditandai kotak hijau. Setiap screenshot dapat di-zoom dan dibuka layar penuh.
+
+Role `iku_owner` sudah ada di rancangan domain, tetapi belum memiliki akun/layar khusus pada pilot; hal ini dicatat di halaman panduan, bukan diisi dengan alur yang belum ada.
+
 ---
 
 # Bagian B — Untuk Developer (Pelaksana Teknis)
@@ -193,17 +209,17 @@ Baris R3 pada contoh semula memakai kode IKU induk (rollup-only). Di preview, ba
 
 ## B.2 Alur peran (swimlane)
 
-<img src="assets/diagrams/alur-peran.png" alt="Swimlane lima peran MATA SIDIK: Puskesmas/PJ Program, Verifikator Dinas, Kabid/Sekretaris, Sistem, dan Pimpinan, lengkap dengan handoff utama, pengembalian, permintaan isi faktor, serta arahan dan pantau TL.">
+<img src="assets/diagrams/alur-peran.webp" alt="Swimlane lima peran MATA SIDIK: Puskesmas/PJ Program, Verifikator Dinas, Kabid/Sekretaris, Sistem, dan Pimpinan, lengkap dengan handoff utama, pengembalian, permintaan isi faktor, serta arahan dan pantau TL.">
 
 *Gambar B.2 — Handoff antarperan. Alur utama: input + BNBA → verifikasi → validasi final → olah data → dashboard → arahan pimpinan. Garis putus-putus menunjukkan pengembalian data, permintaan isi faktor, serta arahan dan TL. Faktor diisi Kabid/Sekretaris; TL ditetapkan pimpinan, ditindaklanjuti Kabid/Sekretaris, dan dipantau. Sumber HTML: [`assets/diagrams/alur-peran.html`](assets/diagrams/alur-peran.html).*
 
 ## B.3 Model data (usulan awal)
 
-<img src="assets/diagrams/model-data.png" alt="Model data MATA SIDIK: entitas master (wilayah, faskes, user, role, periode, indikator) dipisahkan dari transaksi (laporan, target, faktor, audit log, TL), dengan relasi 1:N.">
+<img src="assets/diagrams/model-data.webp" alt="Model data MATA SIDIK: entitas master (wilayah, faskes, user, role, periode, indikator) dipisahkan dari transaksi (laporan, target, faktor, audit log, TL), dengan relasi 1:N.">
 
 *Gambar B.3 — Pemisahan master/referensi dari transaksi, faktor, audit, dan TL. Sumber HTML: [`assets/diagrams/model-data.html`](assets/diagrams/model-data.html).*
 
-Skema database lengkap (31 tabel, kolom, relasi, index, enum, seed, dan catatan migrasi) ada di [`docs/schema.md`](docs/schema.md); diagram katalognya ada di [`assets/diagrams/schema-db.png`](assets/diagrams/schema-db.png).
+Skema database lengkap (31 tabel, kolom, relasi, index, enum, seed, dan catatan migrasi) ada di [`docs/schema.md`](docs/schema.md); diagram katalognya ada di [`assets/diagrams/schema-db.webp`](assets/diagrams/schema-db.webp).
 
 ### Field kunci per entitas
 
@@ -293,7 +309,7 @@ Rancangan lengkap ada di [`docs/04-arsitektur-iku.md`](docs/04-arsitektur-iku.md
 
 **Bentuk:** modular monolith + worker, satu image dengan dua command (`api`, `worker`). Tidak ada Redis dan tidak ada object storage.
 
-<img src="assets/diagrams/arsitektur-aplikasi.png" alt="Arsitektur aplikasi MATA SIDIK: Svelte 5 di browser, reverse proxy, Gin API dan Go worker dalam satu image, PostgreSQL 16 sebagai data dan job queue, serta volume lokal untuk file.">
+<img src="assets/diagrams/arsitektur-aplikasi.webp" alt="Arsitektur aplikasi MATA SIDIK: Svelte 5 di browser, reverse proxy, Gin API dan Go worker dalam satu image, PostgreSQL 16 sebagai data dan job queue, serta volume lokal untuk file.">
 
 *Gambar B.8 — Satu host Docker Compose: `api` dan `worker` memakai image yang sama, PostgreSQL menyimpan data + job queue + outbox, dan file asli berada di volume lokal. Sumber HTML: [`assets/diagrams/arsitektur-aplikasi.html`](assets/diagrams/arsitektur-aplikasi.html); rancangan lengkap di [`docs/04-arsitektur-iku.md` §6](docs/04-arsitektur-iku.md#6-arsitektur-aplikasi).*
 
@@ -316,7 +332,7 @@ Rancangan lengkap ada di [`docs/04-arsitektur-iku.md`](docs/04-arsitektur-iku.md
 
 **Workflow:** default `DRAFT_PKM → VERIFY_DINAS → VALIDATE_KABID → FINAL`, dengan `SUBMISSION_GROUP` per pemilik data untuk submission lintas bidang. Versi workflow di-pin per submission. Catatan wajib saat return dan final; tidak ada auto-approve.
 
-<img src="assets/diagrams/alur-workflow.png" alt="Workflow approval berjenjang MATA SIDIK: DRAFT_PKM submit ke VERIFY_DINAS, approve ke VALIDATE_KABID, approve ke FINAL, dengan jalur return ke pengirim dan verifikator serta SPECIAL_CHANGE pasca-final.">
+<img src="assets/diagrams/alur-workflow.webp" alt="Workflow approval berjenjang MATA SIDIK: DRAFT_PKM submit ke VERIFY_DINAS, approve ke VALIDATE_KABID, approve ke FINAL, dengan jalur return ke pengirim dan verifikator serta SPECIAL_CHANGE pasca-final.">
 
 *Gambar B.8b — State machine approval lengkap: tiga level approval, jalur return, dan `SPECIAL_CHANGE` pasca-final. Sumber HTML: [`assets/diagrams/alur-workflow.html`](assets/diagrams/alur-workflow.html); generator: [`assets/diagrams/gen-teknis.py`](assets/diagrams/gen-teknis.py).*
 
@@ -330,9 +346,9 @@ Gap/edge case P0–P2, acceptance criteria, dan roadmap ada di [`docs/04-arsitek
 
 - Bisnis mentah: `docs/01-gambaran-umum.md:100-151` (tabel mentah 50 baris).
 - Katalog: `docs/02-daftar-indikator-kinerja.md:15-74` (jangan hapus kolom kosong — itu penanda PR).
-- Contoh hitung + gambar: `docs/03-contoh-data.md:17-51`, `assets/output-dashboard-spm.png`.
+- Contoh hitung + gambar: `docs/03-contoh-data.md:17-51`, `assets/output-dashboard-spm.webp`.
 - Aturan proyek (mengikat): `docs/rules.md`.
-- Diagram (sumber HTML, PNG, cara regenerasi): `assets/diagrams/README.md`.
+- Diagram (sumber HTML, WebP, cara regenerasi): `assets/diagrams/README.md`.
 - Skema database: [`docs/schema.md`](docs/schema.md).
 - Struktur & cara run implementasi: [`docs/implementation.md`](docs/implementation.md).
 

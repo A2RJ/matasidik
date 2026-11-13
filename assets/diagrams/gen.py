@@ -117,7 +117,7 @@ edges = [
     edge("M1036 190 H1184", "e", "arahan", 1110, 182),
     edge("M560 280 V370 H340 V280", "n dash", "kembalikan", 450, 362),
     edge("M340 280 V430 H120 V280", "n dash", "revisi", 230, 422),
-    edge("M1220 280 V500 H110 V280", "n dash", "monitoring TL + faktor", 665, 492),
+    edge("M1220 280 V500 H110 V280", "n dash", "pemantauan TL + faktor", 665, 492),
 ]
 legend = [("", "alur utama"), ("n dash", "pengembalian / siklus")]
 open(f"{OUT}/alur-bisnis.html", "w").write(page(
@@ -134,7 +134,7 @@ groups = [
 nodes = [
     node(140, 150, "Draf", "baru diinput", "draf"),
     node(380, 150, "Dikirim", "menunggu verifikasi", "kirim"),
-    node(620, 150, "Diverifikasi", "lolos cek Dinas", "verif"),
+    node(620, 150, "Diverifikasi", "lolos pemeriksaan Dinas", "verif"),
     node(860, 150, "Final", "terkunci", "final"),
     node(1100, 150, "Diubah Khusus", "kewenangan + audit", "ubah"),
 ]
@@ -145,12 +145,12 @@ edges = [
     edge("M896 168 H1064", "e", "kewenangan khusus", 980, 160),
     edge("M1064 192 H896", "n dash", "versi baru", 980, 204),
     edge("M380 256 V340 H140 V256", "n dash", "kembalikan", 260, 332),
-    edge("M620 256 V400 H392 V256", "n dash", "perlu cek", 506, 392),
+    edge("M620 256 V400 H392 V256", "n dash", "perlu diperiksa", 506, 392),
 ]
 legend = [("", "alur status"), ("n dash", "pengembalian / versi")]
 open(f"{OUT}/status-data.html", "w").write(page(
     "Siklus Status Data",
-    "MATA SIDIK / workflow",
+    "MATA SIDIK / alur kerja",
     "Tujuh status dengan jalur pengembalian yang eksplisit; data final hanya berubah lewat kewenangan khusus dan jejak audit.",
     w, h, groups, nodes, edges, legend))
 
@@ -168,7 +168,7 @@ nodes = [
     node(140, 170, "Input + BNBA", "Puskesmas", "pkm"),
     node(400, 170, "Verifikasi", "petugas dinas", "verif"),
     node(660, 170, "Validasi final", "kabid / sekretaris", "valid"),
-    node(920, 170, "Olah data", "engine + agregasi", "engine"),
+    node(920, 170, "Olah data", "sistem + agregasi", "engine"),
     node(1180, 170, "Dashboard", "capaian + tren", "dash"),
     # row 2 — pengembalian & arahan
     node(140, 390, "Perbaiki data", "revisi", "perbaiki"),
@@ -179,7 +179,7 @@ nodes = [
     node(140, 610, "Kirim ulang", "data revisi", "kirim"),
     node(400, 610, "Setujui", "verifikasi ulang", "valid"),
     node(660, 610, "Isi faktor", "pendukung / penghambat", "faktor"),
-    node(920, 610, "Update dashboard", "faktor + capaian", "dash"),
+    node(920, 610, "Perbarui dashboard", "faktor + capaian", "dash"),
     node(1180, 610, "Pantau TL", "status penyelesaian", "tl"),
 ]
 edges = [
@@ -190,8 +190,8 @@ edges = [
     edge("M956 200 H1144", "e", "sajikan", 1050, 192),
     # cabang pengembalian
     edge("M400 276 V384", "n dash", "jika belum", 410, 330),
-    edge("M660 276 V384", "n dash", "jika perlu cek", 670, 330),
-    edge("M660 420 H436", "n dash", "perlu cek", 548, 412),
+    edge("M660 276 V384", "n dash", "jika perlu diperiksa", 670, 330),
+    edge("M660 420 H436", "n dash", "perlu diperiksa", 548, 412),
     edge("M400 420 H176", "n dash", "revisi", 288, 412),
     # row 3
     edge("M176 640 H364", "e", "kirim ulang", 270, 632),
@@ -207,7 +207,7 @@ edges = [
 legend = [("", "alur utama"), ("n dash", "pengembalian / arahan / TL")]
 open(f"{OUT}/alur-peran.html", "w").write(page(
     "Alur Peran MATA SIDIK",
-    "MATA SIDIK / handoff",
+    "MATA SIDIK / serah terima",
     "Swimlane lima peran: siapa mengirim, memeriksa, memvalidasi, mengolah, mengisi faktor, serta menetapkan dan memantau TL.",
     w, h, groups, nodes, edges, legend))
 
@@ -224,12 +224,12 @@ nodes = [
     node(550, 170, "USER", "pengguna", "user"),
     node(760, 170, "ROLE", "hak akses", "role"),
     node(970, 170, "PERIODE", "bulan / tahun", "periode"),
-    node(1180, 170, "INDIKATOR", "master versi", "table"),
+    node(1180, 170, "INDIKATOR", "versi master", "table"),
     # transaksi
     node(130, 550, "TINDAK_LANJUT", "masalah → rekomendasi → PJ → status", "tl", width=170),
     node(340, 550, "FAKTOR", "kualitatif · pendukung/penghambat", "faktor", width=170),
     node(550, 550, "LAPORAN", "nilai per indikator", "laporan"),
-    node(760, 550, "AUDIT_LOG", "who / when / what", "audit"),
+    node(760, 550, "AUDIT_LOG", "siapa / kapan / apa", "audit"),
     node(1180, 550, "TARGET", "tahunan / bulanan", "target"),
 ]
 edges = [
@@ -243,7 +243,7 @@ edges = [
     # faskes -> laporan
     edge("M340 276 V520 H575 V544", "n", "1:N", 460, 512),
     # user -> laporan
-    edge("M540 276 V544", "n", "input", 548, 350, anchor="start"),
+    edge("M540 276 V544", "n",  "masukan", 548, 350, anchor="start"),
     # periode -> laporan
     edge("M970 276 V480 H525 V544", "n", "periode", 785, 472),
     # laporan relations
@@ -254,7 +254,7 @@ edges = [
 legend = [("", "relasi utama"), ("n", "relasi pendukung 1:N")]
 open(f"{OUT}/model-data.html", "w").write(page(
     "Model Data MATA SIDIK",
-    "MATA SIDIK / data model",
+    "MATA SIDIK / model data",
     "Entitas master dipisahkan dari transaksi; setiap laporan menyimpan target, faktor kualitatif, audit, dan TL ber-PJ.",
     w, h, groups, nodes, edges, legend))
 

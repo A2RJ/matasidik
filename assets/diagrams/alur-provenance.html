@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Provenance Nilai IKU Induk</title>
+<title>Jejak Angka Nilai IKU Induk</title>
 <style>
 /* engineered-paper theme (cool near-white, one accent, mono labels)
  * All colors/fonts flow through the :root tokens — tweak tokens, not scattered values. */
@@ -218,7 +218,7 @@ path.aws { stroke: var(--color-ink); stroke-width:1.6; fill:none; }
   <header class="head">
     <div>
       <div class="kicker">MATA SIDIK / kalkulasi</div>
-      <h1>Provenance Nilai IKU Induk</h1>
+      <h1>Jejak Angka Nilai IKU Induk</h1>
     </div>
     <p class="lede">Nilai induk dihitung dari komponen eksplisit; setiap anak menyumbang numerator dan denominator, bukan rata-rata persentase.</p>
   </header>
@@ -235,11 +235,11 @@ path.aws { stroke: var(--color-ink); stroke-width:1.6; fill:none; }
         </marker>
       </defs>
       <path class="n" d="M600 240 V300 H255 V344" marker-end="url(#ar)"/>
-      <text class="el" x="420" y="292" text-anchor="middle">CHILD_IKU · bobot 1</text>
+      <text class="el" x="420" y="292" text-anchor="middle">IKU anak · bobot 1</text>
       <path class="n" d="M700 240 V344" marker-end="url(#ar)"/>
       <text class="el" x="708" y="300" text-anchor="start">bobot 1</text>
       <path class="n" d="M800 240 V300 H1145 V344" marker-end="url(#ar)"/>
-      <text class="el" x="975" y="292" text-anchor="middle">CHILD_IKU · bobot 1</text>
+      <text class="el" x="975" y="292" text-anchor="middle">IKU anak · bobot 1</text>
     </svg>
 
 
@@ -248,8 +248,8 @@ path.aws { stroke: var(--color-ink); stroke-width:1.6; fill:none; }
       <div class="label">IKU-2026-001 · INDUK</div>
       <div class="result">92,39%</div>
       <div class="formula">850 / 920 · target 100%</div>
-      <div class="sub">COMPLETE · gap -7,61 pp</div>
-      <div style="margin-top:5px"><span class="badge b-warn">PERHATIAN</span> <span class="badge b-final">3 CHILD_IKU</span></div>
+      <div class="sub">LENGKAP · gap -7,61 pp</div>
+      <div style="margin-top:5px"><span class="badge b-warn">PERHATIAN</span> <span class="badge b-final">3 IKU ANAK</span></div>
     </div>
     <div class="calc " style="left:90px;top:350px;width:330px;height:130px;">
       <div class="label">IKU-2026-001.01 · Ibu Hamil</div>
@@ -263,19 +263,19 @@ path.aws { stroke: var(--color-ink); stroke-width:1.6; fill:none; }
       <div class="result">95,00%</div>
       <div class="formula">380 / 400 · bobot 1</div>
       <div class="sub">SPM 02 · sesuai target</div>
-      <div style="margin-top:5px"><span class="badge b-ok">OK</span></div>
+      <div style="margin-top:5px"><span class="badge b-ok">SESUAI</span></div>
     </div>
     <div class="calc " style="left:980px;top:350px;width:330px;height:130px;">
       <div class="label">IKU-2026-001.03 · Bayi Baru Lahir</div>
       <div class="result">100,00%</div>
       <div class="formula">20 / 20 · bobot 1</div>
       <div class="sub">SPM 03 · setelah reklasifikasi</div>
-      <div style="margin-top:5px"><span class="badge b-ok">OK</span> <span class="badge b-final">EX-INDUK</span></div>
+      <div style="margin-top:5px"><span class="badge b-ok">SESUAI</span> <span class="badge b-final">DARI INDUK</span></div>
     </div>
     <div class="strip" style="left:30px;top:500px;width:1340px;height:45px;">
       <div class="k">RATIO_OF_SUMS · BUKAN RATA-RATA PERSENTASE</div>
       <div class="t">(450 + 380 + 20) / (500 + 400 + 20) = 850 / 920 = 92,39% &nbsp;·&nbsp;
-      tiap anak disimpan di <b>IKU_VALUE_DETAIL</b> (component_type CHILD_IKU, numerator, denominator, bobot) &nbsp;·&nbsp;
+      tiap anak disimpan di <b>IKU_VALUE_DETAIL</b> (component_type IKU anak, pembilang, penyebut, bobot) &nbsp;·&nbsp;
       .01 → SPM 01 · .02 → SPM 02 · .03 → SPM 03</div>
     </div>
 
@@ -287,7 +287,7 @@ path.aws { stroke: var(--color-ink); stroke-width:1.6; fill:none; }
   </div>
 
   <div class="foot">
-    <span>contoh: Mei 2026 · IKU-2026-001 · tiga IKU leaf · target 100%</span>
+    <span>contoh: Mei 2026 · IKU-2026-001 · tiga IKU anak · target 100%</span>
     <span>dibuat dengan <a href="https://github.com/caru-ini/stack-diagram" target="_blank" rel="noopener">stack-diagram</a></span>
   </div>
 

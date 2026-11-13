@@ -12,7 +12,9 @@
     Upload,
     LayoutDashboard,
     Network,
-    FileSpreadsheet
+    FileSpreadsheet,
+    BookOpen,
+    ArrowRight
   } from '@lucide/svelte';
 
   let username = $state('');
@@ -205,6 +207,17 @@
           </div>
         </details>
       </form>
+
+      <a
+        href="/user-guide"
+        class="mt-3 flex items-center justify-between gap-3 border-2 border-black bg-success px-4 py-3 font-mono text-xs font-bold uppercase shadow-nb transition-transform hover:-translate-y-0.5"
+      >
+        <span class="flex items-center gap-2"><BookOpen size={16} /> Panduan penggunaan</span>
+        <span class="flex items-center gap-2">Tata cara per peran <ArrowRight size={14} /></span>
+      </a>
+      <p class="mt-2 text-center font-mono text-[10px] text-muted-foreground">
+        Panduan dapat dibaca tanpa login.
+      </p>
 
       <div class="mt-4 border-2 border-black bg-secondary p-4 shadow-nbsm">
         <div class="font-mono text-[10px] font-bold uppercase tracking-[0.12em]">Ruang kerja</div>

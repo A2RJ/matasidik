@@ -34,7 +34,8 @@
   $effect(() => {
     if (!$authReady) return;
     const path = $page.url.pathname;
-    if (!$currentActor && path !== '/login') {
+    const publicPaths = ['/login', '/user-guide'];
+    if (!$currentActor && !publicPaths.includes(path)) {
       void goto('/login');
       return;
     }
@@ -54,6 +55,8 @@
   <div class="flex min-h-screen items-center justify-center">
     <div class="nb-card px-6 py-4 font-mono text-xs font-bold uppercase">Memeriksa sesi…</div>
   </div>
+{:else if !$currentActor && $page.url.pathname === '/user-guide'}
+  <div class="min-h-screen">{@render children()}</div>
 {:else if !$currentActor}
   <div class="flex min-h-screen items-center justify-center">
     <div class="nb-card px-6 py-4 font-mono text-xs font-bold uppercase">Mengalihkan ke login…</div>

@@ -1,4 +1,5 @@
 import {
+  BookOpen,
   LayoutDashboard,
   Upload,
   FileText,
@@ -15,6 +16,7 @@ export const APP_REGION = 'Kabupaten Sumbawa Barat';
 
 export const NAV_ITEMS: { href: string; label: string; icon: typeof LayoutDashboard; description: string; roles?: Role[] }[] = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard, description: 'Capaian SPM & IKU' },
+  { href: '/user-guide', label: 'Panduan', icon: BookOpen, description: 'Tata cara per peran' },
   { href: '/upload', label: 'Upload BNBA', icon: Upload, description: 'Kirim & preview data', roles: ['pkm_operator', 'pkm_pj', 'admin'] },
   { href: '/submissions', label: 'Submission', icon: FileText, description: 'Workflow & revisi', roles: ['pkm_operator', 'pkm_pj', 'dinas_verifier', 'kabid', 'sekretaris', 'pimpinan', 'admin'] },
   { href: '/master', label: 'Master Data', icon: Database, description: 'Indikator, label, target', roles: ['kabid', 'sekretaris', 'admin'] },

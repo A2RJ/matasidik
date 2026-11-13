@@ -18,7 +18,7 @@
   import { DISPLAY_STATUS_LABELS, STATUS_TARGET_NOTE } from '$lib/constants/enums';
   import { formatPercent, formatNumber } from '$lib/utils';
   import type { DashboardItem, DashboardSummary, IKUChart, MonthlySPMReport, MonthlySPMRow } from '$lib/types';
-  import { Download, RefreshCw, Target, Activity, AlertTriangle, Database, Network, FileSpreadsheet, FileText } from '@lucide/svelte';
+  import { BookOpen, Download, RefreshCw, Target, Activity, AlertTriangle, Database, Network, FileSpreadsheet, FileText } from '@lucide/svelte';
 
   let items = $state<DashboardItem[]>([]);
   let summary = $state<DashboardSummary | null>(null);
@@ -73,7 +73,7 @@
     { key: 'value', label: 'Capaian', class: 'text-right', width: '100px' },
     { key: 'status', label: TABLE_LABELS.status, width: '150px' },
     { key: 'gap', label: TABLE_LABELS.gap, class: 'text-right', width: '90px' },
-    { key: 'trace', label: TABLE_LABELS.action, width: '96px' }
+    { key: 'trace', label: TABLE_LABELS.action, width: '120px' }
   ] : [
     { key: 'kode', label: 'Kode', width: '110px' },
     { key: 'indikator', label: 'Label / Indikator', width: '34%' },
@@ -201,6 +201,7 @@
 
 <PageHeader title={PAGE_COPY.dashboard.title} description={PAGE_COPY.dashboard.description}>
   {#snippet actions()}
+    <Button variant="outline" onclick={() => goto('/user-guide')}><BookOpen size={14} /> Panduan</Button>
     <Button variant="outline" onclick={() => load()}><RefreshCw size={14} /> Muat ulang</Button>
     {#if canExport}
       <Button variant="secondary" disabled={exporting !== ''} onclick={() => exportData('xlsx')}><FileSpreadsheet size={14} /> Excel</Button>

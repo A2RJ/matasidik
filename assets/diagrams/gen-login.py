@@ -24,10 +24,10 @@ OUT = os.environ.get("MATA_DIAGRAM_DRAFTS", os.path.join(BASE, "drafts"))
 os.makedirs(OUT, exist_ok=True)
 
 steps = [
-    ("1", "Upload", "Puskesmas kirim BNBA.", False),
-    ("2", "Verifikasi", "Dinas cek & setujui/kembalikan.", False),
-    ("3", "Validasi", "Kabid setujui final.", False),
-    ("4", "Final", "Sistem lock + kalkulasi.", True),
+    ("1", "Unggah", "Puskesmas mengirim BNBA.", False),
+    ("2", "Verifikasi", "Dinas memeriksa & menyetujui/mengembalikan.", False),
+    ("3", "Validasi", "Kabid menyetujui final.", False),
+    ("4", "Final", "Sistem mengunci + menghitung.", True),
 ]
 xs = [30, 330, 630, 930]
 cards = ""
@@ -47,7 +47,7 @@ html_doc = f'''<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Alur Approval MATA SIDIK</title>
+<title>Alur Persetujuan MATA SIDIK</title>
 <style>{STYLE}</style>
 </head>
 <body>

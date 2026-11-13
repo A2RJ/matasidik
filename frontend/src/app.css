@@ -41,6 +41,10 @@ body {
   color: var(--nb-ink);
 }
 
+dialog::backdrop {
+  background: rgb(17 17 17 / 0.72);
+}
+
 @layer base {
   h1, h2, h3, h4 {
     @apply font-bold tracking-tight;
