@@ -386,9 +386,6 @@ go run ./cmd/api
 cd frontend
 npm install
 npm run dev
-
-# hentikan proses pengembangan dari root repo
-./shutdown.sh
 ```
 
 - API: `http://localhost:8080` · frontend dev: `http://localhost:5173` (proxy `/api`).
