@@ -9,12 +9,25 @@ import (
 )
 
 func (h *Handler) Factors(c *gin.Context) {
+	if !h.requireFactorViewer(c) {
+		return
+	}
 	rows, err := h.Factor.List(c.Request.Context(), c.Query("periode"), c.DefaultQuery("scope_type", "KABUPATEN"), c.DefaultQuery("scope_id", "wil-kab-swb"))
 	if err != nil {
 		response.Error(c, err)
 		return
 	}
 	response.OK(c, rows)
+}
+
+func (h *Handler) requireFactorViewer(c *gin.Context) bool {
+	switch h.actor(c).Role {
+	case domain.RolePimpinan, domain.RoleKabid, domain.RoleSekretaris, domain.RoleAdmin:
+		return true
+	default:
+		response.Error(c, domain.Forbidden("role tidak boleh melihat faktor dan tindak lanjut"))
+		return false
+	}
 }
 
 func (h *Handler) UpsertFactor(c *gin.Context) {
@@ -33,6 +46,9 @@ func (h *Handler) UpsertFactor(c *gin.Context) {
 }
 
 func (h *Handler) TindakLanjut(c *gin.Context) {
+	if !h.requireFactorViewer(c) {
+		return
+	}
 	rows, err := h.Factor.ListTL(c.Request.Context(), c.Query("periode"))
 	if err != nil {
 		response.Error(c, err)

@@ -11,6 +11,8 @@ import type {
   DashboardSummary,
   Factor,
   FactorRow,
+  IKUChangeDetail,
+  IKUChangeRequest,
   IKUChart,
   IKUValue,
   IKUValueDetail,
@@ -184,6 +186,7 @@ export const api = {
     request<Label>('/master/labels', { method: 'POST', body: JSON.stringify(payload) }),
   updateLabel: (id: string, payload: Record<string, unknown>) =>
     request<Label>(`/master/labels/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
+  deleteLabel: (id: string) => request<Label>(`/master/labels/${id}`, { method: 'DELETE' }),
   createCategory: (payload: Record<string, unknown>) =>
     request<DashboardCategory>('/master/categories', { method: 'POST', body: JSON.stringify(payload) }),
   updateCategory: (id: string, payload: Record<string, unknown>) =>
@@ -216,6 +219,16 @@ export const api = {
   deleteCapaianTahunan: (id: string) =>
     request<{ ok: boolean }>(`/master/capaian-tahunan/${id}`, { method: 'DELETE' }),
 
+  ikuChanges: (params: { status?: string; faskes_id?: string; requested_by?: string } = {}) =>
+    request<IKUChangeRequest[]>(`/iku/change-requests${query(params)}`),
+  ikuChange: (id: string) => request<IKUChangeDetail>(`/iku/change-requests/${id}`),
+  createIKUChange: (payload: Record<string, unknown>) =>
+    request<IKUChangeRequest>('/iku/change-requests', { method: 'POST', body: JSON.stringify(payload) }),
+  decideIKUChange: (id: string, payload: { action: 'approve' | 'reject' | 'return'; notes: string }) =>
+    request<IKUChangeRequest>(`/iku/change-requests/${id}/decision`, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    }),
   ikuValues: (periode?: string, scopeType = 'KABUPATEN', scopeId = 'wil-kab-swb') =>
     request<IKUValue[]>(`/iku/values${query({ periode, scope_type: scopeType, scope_id: scopeId })}`),
   ikuByKode: (kode: string, periode?: string) =>

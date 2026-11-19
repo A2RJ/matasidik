@@ -84,7 +84,7 @@ Nilainya tetap **satu** di `INDICATOR_VALUE`. Label hanya menentukan di dashboar
 | `DASHBOARD_CATEGORY` | `id`, `kode`, `nama`, `jenis` (`LABEL`/`OWNER`), `urutan`, `aktif`, `is_system` | Kategori filter dashboard yang dapat di-CRUD |
 | `LABEL` | `id`, `kode`, `category_id`, `tipe`, `status_aktif` | Identitas stabil label/IKU |
 | `LABEL_VERSION` | `label_id`, `master_release_id`, `nama`, `parent_id`, `path`, `level`, `berlaku_dari`, `berlaku_sampai` | Versi nama/hierarki per release |
-| `IKU_PROFILE` | `label_version_id`, `aggregation_method`, `formula_json`, `pj_bidang_id`, `pj_timker_id`, `iku_owner_id`, `allow_direct_input`, `is_rollup_only` | Aturan khusus IKU |
+| `IKU_PROFILE` | `label_version_id`, `aggregation_method`, `formula_json`, `pj_bidang_id`, `pj_timker_id`, `allow_direct_input`, `is_rollup_only` | Aturan khusus IKU |
 | `INDIKATOR` | `id`, `kode`, `status_aktif` | Identitas stabil indikator |
 | `INDIKATOR_VERSION` | `indikator_id`, `master_release_id`, `nama`, `satuan_baku`, `definisi`, `numerator_label`, `denominator_label`, `sifat_input`, `frekuensi`, `pj_bidang_id`, `pj_timker_id`, `berlaku_dari`, `berlaku_sampai` | Definisi yang dipakai engine |
 | `INDIKATOR_LABEL` | `indikator_version_id`, `label_version_id`, `bobot`, `is_primary` | **Many-to-many**: indikator ↔ label/IKU |
@@ -107,7 +107,7 @@ Nilainya tetap **satu** di `INDICATOR_VALUE`. Label hanya menentukan di dashboar
 | `SUBMISSION_GROUP` | `id`, `submission_id`, `owner_bidang_id`, `owner_timker_id`, `primary_iku_id`, `status`, `current_step_id` | Pemecahan per pemilik data untuk approval lintas bidang |
 | `SUBMISSION_ROW` | `id`, `submission_id`, `group_id`, `row_no`, `kode_iku_raw`, `kode_indikator_raw`, `matched_indikator_versi_id`, `matched_iku_id`, `scope_type`, `scope_code`, `nilai`, `numerator`, `denominator`, `classification_status`, `error_json` | Satu baris hasil parsing |
 | `SUBMISSION_REVIEW` | `id`, `submission_id`, `group_id`, `step_id`, `reviewer_id`, `action`, `reason_code`, `notes`, `details_json`, `created_at` | Keputusan tiap level |
-| `WORKFLOW_DEF` | `id`, `kode`, `nama`, `status_aktif` | Definisi alur (mis. `default_3_level`) |
+| `WORKFLOW_DEF` | `id`, `kode`, `nama`, `status_aktif` | Definisi alur (mis. `default_pkm_approval`) |
 | `WORKFLOW_VERSION` | `id`, `workflow_def_id`, `version_no`, `status`, `published_at`, `published_by` | Versi alur yang di-pin ke submission |
 | `WORKFLOW_STEP` | `id`, `workflow_version_id`, `kode`, `urutan`, `role_code`, `mode` | Step dan role penerima task |
 | `WORKFLOW_TRANSITION` | `id`, `workflow_version_id`, `from_step_id`, `to_step_id`, `action`, `condition_json` | Transisi + guard kondisi |
@@ -238,7 +238,8 @@ Baris R3 salah karena memakai IKU induk. Di preview, Siti memilih ulang `.03` (B
 
 | Step | Role | Aksi | Catatan |
 | --- | --- | --- | --- |
-| `DRAFT_PKM` | Puskesmas/PJ | simpan draf, submit | Draf bisa disimpan tanpa mengirim |
+| `DRAFT_PKM` | Operator Puskesmas/PJ | simpan draf, submit | Draf bisa disimpan tanpa mengirim |
+| `APPROVE_PKM` | Puskesmas approver | approve / return | Hanya faskes yang sama; catatan wajib saat return |
 | `VERIFY_DINAS` | Verifikator Dinas | approve / return | Catatan wajib saat return |
 | `VALIDATE_KABID` | Kabid/Sekretaris | approve / return | Final butuh catatan penerimaan |
 | `FINAL` | Sistem | lock + calculate | Immutable |
@@ -246,16 +247,16 @@ Baris R3 salah karena memakai IKU induk. Di preview, Siti memilih ulang `.03` (B
 
 Alur utama:
 
-<img src="../assets/diagrams/alur-workflow.webp" alt="Workflow approval berjenjang MATA SIDIK: DRAFT_PKM submit ke VERIFY_DINAS, approve ke VALIDATE_KABID, approve ke FINAL, dengan jalur return ke pengirim dan verifikator serta SPECIAL_CHANGE pasca-final.">
+<img src="../assets/diagrams/alur-workflow.webp" alt="Workflow approval berjenjang MATA SIDIK: DRAFT_PKM submit ke APPROVE_PKM, lalu VERIFY_DINAS, approve ke VALIDATE_KABID, approve ke FINAL, dengan jalur return dan SPECIAL_CHANGE pasca-final.">
 
-*Gambar 4.1 — State machine default tiga level. FINAL mengunci data dan memicu kalkulasi; perubahan pasca-final hanya lewat `SPECIAL_CHANGE` dengan alasan dan dual approval. Sumber HTML: [`../assets/diagrams/alur-workflow.html`](../assets/diagrams/alur-workflow.html).*
+*Gambar 4.1 — State machine default dengan approval Puskesmas sebelum Dinas. FINAL mengunci data dan memicu kalkulasi; perubahan pasca-final hanya lewat `SPECIAL_CHANGE` dengan alasan dan dual approval. Sumber HTML: [`../assets/diagrams/alur-workflow.html`](../assets/diagrams/alur-workflow.html).*
 
 Status lama tetap dipetakan agar kompatibel dengan UI/laporan yang ada:
 
 | Status lama | Step internal |
 | --- | --- |
 | `draf` | `DRAFT_PKM` |
-| `dikirim` | `VERIFY_DINAS` |
+| `dikirim` | `APPROVE_PKM` atau `VERIFY_DINAS` (lihat `submission.step`) |
 | `diverifikasi` | `VALIDATE_KABID` |
 | `dikembalikan_petugas` | kembali ke `DRAFT_PKM` |
 | `dikembalikan_verifikator` | kembali ke `VERIFY_DINAS` |
@@ -292,7 +293,22 @@ Puskesmas melihat halaman revisi berisi diff lama vs baru, thread komentar per b
 - Uploader tidak boleh memverifikasi/memvalidasi pengajuannya sendiri.
 - Admin tidak boleh mengubah data final tanpa mekanisme khusus dan persetujuan kedua.
 - Data tetap terhubung ke `uploader_id`, `faskes_id`, `created_by`, dan `submission_revision_id`. User yang pindah/berhenti di-soft-delete; histori tidak ikut terhapus.
-- Approval data mengikuti **PJ indikator**; publikasi agregasi mengikuti **IKU owner**. Untuk submission lintas bidang, `SUBMISSION_GROUP` dipecah per pemilik data agar tidak saling menunggu.
+- Approval data mengikuti **PJ indikator**; publikasi master IKU dilakukan **Admin** setelah approval Puskesmas. Untuk submission lintas bidang, `SUBMISSION_GROUP` dipecah per pemilik data agar tidak saling menunggu.
+
+### 4.5 Akses UI per peran
+
+Matriks lengkap ada di `README.md` B.4 dan `docs/rules.md` §10.1. Aturan teknis:
+
+- Sumber tunggal aturan ada di `frontend/src/lib/constants/access.ts`; sidebar, penjaga rute, dan tombol aksi memakai daftar yang sama.
+- Menu yang tidak relevan tidak ditampilkan. URL langsung di luar peran menampilkan **Akses terbatas**.
+- Aksi yang tidak menjadi kewenangan peran disembunyikan, bukan hanya dinonaktifkan.
+- `pkm_pj` hanya dapat mengunggah BNBA; tidak dapat mengajukan IKU.
+- `pkm_approver` hanya memutus pengajuan faskes sendiri, dashboard-nya dibatasi ke faskes sendiri, dan tidak dapat mengunggah, mengelola master, atau mempublikasikan IKU.
+- Admin dapat CRUD IKU global dari Master; Operator Puskesmas hanya melalui Pengajuan IKU.
+- `GET /api/v1/factors` dan `GET /api/v1/tindak-lanjut` hanya untuk Kabid, Sekretaris, Pimpinan, dan Admin.
+- `SubmissionDetail`, `Revisions`, `File`, dan `Job` membatasi Operator/PJ/Kepala Puskesmas ke faskes sendiri.
+- Panduan in-app menyaring tab peran; Admin dapat membuka semua panduan.
+- Label UI tidak memuat nama tech stack, tabel, field internal, atau istilah implementasi. Padanan label ada di `docs/rules.md` §10.4.
 
 ---
 
@@ -609,7 +625,7 @@ Aturan:
 | Proteksi | Rate limit login, lockout bertahap, audit login sukses/gagal |
 | Secret | Environment/secret file, bukan repo; rotasi kunci PASETO dengan `kid` |
 
-Role awal: `pkm_operator`, `pkm_pj`, `dinas_verifier`, `kabid`, `sekretaris`, `iku_owner`, `pimpinan`, `admin`.
+Role awal: `pkm_operator`, `pkm_pj`, `pkm_approver`, `dinas_verifier`, `kabid`, `sekretaris`, `pimpinan`, `admin`.
 
 ### 6.7 Observability level container
 
@@ -646,6 +662,9 @@ Jika nanti butuh analisis log terpusat, kirim stdout container ke Loki/ELK tanpa
 | `GET` | `/api/v1/submissions/{id}/revisions` | Riwayat revisi |
 | `GET` | `/api/v1/iku/{kode}/values?periode=2026-05` | Nilai IKU + status |
 | `GET` | `/api/v1/iku-values/{id}/detail` | Provenance komponen |
+| `POST/GET` | `/api/v1/iku/change-requests` | Ajukan / daftar pengajuan IKU |
+| `GET` | `/api/v1/iku/change-requests/{id}` | Detail pengajuan + revisi + review |
+| `POST` | `/api/v1/iku/change-requests/{id}/decision` | Approve/reject/return Puskesmas atau Admin |
 | `GET` | `/api/v1/dashboard/spm?periode=2026-05` | Baris SPM + ringkasan berbasis target |
 | `GET` | `/api/v1/dashboard/category?kode=IKK&periode=2026-05` | Baris kategori dinamis (label/owner); `kode=ALL` menggabungkan semua kategori |
 | `GET` | `/api/v1/dashboard/spm/monthly?tahun=2026` | Laporan absolut 12 bulan per indikator SPM |
@@ -704,7 +723,7 @@ Pemetaan error HTTP:
 | G5 | Self-approval | Kecurangan | Pemisahan tugas; constraint DB; override dual control |
 | G6 | Koreksi final tanpa audit | Data tidak traceable | `SPECIAL_CHANGE`; alasan wajib; dual approval; versi baru |
 | G7 | Siklus IKU / formula invalid | Kalkulasi gagal | Cycle check, formula validator, blokir publish |
-| G8 | IKU lintas bidang | Approval saling tunggu | `SUBMISSION_GROUP` per pemilik; approval data oleh PJ; publikasi oleh IKU owner |
+| G8 | IKU lintas bidang | Approval saling tunggu | `SUBMISSION_GROUP` per pemilik; approval data oleh PJ; publikasi master oleh Admin |
 | G9 | Upload ganda/replay | Data dobel | File hash + natural key + `Idempotency-Key`; revisi/supersede |
 | G10 | Disk penuh / file hilang | Upload gagal, audit rusak | Kuota, alert > 80%, backup volume, cek konsistensi DB–file |
 | G11 | Worker mati / job macet | Halaman loading terus | Heartbeat + reclaim job basi; `max_attempts`; alert job `dead` |
@@ -757,7 +776,7 @@ Pemetaan error HTTP:
 | 0 | Keputusan domain + bersihkan master | Pohon IKU, kode, satuan, formula, PJ, target disepakati |
 | 1 | Master data + identity | Label many-to-many, versi, RBAC/scope, audit dasar, auth PASETO |
 | 2 | Upload + klasifikasi + preview | Template, parser, validasi, preview, ubah IKU, submission/revision |
-| 3 | Workflow | 3 level default, catatan, delegasi, SLA, final lock |
+| 3 | Workflow | Approval Puskesmas + Dinas + Kabid, catatan, delegasi, SLA, final lock |
 | 4 | Kalkulasi + dashboard | Formula engine, rollup, provenance, snapshot |
 | 5 | Hardening + migrasi + pilot | P0 tertutup, parallel run, pelatihan, rollout |
 
@@ -778,7 +797,7 @@ Pemetaan error HTTP:
 
 Diagram lengkap:
 
-<img src="../assets/diagrams/alur-data-iku.webp" alt="Alur data IKU end-to-end: upload BNBA, klasifikasi tiga baris ke IKU leaf .01/.02/.03, preview dan koreksi R3, approval tiga level, kalkulasi 90,00%, 95,00%, dan 100,00% menjadi 92,39%, dashboard dengan jejak angka, serta 3 baris output dashboard SPM yang dapat ditelusuri sampai file.">
+<img src="../assets/diagrams/alur-data-iku.webp" alt="Alur data IKU end-to-end: upload BNBA, klasifikasi tiga baris ke IKU leaf .01/.02/.03, preview dan koreksi R3, approval Puskesmas dan Dinas, kalkulasi 90,00%, 95,00%, dan 100,00% menjadi 92,39%, dashboard dengan jejak angka, serta 3 baris output dashboard SPM yang dapat ditelusuri sampai file.">
 
 *Gambar 10 — Alur end-to-end Mei 2026. Sumber HTML: [`../assets/diagrams/alur-data-iku.html`](../assets/diagrams/alur-data-iku.html). Diagram dihasilkan oleh [`../assets/diagrams/gen-end-to-end.py`](../assets/diagrams/gen-end-to-end.py); data di bawah adalah data yang sama dengan yang tampil di diagram.*
 
@@ -823,8 +842,8 @@ Jejak tiga baris SPM mengikuti rantai `SPM → IKU_VALUE → INDICATOR_VALUE →
 | 1 | Hierarki IKU: tree atau DAG? | **Tree** untuk kalkulasi; many-to-many hanya untuk tampilan |
 | 2 | Komposisi induk: semua anak otomatis atau eksplisit? | **Eksplisit** via `IKU_KOMPONEN`, dengan opsi “tambahkan semua anak” saat publish |
 | 3 | Satu file banyak IKU? | **Boleh**, dipecah per pemilik via `SUBMISSION_GROUP` |
-| 4 | Level approval? | **3 level default** + konfigurasi tambahan; pimpinan observer |
-| 5 | Kepemilikan data? | **PJ indikator** memiliki nilai mentah; **IKU owner** memiliki agregasi/publikasi |
+| 4 | Level approval? | **Puskesmas + Dinas + Kabid** default; pimpinan observer |
+| 5 | Kepemilikan data? | **PJ indikator** memiliki nilai mentah; **Admin** dapat CRUD IKU global langsung dan mempublikasikan pengajuan setelah approval Puskesmas |
 | 6 | Format kode? | `IKU-2026-001` dan `IND-001`; kode stabil, versi terpisah |
 | 7 | Target per scope? | Putuskan apakah target sama untuk semua faskes atau berbeda per wilayah |
 | 8 | PII di BNBA? | Inventarisasi kolom; enkripsi/masking; batasi akses |
@@ -836,7 +855,7 @@ Jejak tiga baris SPM mengikuti rantai `SPM → IKU_VALUE → INDICATOR_VALUE →
 ## 12. Referensi
 
 - `../README.md` — bagian A.7 (bisnis) dan B.8 (teknis).
-- `01-gambaran-umum.md` — ruang lingkup, alur 3 level, 9 kategori.
+- `01-gambaran-umum.md` — ruang lingkup, alur approval, 9 kategori.
 - `02-daftar-indikator-kinerja.md` — katalog indikator + label ganda.
 - `03-contoh-data.md` — contoh SPM dan BNBA.
 - `rules.md` — aturan proyek yang mengikat.

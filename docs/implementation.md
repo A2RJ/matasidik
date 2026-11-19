@@ -177,9 +177,12 @@ Semua route di bawah `/api/v1`. Autentikasi memakai `Authorization: Bearer <PASE
 | GET/POST/PATCH | `/admin/users`, `/admin/faskes`, `/admin/positions` | Administrasi user, puskesmas, jabatan |
 | GET/POST/PATCH/DELETE | `/master/categories` | CRUD kategori dashboard; DELETE = nonaktifkan (Admin) |
 | GET/POST/PATCH | `/master/bidang` | CRUD bidang/sekretariat/timker (Admin) |
-| PATCH | `/master/labels/{id}` | Ubah nama/kategori/parent/PJ label (Admin) |
 | GET | `/master/labels` / `/master/indicators` / `/master/targets` | Master |
-| POST | `/master/labels` / `/master/indicators` | Tambah master (Admin) |
+| POST/PATCH/DELETE | `/master/labels` | CRUD IKU global (Admin); DELETE = nonaktifkan |
+| POST | `/master/indicators` | Tambah indikator (Admin) |
+| POST/GET | `/iku/change-requests` | Ajukan / daftar pengajuan IKU |
+| GET | `/iku/change-requests/{id}` | Detail pengajuan + revisi + review |
+| POST | `/iku/change-requests/{id}/decision` | Approve/reject/return Puskesmas atau Admin |
 | PUT | `/master/targets` | Upsert target (Admin/Kabid/Sekretaris) |
 | GET | `/master/capaian-tahunan?tahun=2025` | Capaian tahunan per label/IKU/indikator |
 | POST | `/master/capaian-tahunan` | Tambah/upsert capaian tahunan (Admin) |
@@ -241,6 +244,52 @@ Baris non-`MATCHED` menjadi blocker submit sampai dikoreksi.
 - `bidang` menyimpan `jenis` (`bidang`/`sekretariat`/`timker`) dan `parent_id`; indikator memakai `pj_bidang_id` + `pj_timker_id`.
 - Template BNBA menambahkan kolom opsional `kode_kategori` setelah `kode_faskes`. Jika diisi, classifier memvalidasi kecocokan dengan kategori label; jika kosong, validasi lama tetap berlaku.
 - `GET /dashboard/category` mengembalikan label/indikator sesuai kategori; `SPM` tetap memakai `dashboard_row`.
+
+### 6.2 Pengajuan IKU dan approval Puskesmas
+
+- Hanya Operator Puskesmas yang mengajukan `CREATE`/`UPDATE`/`DEACTIVATE` melalui `/iku/change-requests`.
+- Admin dapat CRUD IKU global langsung lewat `/master/labels`; operator tidak.
+- Puskesmas approver (`pkm_approver`) memutus pengajuan faskesnya; Admin memutus tahap final dan mempublikasikan.
+- Tabel: `iku_change_request`, `iku_change_revision`, `iku_change_review`.
+- Workflow BNBA memakai versi `wf-default-v2`: `DRAFT_PKM → APPROVE_PKM → VERIFY_DINAS → VALIDATE_KABID → FINAL`.
+- Submission lama tetap memakai versi workflow yang di-pin.
+
+### 6.3 Pembatasan tampilan dan label per peran
+
+- Sumber aturan tunggal ada di `frontend/src/lib/constants/access.ts`; sidebar, penjaga rute, dan tampilan aksi memakai daftar yang sama.
+- Membuka URL menu di luar peran menampilkan halaman **Akses terbatas**, bukan isi halaman.
+- Aksi yang tidak menjadi kewenangan peran disembunyikan, bukan hanya dinonaktifkan: ekspor dashboard, template BNBA, unggah, pengajuan IKU, tambah/ubah master, faktor, TL, dan administrasi.
+- Operator/PJ Puskesmas memakai faskes sendiri tanpa pemilih faskes; Admin tetap dapat memilih faskes. Dashboard `pkm_approver` juga dibatasi ke faskes sendiri.
+- `GET /factors` dan `GET /tindak-lanjut` dibatasi untuk Kabid, Sekretaris, Pimpinan, dan Admin.
+- Mode **lihat sebagai** (`pkm_approver`/peran lain oleh Admin) disimpan per tab dan dipulihkan setelah refresh/reload; tombol **Kembali** menghapus mode. Access token tidak disimpan di storage.
+- Navigasi dari daftar submission memakai router SPA (`goto`), bukan reload penuh, agar mode lihat sebagai dan state halaman tidak hilang.
+- Scope `SubmissionDetail`, `Revisions`, `File`, dan `Job` membatasi Operator/PJ/Kepala Puskesmas ke faskes sendiri.
+- Panduan in-app menyaring tab peran; Admin tetap dapat membuka semua panduan.
+- Label UI memakai istilah layanan (mis. Jejak Audit, Jumlah/Total, proses berkas, baris bermasalah), bukan istilah teknis implementasi.
+
+Tabel menu yang tampil:
+
+| Peran | Menu |
+| --- | --- |
+| `pkm_operator` | Dashboard, Panduan, Upload BNBA, Submission, Pengajuan IKU |
+| `pkm_pj` | Dashboard, Panduan, Upload BNBA, Submission |
+| `pkm_approver` | Dashboard, Panduan, Submission, Pengajuan IKU |
+| `dinas_verifier` | Dashboard, Panduan, Submission |
+| `kabid`, `sekretaris` | Dashboard, Panduan, Submission, Master Data, Faktor & TL |
+| `pimpinan` | Dashboard, Panduan, Submission, Faktor & TL, Jejak Audit |
+| `admin` | Semua menu |
+
+File yang terdampak:
+
+- Aturan akses: `frontend/src/lib/constants/access.ts`
+- Penjaga rute: `frontend/src/routes/+layout.svelte`
+- Sidebar: `frontend/src/lib/components/layout/sidebar.svelte`
+- Label dan padanan istilah: `frontend/src/lib/constants/labels.ts`, `frontend/src/lib/constants/enums.ts`
+- Halaman: `+page.svelte`, `upload`, `submissions`, `submissions/[id]`, `iku-requests`, `master`, `factors`, `audit`, `admin`, `profile`, `user-guide`
+- Backend: `backend/internal/httpapi/handler/factor.go`, `backend/internal/httpapi/handler/dashboard.go`, `backend/internal/httpapi/handler/submission.go`, `backend/internal/service/dashboard.go`
+- Sesi/mode lihat sebagai: `frontend/src/lib/stores/auth.ts`, `frontend/src/lib/auth/token.ts`
+- Navigasi SPA: `frontend/src/routes/submissions/+page.svelte`
+- Panduan: `frontend/src/lib/content/user-guide.ts`, `frontend/src/routes/user-guide/+page.svelte`
 
 ## 7. Kalkulasi
 

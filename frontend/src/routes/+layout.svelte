@@ -11,11 +11,16 @@
   import { applyBootstrap, currentActor } from '$lib/stores/session';
   import { authReady, restoreSession } from '$lib/stores/auth';
   import { APP_NAME } from '$lib/constants/labels';
+  import { accessLabelFor, canAccessPath } from '$lib/constants/access';
 
   let { children }: { children: Snippet } = $props();
   let mobileOpen = $state(false);
   let bootstrapError = $state('');
   let bootstrapped = $state(false);
+  let unauthorized = $derived(
+    !!$currentActor && !canAccessPath($currentActor.role, $page.url.pathname)
+  );
+  let deniedLabel = $derived(accessLabelFor($page.url.pathname));
 
   onMount(async () => {
     await restoreSession();
@@ -90,7 +95,24 @@
       {/if}
 
       <main class="mx-auto w-full max-w-[1600px] flex-1 p-4 md:p-6">
-        {@render children()}
+        {#if unauthorized}
+          <div class="mx-auto mt-6 max-w-2xl border-2 border-black bg-card p-6 shadow-nb">
+            <div class="nb-kicker">Akses terbatas</div>
+            <h1 class="mt-2 text-3xl">Halaman ini tidak tersedia untuk akun Anda</h1>
+            <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
+              Menu {deniedLabel} hanya dapat dibuka oleh peran yang berwenang. Menu yang tampil di
+              samping sudah disesuaikan dengan peran akun Anda.
+            </p>
+            <a
+              href="/"
+              class="mt-5 inline-flex h-10 items-center border-2 border-black bg-primary px-4 font-mono text-xs font-bold uppercase shadow-nbsm"
+            >
+              Kembali ke dashboard
+            </a>
+          </div>
+        {:else}
+          {@render children()}
+        {/if}
       </main>
 
       <footer class="border-t-2 border-black bg-card px-4 py-3 font-mono text-[10px] text-muted-foreground md:px-6">

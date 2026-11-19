@@ -36,7 +36,8 @@
 | [`docs/02-daftar-indikator-kinerja.md`](docs/02-daftar-indikator-kinerja.md) | Dinas, Developer | Katalog 58 baris indikator dan label |
 | [`docs/03-contoh-data.md`](docs/03-contoh-data.md) | Dinas, Developer | Contoh output dashboard SPM dan data absolut |
 | [`docs/04-arsitektur-iku.md`](docs/04-arsitektur-iku.md) | Developer | Rancangan IKU dinamis, upload, workflow, kalkulasi, arsitektur |
-| [`docs/05-rencana-bnba-wilayah.md`](docs/05-rencana-bnba-wilayah.md) | Developer, Dinas | Rencana BNBA, sebaran wilayah, dan pengelompokan dashboard dinamis; Track A menunggu format BNBA, Track B sedang diimplementasikan |
+| [`docs/05-rencana-bnba-wilayah.md`](docs/05-rencana-bnba-wilayah.md) | Developer, Dinas | Rencana detail BNBA, sebaran wilayah, dan pengelompokan dashboard dinamis |
+| [`docs/06-rencana-final.md`](docs/06-rencana-final.md) | Dinas, Developer | Plan final konsolidasi: BNBA, dashboard dinamis, laporan bulanan, tata kelola IKU, role, dan workflow |
 | [`docs/schema.md`](docs/schema.md) | Developer | Skema database, relasi, enum, index, seed, dan catatan migrasi SQLite → PostgreSQL |
 | [`docs/implementation.md`](docs/implementation.md) | Developer | Struktur proyek, cara run, API pilot, repository pattern, dan batasan implementasi |
 | [`docs/rules.md`](docs/rules.md) | Agent, Developer | Aturan proyek yang mengikat dan daftar keputusan terbuka |
@@ -77,20 +78,21 @@ Ruang lingkup (`docs/01-gambaran-umum.md:37-41`):
 
 ## A.2 Alur bisnis + peran tiap tahap
 
-<img src="assets/diagrams/alur-bisnis.webp" alt="Alur bisnis MATA SIDIK enam tahap: input Puskesmas, verifikasi Dinas, validasi Kabid/Sekretaris, pengolahan sistem + faktor, dashboard, keputusan Kepala Dinas + TL, dengan jalur pengembalian serta monitoring faktor dan TL.">
+<img src="assets/diagrams/alur-bisnis.webp" alt="Alur bisnis MATA SIDIK tujuh tahap: input Operator Puskesmas/PJ, approval Puskesmas, verifikasi Dinas, validasi Kabid/Sekretaris, pengolahan sistem + faktor, dashboard, keputusan Kepala Dinas + TL, dengan jalur pengembalian serta monitoring faktor dan TL.">
 
-*Gambar A.2 — Enam tahap proses bisnis dari input Puskesmas sampai keputusan pimpinan. Garis putus-putus adalah jalur pengembalian serta monitoring faktor dan TL. Diagram dibuat dengan stack-diagram; sumber HTML ada di [`assets/diagrams/alur-bisnis.html`](assets/diagrams/alur-bisnis.html).*
+*Gambar A.2 — Tujuh tahap proses bisnis dari input Operator Puskesmas/PJ dan approval Puskesmas sampai keputusan pimpinan. Garis putus-putus adalah jalur pengembalian serta monitoring faktor dan TL. Diagram dibuat dengan stack-diagram; sumber HTML ada di [`assets/diagrams/alur-bisnis.html`](assets/diagrams/alur-bisnis.html).*
 
 ### Tabel peran × aksi × data
 
 | Tahap | Pelaku | Aksi | Data masuk | Data keluar / status |
 | --- | --- | --- | --- | --- |
-| 1. Input | Petugas Puskesmas, PJ program/indikator Dinas | Input angka + upload file BNBA Excel format Puskesmas; kirim per periode | Jumlah layanan, alamat domisili (desa/puskesmas/kecamatan), periode | Status: Draf → Dikirim |
-| 2. Verifikasi | Petugas Dinas (kabupaten) | Cek kelengkapan; setujui atau kembalikan dengan catatan | Data terkirim | Status: Diverifikasi / Dikembalikan ke tahap 1 |
-| 3. Validasi | Kepala Bidang / Sekretaris Dinas | Setujui final atau kembalikan ke tahap 2; perubahan data final butuh kewenangan khusus + jejak audit | Data terverifikasi | Status: Final (terkunci) / Dikembalikan ke tahap 2 |
-| 4. Pengolahan | Sistem (otomatis) + Kabid/Sekretaris | Rekap, hitung indikator, tren, kesenjangan; Kabid/Sekretaris wajib isi faktor pendukung + penghambat (analisis kualitatif; bukan TL) | Data final + target | Tren capaian, gap target–realisasi, faktor |
-| 5. Dashboard | Semua (sesuai hak akses) | Lihat/filter/ekspor per 9 pengelompokan (lihat A.4) | Data olahan | Grafik, tabel, laporan periodik |
-| 6. Keputusan | Kepala Dinas/pimpinan → Kabid/Sekretaris | Beri arahan, tetapkan TL (masalah → rekomendasi → PJ → status), pantau evaluasi | Capaian + faktor + gap | Arahan, TL ber-PJ dan berstatus |
+| 1. Input | Operator Puskesmas/PJ Program | Input angka + upload file BNBA Excel format Puskesmas; kirim per periode | Jumlah layanan, alamat domisili (desa/puskesmas/kecamatan), periode | Status: Draf → Dikirim |
+| 2. Approval Puskesmas | Puskesmas Approver | Cek data faskes; setujui atau kembalikan dengan catatan | Data terkirim | Diteruskan ke Dinas / Dikembalikan ke tahap 1 |
+| 3. Verifikasi | Petugas Dinas (kabupaten) | Cek kelengkapan; setujui atau kembalikan dengan catatan | Data disetujui Puskesmas | Status: Diverifikasi / Dikembalikan ke tahap 1 |
+| 4. Validasi | Kepala Bidang / Sekretaris Dinas | Setujui final atau kembalikan ke tahap 3; perubahan data final butuh kewenangan khusus + jejak audit | Data terverifikasi | Status: Final (terkunci) / Dikembalikan ke tahap 3 |
+| 5. Pengolahan | Sistem (otomatis) + Kabid/Sekretaris | Rekap, hitung indikator, tren, kesenjangan; Kabid/Sekretaris wajib isi faktor pendukung + penghambat (analisis kualitatif; bukan TL) | Data final + target | Tren capaian, gap target–realisasi, faktor |
+| 6. Dashboard | Semua (sesuai hak akses) | Lihat/filter/ekspor per 9 pengelompokan (lihat A.4) | Data olahan | Grafik, tabel, laporan periodik |
+| 7. Keputusan | Kepala Dinas/pimpinan → Kabid/Sekretaris | Beri arahan, tetapkan TL (masalah → rekomendasi → PJ → status), pantau evaluasi | Capaian + faktor + gap | Arahan, TL ber-PJ dan berstatus |
 
 **Faktor vs TL:** faktor adalah analisis kualitatif (pendukung/penghambat) dan tidak mengubah angka; TL adalah rencana aksi ber-PJ dan berstatus (masalah → rekomendasi → PJ → status).
 
@@ -137,7 +139,7 @@ Konsekuensi praktis bagi Dinas: tiap tambah indikator baru wajib melengkapi 6 fi
 
 Katalog indikator tidak lagi diperlakukan sebagai daftar datar. IKU menjadi **label many-to-many** yang dapat memiliki anak dinamis, dan nilai IKU induk dihitung dari komponen yang eksplisit — bukan sekadar merata-ratakan persentase anak.
 
-<img src="assets/diagrams/alur-data-iku.webp" alt="Alur data IKU end-to-end: upload BNBA oleh Puskesmas, klasifikasi tiga baris ke IKU leaf .01/.02/.03, preview dengan akses ubah IKU, approval tiga level, kalkulasi IKU anak dan induk, dashboard yang bisa ditelusuri, serta 3 baris output dashboard SPM yang terhubung ke file.">
+<img src="assets/diagrams/alur-data-iku.webp" alt="Alur data IKU end-to-end: upload BNBA oleh Puskesmas, klasifikasi tiga baris ke IKU leaf .01/.02/.03, preview dengan akses ubah IKU, approval Puskesmas dan Dinas, kalkulasi IKU anak dan induk, dashboard yang bisa ditelusuri, serta 3 baris output dashboard SPM yang terhubung ke file.">
 
 *Gambar A.7 — Satu alur utuh: upload 3 baris, koreksi IKU di preview, approval Puskesmas → Dinas → Kabid, kalkulasi induk–anak, dan dashboard. Sumber HTML: [`assets/diagrams/alur-data-iku.html`](assets/diagrams/alur-data-iku.html). Rancangan lengkap: [`docs/04-arsitektur-iku.md`](docs/04-arsitektur-iku.md).*
 
@@ -178,18 +180,21 @@ Baris R3 pada contoh semula memakai kode IKU induk (rollup-only). Di preview, ba
 
 ## A.8 Panduan penggunaan per peran di aplikasi
 
-Halaman **`/user-guide`** adalah panduan in-app yang dapat dibuka dari **dashboard** dan **halaman login** (tanpa login). Selain alur per peran, halaman ini memuat **katalog menu/fitur**, **hak akses per menu**, serta **keterkaitan fitur/menu/flow/data**. Modul per peran/level:
+Halaman **`/user-guide`** adalah panduan in-app yang dapat dibuka dari **dashboard** dan **halaman login** (tanpa login). Setiap peran memuat **posisi pada alur**, **menu & hak akses yang dipakai**, serta **tutorial langkah** dengan data/status, tujuan berikutnya, dan screenshot komponen. Modul per peran/level:
 
 | Modul | Role | Titik mulai |
 | --- | --- | --- |
-| Puskesmas & PJ Program | `pkm_operator`, `pkm_pj` | Input BNBA |
+| Operator Puskesmas | `pkm_operator` | Input BNBA & ajukan IKU |
+| PJ Program | `pkm_pj` | Input BNBA sesuai PJ indikator |
+| Puskesmas Approver | `pkm_approver` | Approval BNBA & pengajuan IKU |
+| Admin | `admin` | CRUD IKU global & approval final |
 | Verifikator Dinas | `dinas_verifier` | Verifikasi |
 | Kabid / Sekretaris | `kabid`, `sekretaris` | Validasi final |
 | Pimpinan | `pimpinan` | Dashboard SPM |
 
-Setiap modul memakai **satu WebP alur lengkap** yang sama (`assets/diagrams/alur-panduan.webp`, dibuat dengan stack-diagram) dengan **kotak hijau** pada titik mulai role. Keterkaitan antarrole dijelaskan pada tabel di modul terkait. Screenshot form/tabel diambil dari aplikasi pilot; tabel tetap ditampilkan penuh dan aksi role ditandai kotak hijau. Setiap screenshot dapat di-zoom dan dibuka layar penuh.
+Setiap modul memakai **satu WebP alur lengkap** yang sama (`assets/diagrams/alur-panduan.webp`, dibuat dengan stack-diagram) dengan **kartu peran pada alur ditandai hijau**. Keterkaitan antarperan dijelaskan pada langkah/tujuan berikutnya dan catatan modul. Screenshot diambil per komponen (form/tabel/panel aksi) dari aplikasi pilot; aksi peran ditandai kotak hijau agar konteks langsung terlihat. Setiap screenshot dapat diperbesar atau dibuka layar penuh.
 
-Role `iku_owner` sudah ada di rancangan domain, tetapi belum memiliki akun/layar khusus pada pilot; hal ini dicatat di halaman panduan, bukan diisi dengan alur yang belum ada.
+Role `iku_owner` sudah dihapus dari domain, role, dan kolom master. Publikasi master IKU dilakukan Admin setelah approval Puskesmas.
 
 ---
 
@@ -209,9 +214,9 @@ Role `iku_owner` sudah ada di rancangan domain, tetapi belum memiliki akun/layar
 
 ## B.2 Alur peran (swimlane)
 
-<img src="assets/diagrams/alur-peran.webp" alt="Swimlane lima peran MATA SIDIK: Puskesmas/PJ Program, Verifikator Dinas, Kabid/Sekretaris, Sistem, dan Pimpinan, lengkap dengan handoff utama, pengembalian, permintaan isi faktor, serta arahan dan pantau TL.">
+<img src="assets/diagrams/alur-peran.webp" alt="Swimlane enam peran MATA SIDIK: Operator Puskesmas/PJ, Puskesmas Approver, Verifikator Dinas, Kabid/Sekretaris, Sistem, dan Pimpinan, lengkap dengan handoff utama, pengembalian, permintaan isi faktor, serta arahan dan pantau TL.">
 
-*Gambar B.2 — Handoff antarperan. Alur utama: input + BNBA → verifikasi → validasi final → olah data → dashboard → arahan pimpinan. Garis putus-putus menunjukkan pengembalian data, permintaan isi faktor, serta arahan dan TL. Faktor diisi Kabid/Sekretaris; TL ditetapkan pimpinan, ditindaklanjuti Kabid/Sekretaris, dan dipantau. Sumber HTML: [`assets/diagrams/alur-peran.html`](assets/diagrams/alur-peran.html).*
+*Gambar B.2 — Handoff antarperan. Alur utama: input + BNBA → approval Puskesmas → verifikasi → validasi final → olah data → dashboard → arahan pimpinan. Garis putus-putus menunjukkan pengembalian data, permintaan isi faktor, serta arahan dan TL. Faktor diisi Kabid/Sekretaris; TL ditetapkan pimpinan, ditindaklanjuti Kabid/Sekretaris, dan dipantau. Sumber HTML: [`assets/diagrams/alur-peran.html`](assets/diagrams/alur-peran.html).*
 
 ## B.3 Model data (usulan awal)
 
@@ -219,7 +224,7 @@ Role `iku_owner` sudah ada di rancangan domain, tetapi belum memiliki akun/layar
 
 *Gambar B.3 — Pemisahan master/referensi dari transaksi, faktor, audit, dan TL. Sumber HTML: [`assets/diagrams/model-data.html`](assets/diagrams/model-data.html).*
 
-Skema database lengkap (31 tabel, kolom, relasi, index, enum, seed, dan catatan migrasi) ada di [`docs/schema.md`](docs/schema.md); diagram katalognya ada di [`assets/diagrams/schema-db.webp`](assets/diagrams/schema-db.webp).
+Skema database lengkap (34 tabel, kolom, relasi, index, enum, seed, dan catatan migrasi) ada di [`docs/schema.md`](docs/schema.md); diagram katalognya ada di [`assets/diagrams/schema-db.webp`](assets/diagrams/schema-db.webp).
 
 ### Field kunci per entitas
 
@@ -239,16 +244,28 @@ Skema database lengkap (31 tabel, kolom, relasi, index, enum, seed, dan catatan 
 
 ## B.4 Matriks hak akses (RBAC awal — selaraskan dengan Dinas)
 
-| Aksi | Puskesmas/PJ | Verifikator Dinas | Kabid/Sekretaris | Pimpinan | Admin |
-| --- | --- | --- | --- | --- | --- |
-| Input/kirim + upload BNBA | ✅ | ❌ | ❌ | ❌ | ✅ (bantuan) |
-| Verifikasi/kembalikan ke pengirim | ❌ | ✅ | ❌ | ❌ | ❌ |
-| Validasi final/kembalikan ke verifikator | ❌ | ❌ | ✅ | ❌ | ❌ |
-| Ubah data final (khusus + audit) | ❌ | ❌ | ✅ terbatas | ❌ | ✅ dual approval |
-| Isi faktor pendukung/penghambat | ❌ | ❌ | ✅ wajib | ❌ | ❌ |
-| Lihat dashboard semua filter | milik sendiri | bidangnya | bidangnya | ✅ semua | ✅ |
-| Beri arahan / tetapkan TL | ❌ | ❌ | terima | ✅ beri | ❌ |
-| Kelola master + user | ❌ | ❌ | ❌ | ❌ | ✅ |
+| Aksi | Operator/PJ Puskesmas | Kepala Puskesmas | Verifikator Dinas | Kabid/Sekretaris | Pimpinan | Admin |
+| --- | --- | --- | --- | --- | --- | --- |
+| Input/kirim + unggah BNBA | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ bantuan |
+| Persetujuan BNBA tahap Puskesmas | ❌ | ✅ faskes sendiri | ❌ | ❌ | ❌ | ❌ |
+| Verifikasi/kembalikan ke pengirim | ❌ | ❌ | ✅ | ❌ | ❌ | ✅ bantuan |
+| Validasi final/kembalikan ke verifikator | ❌ | ❌ | ❌ | ✅ | ❌ | ✅ bantuan |
+| Ubah data final (khusus + audit) | ❌ | ❌ | ❌ | ✅ terbatas | ❌ | ✅ dual approval |
+| Isi faktor pendukung/penghambat | ❌ | ❌ | ❌ | ✅ wajib | baca | ✅ |
+| Lihat dashboard | milik sendiri | milik sendiri | bidangnya | bidangnya | ✅ semua | ✅ semua |
+| Beri arahan / tetapkan TL | ❌ | ❌ | ❌ | terima + ubah status | ✅ beri | ✅ |
+| Kelola master + user | ❌ | ❌ | ❌ | lihat + target | ❌ | ✅ |
+| Ajukan IKU | ✅ operator | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Setujui IKU tahap Puskesmas | ❌ | ✅ faskes sendiri | ❌ | ❌ | ❌ | ❌ |
+| Setujui/publikasikan IKU final | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
+| CRUD IKU global | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
+| Lihat jejak audit | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ |
+
+**Tambahan `pkm_approver`:** approve/reject BNBA dan pengajuan IKU hanya untuk faskes sendiri; tidak bisa upload, tidak bisa publikasi IKU, dan tidak boleh menyetujui pengajuannya sendiri.
+
+**Admin dan IKU:** Operator Puskesmas mengajukan IKU untuk faskesnya; Admin dapat melakukan CRUD IKU **global** langsung dari Master, serta approve/reject pengajuan yang sudah lolos Puskesmas.
+
+**Tampilan aplikasi mengikuti matriks ini.** Menu sidebar, penjaga rute, dan tombol aksi memakai satu daftar aturan di `frontend/src/lib/constants/access.ts`. URL menu di luar peran menampilkan halaman **Akses terbatas**. `pkm_pj` tidak dapat mengajukan IKU; pengajuan IKU hanya untuk Operator Puskesmas. Panduan in-app juga menyaring tab peran sesuai akun yang login. Mode **lihat sebagai** Admin tetap aktif saat reload/refresh dalam tab yang sama dan kembali ke Admin lewat tombol **Kembali**.
 
 ## B.5 Skema master indikator dinamis + RACI per label
 
@@ -268,12 +285,14 @@ Contoh sifat dari sumber: UHH = input langsung kabupaten 1x/tahun (`docs/02-daft
 | Bidang / Sekretariat / Timker | R | C | A | I |
 | Arahan + TL | I | C | R (eksekusi) | A (pemberi arahan) |
 
+**Puskesmas Approver** berada di antara input dan verifikasi: R untuk approval BNBA dan pengajuan master IKU faskes sendiri.
+
 ### Enum status formal (7 nilai: 5 status inti + 2 status pengembalian)
 
 | Status | Arti | Boleh dilakukan oleh |
 | --- | --- | --- |
 | `draf` | Baru diinput, belum dikirim | Puskesmas/PJ |
-| `dikirim` | Menunggu verifikasi | Sistem (terkunci untuk pengirim) |
+| `dikirim` | Menunggu approval Puskesmas atau verifikasi Dinas (lihat `step`) | Puskesmas Approver / Verifikator |
 | `diverifikasi` | Lolos cek Dinas, menunggu validasi | Verifikator |
 | `dikembalikan_petugas` | Belum sesuai, kembali ke tahap 1 + catatan | Verifikator |
 | `dikembalikan_verifikator` | Perlu cek, kembali ke tahap 2 | Kabid/Sekretaris |
@@ -330,11 +349,13 @@ Rancangan lengkap ada di [`docs/04-arsitektur-iku.md`](docs/04-arsitektur-iku.md
 
 **Preview:** dropdown “Ubah IKU” hanya berisi IKU leaf valid untuk indikator tersebut. Perubahan sebelum submit dicatat di audit; setelah submit, perubahan mengikuti revisi + approval.
 
-**Workflow:** default `DRAFT_PKM → VERIFY_DINAS → VALIDATE_KABID → FINAL`, dengan `SUBMISSION_GROUP` per pemilik data untuk submission lintas bidang. Versi workflow di-pin per submission. Catatan wajib saat return dan final; tidak ada auto-approve.
+**Workflow:** default `DRAFT_PKM → APPROVE_PKM → VERIFY_DINAS → VALIDATE_KABID → FINAL`, dengan `SUBMISSION_GROUP` per pemilik data untuk submission lintas bidang. Versi workflow di-pin per submission. Catatan wajib saat return dan final; tidak ada auto-approve.
 
-<img src="assets/diagrams/alur-workflow.webp" alt="Workflow approval berjenjang MATA SIDIK: DRAFT_PKM submit ke VERIFY_DINAS, approve ke VALIDATE_KABID, approve ke FINAL, dengan jalur return ke pengirim dan verifikator serta SPECIAL_CHANGE pasca-final.">
+<img src="assets/diagrams/alur-workflow.webp" alt="Workflow approval berjenjang MATA SIDIK: DRAFT_PKM submit ke APPROVE_PKM, lalu VERIFY_DINAS, VALIDATE_KABID, dan FINAL, dengan jalur return serta SPECIAL_CHANGE pasca-final.">
 
-*Gambar B.8b — State machine approval lengkap: tiga level approval, jalur return, dan `SPECIAL_CHANGE` pasca-final. Sumber HTML: [`assets/diagrams/alur-workflow.html`](assets/diagrams/alur-workflow.html); generator: [`assets/diagrams/gen-teknis.py`](assets/diagrams/gen-teknis.py).*
+*Gambar B.8b — State machine approval lengkap: approval Puskesmas, Dinas, dan Kabid, jalur return, dan `SPECIAL_CHANGE` pasca-final. Sumber HTML: [`assets/diagrams/alur-workflow.html`](assets/diagrams/alur-workflow.html); generator: [`assets/diagrams/gen-teknis.py`](assets/diagrams/gen-teknis.py).*
+
+**Pengajuan IKU:** hanya **Operator Puskesmas** yang mengajukan `CREATE`/`UPDATE`/`DEACTIVATE`; Puskesmas approver faskes yang sama memutus; Admin mempublikasikan. **Admin juga dapat CRUD IKU global langsung dari Master.** Endpoint pengajuan: `/api/v1/iku/change-requests`.
 
 **Kalkulasi:** `RATIO_OF_SUMS` untuk persentase (`Σ numerator / Σ denominator`), komponen induk eksplisit, provenance di `IKU_VALUE_DETAIL`, status `COMPLETE/PARTIAL/NO_DATA/STALE`. Contoh: `.01` 450/500 = 90,00%; `.02` 380/400 = 95,00%; `.03` 20/20 = 100,00%; induk 850/920 = 92,39%.
 
@@ -368,7 +389,7 @@ npm run dev
 ```
 
 - API: `http://localhost:8080` · frontend dev: `http://localhost:5173` (proxy `/api`).
-- Login awal: `admin`, `siti`, `rina`, `kabid`, `pimpinan`, `sekretaris`, `pjgizi` — password `password123` (ganti sebelum produksi).
+- Login awal: `admin`, `siti`, `kepalapkm`, `rina`, `kabid`, `pimpinan`, `sekretaris`, `pjgizi` — password `password123` (ganti sebelum produksi).
 - Set `APP_AUTH_KEY` (64 hex chars = 32 byte) agar access token tetap valid setelah restart; jika kosong API memakai kunci acak sementara (refresh token di DB tetap bekerja).
 - Access token PASETO v4.local 30 menit; refresh token HttpOnly 7 hari; admin dapat memakai **ActingAs**.
 - Halaman login menampilkan fungsi aplikasi di kiri dan form di kanan; alur empat langkah ditampilkan sebagai satu baris ringkas tanpa label jabatan: upload → verifikasi → validasi → final.

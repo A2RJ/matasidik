@@ -12,6 +12,13 @@
   import DataTable from '$lib/components/ui/data-table.svelte';
   import Spinner from '$lib/components/ui/spinner.svelte';
   import { PAGE_COPY } from '$lib/constants/labels';
+  import {
+    AGGREGATION_LABELS,
+    AGGREGATION_OPTIONS,
+    CATEGORY_TYPE_LABELS,
+    ORGANIZATION_TYPE_LABELS,
+    SCOPE_TYPE_LABELS
+  } from '$lib/constants/enums';
   import { formatDateTime, formatPercent } from '$lib/utils';
   import type { Bidang, CapaianTahunan, DashboardCategory, Indicator, Label, Target } from '$lib/types';
   import { Plus, RefreshCw, Database, Tag, Target as TargetIcon, CalendarDays, History } from '@lucide/svelte';
@@ -65,9 +72,9 @@
   let timkerOptions = $derived(bidangList.filter((b) => b.aktif && b.jenis === 'timker').map((b) => ({ value: b.id, label: `${b.kode} · ${b.nama}` })));
   let selectedLabelOptions = $derived(labelOptions.filter((o) => indForm.labelIDs.includes(o.value)));
   let periodOptions = $derived(periods.map((p) => ({ value: p.id, label: p.kode })));
-  let parentOptions = $derived([{ value: '', label: 'Tanpa parent' }, ...labelOptions]);
+  let parentOptions = $derived([{ value: '', label: 'Tanpa induk' }, ...labelOptions]);
   let bidangParentOptions = $derived([
-    { value: '', label: 'Tanpa parent' },
+    { value: '', label: 'Tanpa induk' },
     ...bidangList.filter((b) => b.aktif && b.jenis !== 'timker').map((b) => ({ value: b.id, label: `${b.kode} · ${b.nama}` }))
   ]);
   let baselineTargetOptions = $derived([
@@ -96,12 +103,12 @@
   ];
   let labelColumns = [
     { key: 'kode', label: 'Kode', class: 'w-44' },
-    { key: 'nama', label: 'Label' },
+    { key: 'nama', label: 'Nama IKU' },
     { key: 'category', label: 'Kategori', class: 'w-40' },
-    { key: 'aggregation', label: 'Agregasi', class: 'w-36' },
-    { key: 'input', label: 'Input', class: 'w-32' },
-    { key: 'parent', label: 'Parent', class: 'w-44' },
-    { key: 'action', label: 'Aksi', class: 'w-24' }
+    { key: 'aggregation', label: 'Cara hitung', class: 'w-36' },
+    { key: 'input', label: 'Sumber nilai', class: 'w-32' },
+    { key: 'parent', label: 'IKU induk', class: 'w-44' },
+    { key: 'action', label: 'Aksi', class: 'w-48' }
   ];
   let categoryColumns = [
     { key: 'urutan', label: 'Urutan', class: 'w-20' },
@@ -115,21 +122,21 @@
     { key: 'kode', label: 'Kode', class: 'w-32' },
     { key: 'nama', label: 'Bidang/Timker' },
     { key: 'jenis', label: 'Jenis', class: 'w-28' },
-    { key: 'parent', label: 'Parent', class: 'w-48' },
+    { key: 'parent', label: 'Induk', class: 'w-48' },
     { key: 'aktif', label: 'Status', class: 'w-28' },
     { key: 'action', label: 'Aksi', class: 'w-24' }
   ];
   let targetColumns = [
     { key: 'label', label: 'Label' },
     { key: 'periode', label: 'Periode', class: 'w-28' },
-    { key: 'scope', label: 'Scope', class: 'w-32' },
+    { key: 'scope', label: 'Lingkup', class: 'w-32' },
     { key: 'tahunan', label: 'Target tahunan', class: 'text-right w-32' },
     { key: 'bulanan', label: 'Target bulanan', class: 'text-right w-32' }
   ];
   let baselineColumns = [
     { key: 'target', label: 'Label / Indikator' },
     { key: 'tahun', label: 'Tahun', class: 'w-20' },
-    { key: 'scope', label: 'Scope', class: 'w-28' },
+    { key: 'scope', label: 'Lingkup', class: 'w-28' },
     { key: 'nilai', label: 'Capaian', class: 'text-right w-28' },
     { key: 'catatan', label: 'Catatan', class: 'w-52' },
     { key: 'updated', label: 'Diperbarui', class: 'w-44' },
@@ -216,6 +223,18 @@
           aggregation_method: 'RATIO_OF_SUMS', allow_direct_input: true, is_rollup_only: false
         };
     labelOpen = true;
+  }
+
+  async function deactivateLabel(item: Label) {
+    if (!confirm(`Nonaktifkan IKU ${item.kode}?`)) return;
+    error = '';
+    try {
+      await api.deleteLabel(item.id);
+      message = 'IKU dinonaktifkan.';
+      await reload();
+    } catch (err) {
+      error = err instanceof Error ? err.message : 'Gagal menonaktifkan IKU.';
+    }
   }
 
   async function saveLabel() {
@@ -447,17 +466,30 @@
     <Button variant="outline" onclick={reload}><RefreshCw size={14} /> Muat ulang</Button>
     <Button variant={activeTab === 'preview' ? 'default' : 'outline'} onclick={() => (activeTab = 'preview')}><Tag size={14} /> Pratinjau Pemetaan</Button>
     {#if activeTab === 'indicators'}
-      <Button onclick={() => (indicatorOpen = true)} disabled={!canMaster}><Plus size={14} /> Indikator</Button>
+      {#if canMaster}
+        <Button onclick={() => (indicatorOpen = true)}><Plus size={14} /> Indikator</Button>
+      {/if}
     {:else if activeTab === 'labels'}
-      <Button onclick={() => openLabel()} disabled={!canMaster}><Plus size={14} /> Label</Button>
+      {#if canMaster}
+        <Button onclick={() => openLabel()}><Plus size={14} /> IKU Global</Button>
+        <a href="/iku-requests" class="inline-flex h-10 items-center gap-2 border-2 border-black bg-card px-4 font-mono text-xs font-bold uppercase shadow-nbsm">
+          Pengajuan IKU
+        </a>
+      {/if}
     {:else if activeTab === 'categories'}
-      <Button onclick={() => openCategory()} disabled={!canMaster}><Plus size={14} /> Kategori</Button>
+      {#if canMaster}
+        <Button onclick={() => openCategory()}><Plus size={14} /> Kategori</Button>
+      {/if}
     {:else if activeTab === 'bidang'}
-      <Button onclick={() => openBidang()} disabled={!canMaster}><Plus size={14} /> Bidang/Timker</Button>
+      {#if canMaster}
+        <Button onclick={() => openBidang()}><Plus size={14} /> Bidang/Timker</Button>
+      {/if}
     {:else if activeTab === 'targets'}
       <Button onclick={() => (targetOpen = true)} disabled={!isAdmin}><Plus size={14} /> Target</Button>
     {:else if activeTab === 'baselines'}
-      <Button onclick={() => openBaseline()} disabled={!canMaster}><Plus size={14} /> Capaian</Button>
+      {#if canMaster}
+        <Button onclick={() => openBaseline()}><Plus size={14} /> Capaian</Button>
+      {/if}
     {/if}
   {/snippet}
 </PageHeader>
@@ -537,46 +569,55 @@
       Pratinjau pemetaan indikator ke label/kategori dan PJ. Label Indikator berasal dari label/kategori; Bidang dan Timker berasal dari kolom PJ, bukan dari label.
     </div>
   {:else if activeTab === 'labels'}
-    <DataTable columns={labelColumns} rows={labels}>
+    <DataTable columns={canMaster ? labelColumns : labelColumns.filter((c) => c.key !== 'action')} rows={labels}>
       {#snippet cell(item: Label, key)}
         {#if key === 'kode'}<span class="font-bold">{item.kode}</span>
         {:else if key === 'nama'}{item.nama}
         {:else if key === 'category'}<Badge tone="neutral">{item.category_nama ?? item.category_kode ?? item.tipe}</Badge>
-        {:else if key === 'aggregation'}{item.aggregation_method}
+        {:else if key === 'aggregation'}{AGGREGATION_LABELS[item.aggregation_method] ?? item.aggregation_method}
         {:else if key === 'input'}
-          {#if item.is_rollup_only}<Badge tone="warning">Rollup</Badge>{:else}<Badge tone="success">Direct input</Badge>{/if}
+          {#if item.is_rollup_only}<Badge tone="warning">Dari komponen</Badge>{:else}<Badge tone="success">Input langsung</Badge>{/if}
         {:else if key === 'parent'}{item.parent_id ? labelMap.get(item.parent_id)?.kode ?? item.parent_id : '—'}
         {:else if key === 'action'}
-          <Button size="sm" variant="outline" onclick={() => openLabel(item)} disabled={!canMaster}>Edit</Button>
+          {#if canMaster}
+            <div class="flex flex-wrap gap-1">
+              <Button size="sm" variant="outline" onclick={() => openLabel(item)}>Edit</Button>
+              <Button size="sm" variant="ghost" onclick={() => deactivateLabel(item)}>Nonaktifkan</Button>
+            </div>
+          {/if}
         {/if}
       {/snippet}
     </DataTable>
   {:else if activeTab === 'categories'}
-    <DataTable columns={categoryColumns} rows={categories}>
+    <DataTable columns={canMaster ? categoryColumns : categoryColumns.filter((c) => c.key !== 'action')} rows={categories}>
       {#snippet cell(item: DashboardCategory, key)}
         {#if key === 'urutan'}<span class="font-mono">{item.urutan}</span>
         {:else if key === 'kode'}<span class="font-bold">{item.kode}</span>
         {:else if key === 'nama'}{item.nama}
-        {:else if key === 'jenis'}<Badge tone={item.jenis === 'OWNER' ? 'warning' : 'info'}>{item.jenis}</Badge>
+        {:else if key === 'jenis'}<Badge tone={item.jenis === 'OWNER' ? 'warning' : 'info'}>{CATEGORY_TYPE_LABELS[item.jenis] ?? item.jenis}</Badge>
         {:else if key === 'aktif'}<Badge tone={item.aktif ? 'success' : 'neutral'}>{item.aktif ? 'Aktif' : 'Nonaktif'}</Badge>
         {:else if key === 'action'}
-          <div class="flex gap-1">
-            <Button size="sm" variant="outline" onclick={() => openCategory(item)} disabled={!canMaster}>Edit</Button>
-            {#if item.aktif}<Button size="sm" variant="ghost" onclick={() => deactivateCategory(item)} disabled={!canMaster}>Nonaktifkan</Button>{/if}
-          </div>
+          {#if canMaster}
+            <div class="flex gap-1">
+              <Button size="sm" variant="outline" onclick={() => openCategory(item)}>Edit</Button>
+              {#if item.aktif}<Button size="sm" variant="ghost" onclick={() => deactivateCategory(item)}>Nonaktifkan</Button>{/if}
+            </div>
+          {/if}
         {/if}
       {/snippet}
     </DataTable>
   {:else if activeTab === 'bidang'}
-    <DataTable columns={bidangColumns} rows={bidangList}>
+    <DataTable columns={canMaster ? bidangColumns : bidangColumns.filter((c) => c.key !== 'action')} rows={bidangList}>
       {#snippet cell(item: Bidang, key)}
         {#if key === 'kode'}<span class="font-bold">{item.kode}</span>
         {:else if key === 'nama'}{item.nama}
-        {:else if key === 'jenis'}<Badge tone={item.jenis === 'timker' ? 'warning' : 'info'}>{item.jenis}</Badge>
+        {:else if key === 'jenis'}<Badge tone={item.jenis === 'timker' ? 'warning' : 'info'}>{ORGANIZATION_TYPE_LABELS[item.jenis] ?? item.jenis}</Badge>
         {:else if key === 'parent'}{item.parent_id ? bidangMap.get(item.parent_id)?.kode ?? item.parent_id : '—'}
         {:else if key === 'aktif'}<Badge tone={item.aktif ? 'success' : 'neutral'}>{item.aktif ? 'Aktif' : 'Nonaktif'}</Badge>
         {:else if key === 'action'}
-          <Button size="sm" variant="outline" onclick={() => openBidang(item)} disabled={!canMaster}>Edit</Button>
+          {#if canMaster}
+            <Button size="sm" variant="outline" onclick={() => openBidang(item)}>Edit</Button>
+          {/if}
         {/if}
       {/snippet}
     </DataTable>
@@ -585,7 +626,7 @@
       {#snippet cell(item: Target, key)}
         {#if key === 'label'}{item.label_id ? labelMap.get(item.label_id)?.kode ?? item.label_id : item.indikator_id ?? '—'}
         {:else if key === 'periode'}{item.periode_id ? periodMap.get(item.periode_id)?.kode ?? item.periode_id : '—'}
-        {:else if key === 'scope'}{item.scope_type}/{item.scope_id ?? '—'}
+        {:else if key === 'scope'}{SCOPE_TYPE_LABELS[item.scope_type] ?? item.scope_type}{item.scope_id && item.scope_type !== 'KABUPATEN' ? ` · ${item.scope_id}` : ''}
         {:else if key === 'tahunan'}{formatPercent(item.target_tahunan, 0)}
         {:else if key === 'bulanan'}{formatPercent(item.target_bulanan, 2)}
         {/if}
@@ -599,23 +640,25 @@
         Belum ada capaian tahunan untuk {baselineYear}. Tambahkan capaian per label/IKU atau indikator.
       </div>
     {:else}
-      <DataTable columns={baselineColumns} rows={baselines}>
+      <DataTable columns={canMaster ? baselineColumns : baselineColumns.filter((c) => c.key !== 'action')} rows={baselines}>
         {#snippet cell(item: CapaianTahunan, key)}
           {#if key === 'target'}
             <div class="font-semibold">{baselineName(item)}</div>
             <div class="text-[10px] text-muted-foreground">{item.label_id ? 'Label / IKU' : 'Indikator'}</div>
           {:else if key === 'tahun'}{item.tahun}
-          {:else if key === 'scope'}{item.scope_type}/{item.scope_id ?? '—'}
+          {:else if key === 'scope'}{SCOPE_TYPE_LABELS[item.scope_type] ?? item.scope_type}{item.scope_id && item.scope_type !== 'KABUPATEN' ? ` · ${item.scope_id}` : ''}
           {:else if key === 'nilai'}<span class="font-bold">{formatPercent(item.nilai, 2)}</span>
           {:else if key === 'catatan'}{item.catatan ?? '—'}
           {:else if key === 'updated'}
             <div>{formatDateTime(item.updated_at)}</div>
             <div class="text-[10px] text-muted-foreground">{item.updated_by_nama ?? '—'}</div>
           {:else if key === 'action'}
-            <div class="flex gap-1">
-              <Button size="sm" variant="outline" onclick={() => openBaseline(item)} disabled={!canMaster}>Edit</Button>
-              <Button size="sm" variant="ghost" onclick={() => deleteBaseline(item)} disabled={!canMaster}>Hapus</Button>
-            </div>
+            {#if canMaster}
+              <div class="flex gap-1">
+                <Button size="sm" variant="outline" onclick={() => openBaseline(item)}>Edit</Button>
+                <Button size="sm" variant="ghost" onclick={() => deleteBaseline(item)}>Hapus</Button>
+              </div>
+            {/if}
           {/if}
         {/snippet}
       </DataTable>
@@ -660,8 +703,8 @@
       <Select id="pt" bind:value={indForm.pjTimkerID} options={timkerOptions} placeholder="Pilih timker" />
     </div>
     <div class="sm:col-span-2"><label class="nb-label" for="id">Definisi</label><Textarea id="id" bind:value={indForm.definisi} rows={3} /></div>
-    <div><label class="nb-label" for="num">Label numerator</label><Input id="num" bind:value={indForm.numerator_label} /></div>
-    <div><label class="nb-label" for="den">Label denominator</label><Input id="den" bind:value={indForm.denominator_label} /></div>
+    <div><label class="nb-label" for="num">Nama pembilang</label><Input id="num" bind:value={indForm.numerator_label} /></div>
+    <div><label class="nb-label" for="den">Nama penyebut</label><Input id="den" bind:value={indForm.denominator_label} /></div>
   </div>
   <div class="mt-4 flex justify-end gap-2">
     <Button variant="outline" onclick={() => (indicatorOpen = false)}>Batal</Button>
@@ -669,29 +712,29 @@
   </div>
 </Modal>
 
-<Modal open={labelOpen} title={editingLabel ? 'Edit label/IKU' : 'Tambah label/IKU'} description="Setiap label/IKU wajib punya satu kategori." onclose={() => (labelOpen = false)}>
+<Modal open={labelOpen} title={editingLabel ? 'Edit IKU' : 'Tambah IKU'} description="Setiap IKU wajib memiliki satu kategori." onclose={() => (labelOpen = false)}>
   <div class="grid gap-3 sm:grid-cols-2">
     <div><label class="nb-label" for="lk">Kode</label><Input id="lk" bind:value={labelForm.kode} placeholder="IKU-2026-002" disabled={!!editingLabel} /></div>
     <div><label class="nb-label" for="ln">Nama</label><Input id="ln" bind:value={labelForm.nama} /></div>
     <div><label class="nb-label" for="lc">Kategori</label><Select id="lc" bind:value={labelForm.categoryID} options={categoryOptions} placeholder="Pilih kategori" /></div>
-    <div><label class="nb-label" for="lp">Parent</label><Select id="lp" bind:value={labelForm.parentID} options={parentOptions} /></div>
-    <div><label class="nb-label" for="la">Agregasi</label><Select id="la" bind:value={labelForm.aggregation_method} options={['RATIO_OF_SUMS','SUM','WEIGHTED_AVERAGE','FORMULA','NONE'].map((v)=>({value:v,label:v}))} disabled={!!editingLabel} /></div>
+    <div><label class="nb-label" for="lp">IKU induk</label><Select id="lp" bind:value={labelForm.parentID} options={parentOptions} /></div>
+    <div><label class="nb-label" for="la">Cara hitung</label><Select id="la" bind:value={labelForm.aggregation_method} options={AGGREGATION_OPTIONS} disabled={!!editingLabel} /></div>
     <div class="flex items-end gap-4 pb-1">
-      <label class="flex items-center gap-2 font-mono text-[10px] font-bold uppercase"><input type="checkbox" bind:checked={labelForm.allow_direct_input} /> Direct input</label>
-      <label class="flex items-center gap-2 font-mono text-[10px] font-bold uppercase"><input type="checkbox" bind:checked={labelForm.is_rollup_only} /> Rollup</label>
+      <label class="flex items-center gap-2 font-mono text-[10px] font-bold uppercase"><input type="checkbox" bind:checked={labelForm.allow_direct_input} /> Input langsung</label>
+      <label class="flex items-center gap-2 font-mono text-[10px] font-bold uppercase"><input type="checkbox" bind:checked={labelForm.is_rollup_only} /> Nilai dari komponen</label>
     </div>
   </div>
   <div class="mt-4 flex justify-end gap-2">
     <Button variant="outline" onclick={() => (labelOpen = false)}>Batal</Button>
-    <Button variant="success" onclick={saveLabel}>Simpan label</Button>
+    <Button variant="success" onclick={saveLabel}>Simpan IKU</Button>
   </div>
 </Modal>
 
-<Modal open={categoryOpen} title={editingCategory ? 'Edit kategori' : 'Tambah kategori'} description="Kategori mengatur filter dashboard dan taksonomi label." onclose={() => (categoryOpen = false)}>
+<Modal open={categoryOpen} title={editingCategory ? 'Edit kategori' : 'Tambah kategori'} description="Kategori mengatur filter dashboard dan pengelompokan IKU." onclose={() => (categoryOpen = false)}>
   <div class="grid gap-3 sm:grid-cols-2">
     <div><label class="nb-label" for="ck">Kode</label><Input id="ck" bind:value={categoryForm.kode} placeholder="IKK" disabled={!!editingCategory} /></div>
     <div><label class="nb-label" for="cn">Nama</label><Input id="cn" bind:value={categoryForm.nama} placeholder="IKK" /></div>
-    <div><label class="nb-label" for="cj">Jenis</label><Select id="cj" bind:value={categoryForm.jenis} options={[{value:'LABEL',label:'LABEL'},{value:'OWNER',label:'OWNER'}]} disabled={!!editingCategory?.is_system} /></div>
+    <div><label class="nb-label" for="cj">Jenis</label><Select id="cj" bind:value={categoryForm.jenis} options={[{value:'LABEL',label:'Kelompok IKU'},{value:'OWNER',label:'Bidang/Timker'}]} disabled={!!editingCategory?.is_system} /></div>
     <div><label class="nb-label" for="cu">Urutan</label><Input id="cu" type="number" bind:value={categoryForm.urutan} /></div>
     <label class="flex items-center gap-2 font-mono text-[10px] font-bold uppercase"><input type="checkbox" bind:checked={categoryForm.aktif} /> Aktif</label>
   </div>
@@ -701,12 +744,12 @@
   </div>
 </Modal>
 
-<Modal open={bidangOpen} title={editingBidang ? 'Edit bidang/timker' : 'Tambah bidang/timker'} description="Bidang, sekretariat, dan timker memakai satu tabel dengan jenis berbeda." onclose={() => (bidangOpen = false)}>
+<Modal open={bidangOpen} title={editingBidang ? 'Edit bidang/timker' : 'Tambah bidang/timker'} description="Bidang, sekretariat, dan tim kerja dikelola sebagai satu kelompok organisasi." onclose={() => (bidangOpen = false)}>
   <div class="grid gap-3 sm:grid-cols-2">
     <div><label class="nb-label" for="bk">Kode</label><Input id="bk" bind:value={bidangForm.kode} placeholder="KESGA" /></div>
     <div><label class="nb-label" for="bn">Nama</label><Input id="bn" bind:value={bidangForm.nama} placeholder="Timker Kesehatan Keluarga" /></div>
-    <div><label class="nb-label" for="bj">Jenis</label><Select id="bj" bind:value={bidangForm.jenis} options={[{value:'bidang',label:'Bidang'},{value:'sekretariat',label:'Sekretariat'},{value:'timker',label:'Timker'}]} /></div>
-    <div><label class="nb-label" for="bp">Parent</label><Select id="bp" bind:value={bidangForm.parentID} options={bidangParentOptions} /></div>
+    <div><label class="nb-label" for="bj">Jenis</label><Select id="bj" bind:value={bidangForm.jenis} options={[{value:'bidang',label:'Bidang'},{value:'sekretariat',label:'Sekretariat'},{value:'timker',label:'Tim Kerja'}]} /></div>
+    <div><label class="nb-label" for="bp">Induk</label><Select id="bp" bind:value={bidangForm.parentID} options={bidangParentOptions} /></div>
     <label class="flex items-center gap-2 font-mono text-[10px] font-bold uppercase"><input type="checkbox" bind:checked={bidangForm.aktif} /> Aktif</label>
   </div>
   <div class="mt-4 flex justify-end gap-2">

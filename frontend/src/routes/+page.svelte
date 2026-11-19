@@ -44,6 +44,13 @@
     Object.entries(DISPLAY_STATUS_LABELS).map(([value, label]) => ({ value, label }))
   );
   let canExport = $derived($currentActor && ['pimpinan', 'kabid', 'sekretaris', 'dinas_verifier', 'admin'].includes($currentActor.role));
+  let canUpload = $derived($currentActor && ['pkm_operator', 'pkm_pj', 'admin'].includes($currentActor.role));
+  let isFaskesScoped = $derived(
+    $currentActor?.role === 'pkm_operator' ||
+      $currentActor?.role === 'pkm_pj' ||
+      $currentActor?.role === 'pkm_approver'
+  );
+  let canSeeAllFaskes = $derived(!isFaskesScoped);
   let baselineHeader = $derived(
     items[0]?.baseline_year ? `Capaian ${items[0].baseline_year}` : TABLE_LABELS.baselinePrev
   );
@@ -207,7 +214,9 @@
       <Button variant="secondary" disabled={exporting !== ''} onclick={() => exportData('xlsx')}><FileSpreadsheet size={14} /> Excel</Button>
       <Button variant="secondary" disabled={exporting !== ''} onclick={() => exportData('pdf')}><FileText size={14} /> PDF</Button>
     {/if}
-    <Button variant="default" onclick={downloadTemplate}><Download size={14} /> Template BNBA</Button>
+    {#if canUpload}
+      <Button variant="default" onclick={downloadTemplate}><Download size={14} /> Template BNBA</Button>
+    {/if}
   {/snippet}
 </PageHeader>
 
@@ -223,7 +232,7 @@
   <StatCard
     label={isSPM ? 'IKU induk · Kesehatan Ibu' : 'Total baris kategori'}
     value={isSPM ? (summary?.parent_value !== undefined ? formatPercent(summary.parent_value) : '—') : `${summary?.total ?? 0}`}
-    hint={isSPM ? `Status ${summary?.parent_status ?? 'NO_DATA'} · RATIO_OF_SUMS` : `Kategori ${filterCategory}`}
+    hint={isSPM ? `Status ${DISPLAY_STATUS_LABELS[summary?.parent_status ?? 'NO_DATA'] ?? 'Belum ada data'} · dihitung dari komponen` : `Kategori ${filterCategory}`}
     tone="primary"
   >
     {#snippet icon()}<Target size={18} />{/snippet}
@@ -247,7 +256,7 @@
   <StatCard
     label="Belum ada data"
     value={`${summary?.no_data ?? 0}`}
-    hint="Baris tanpa IKU_VALUE final"
+    hint="Belum memiliki nilai final"
     tone="muted"
   >
     {#snippet icon()}<Database size={18} />{/snippet}
@@ -258,7 +267,7 @@
   <div class="flex flex-wrap items-end justify-between gap-3 border-b-2 border-black bg-muted px-4 py-3">
     <div>
       <div class="nb-kicker">Filter dashboard</div>
-      <h2 class="mt-1 text-xl">Periode & scope</h2>
+      <h2 class="mt-1 text-xl">Periode & cakupan</h2>
     </div>
     <div class="grid gap-2 sm:grid-cols-4">
       <div class="min-w-44">
@@ -269,10 +278,12 @@
         <label class="nb-label" for="category">Kelompok</label>
         <Select id="category" bind:value={filterCategory} options={categoryOptions} placeholder="Pilih kelompok" />
       </div>
-      <div class="min-w-48">
-        <label class="nb-label" for="faskes">Faskes/UPTD</label>
-        <Select id="faskes" bind:value={filterFaskes} options={faskesOptions} placeholder="Semua faskes" allowEmpty />
-      </div>
+      {#if canSeeAllFaskes}
+        <div class="min-w-48">
+          <label class="nb-label" for="faskes">Faskes/UPTD</label>
+          <Select id="faskes" bind:value={filterFaskes} options={faskesOptions} placeholder="Semua faskes" allowEmpty />
+        </div>
+      {/if}
       <div class="min-w-40">
         <label class="nb-label" for="status">Status</label>
         <Select id="status" bind:value={filterStatus} options={statusOptions} placeholder="Semua status" allowEmpty />
@@ -286,10 +297,10 @@
     <div class="flex flex-wrap items-center justify-between gap-3 border-b-2 border-black bg-card px-4 py-3">
       <div>
         <div class="nb-kicker">Performa antar puskesmas/UPTD</div>
-        <h2 class="mt-1 text-xl">Multi-series IKU</h2>
-        <p class="mt-1 text-xs text-muted-foreground">Setiap warna adalah satu IKU leaf; bandingkan capaian antar faskes pada periode aktif.</p>
+        <h2 class="mt-1 text-xl">Capaian per puskesmas</h2>
+        <p class="mt-1 text-xs text-muted-foreground">Setiap warna mewakili satu IKU; bandingkan capaian antar faskes pada periode aktif.</p>
       </div>
-      <Badge tone="info">Legends: seluruh IKU leaf</Badge>
+      <Badge tone="info">Semua IKU</Badge>
     </div>
     <CardContent>
       <MultiBarChart faskes={chart?.faskes ?? []} series={chart?.series ?? []} />
@@ -301,11 +312,11 @@
   <div class="flex flex-wrap items-center justify-between gap-3 border-b-2 border-black bg-muted px-4 py-3">
     <div>
       <div class="nb-kicker">{isSPM ? 'Output SPM' : 'Output kelompok'}</div>
-      <h2 class="mt-1 text-xl">{isSPM ? 'Capaian SPM per indikator' : isAll ? 'Capaian semua kelompok' : 'Capaian per label/owner'}</h2>
+      <h2 class="mt-1 text-xl">{isSPM ? 'Capaian SPM per indikator' : isAll ? 'Capaian semua kelompok' : 'Capaian per kelompok'}</h2>
     </div>
     <div class="flex flex-wrap gap-2">
       <Badge tone="final">Data final</Badge>
-      <Badge tone="info">Traceable</Badge>
+      <Badge tone="info">Dapat ditelusuri</Badge>
       {#if summary}<Badge tone="neutral">Total {summary.total} baris</Badge>{/if}
     </div>
   </div>
@@ -339,7 +350,7 @@
         {:else if key === 'gap'}
           {item.gap !== undefined ? `${item.gap > 0 ? '+' : ''}${formatNumber(item.gap, 2)} pp` : '—'}
         {:else if key === 'owner'}
-          {item.owner_nama ? `${item.owner_nama} (${item.owner_jenis ?? 'owner'})` : '—'}
+          {item.owner_nama ?? '—'}
         {:else if key === 'trace'}
           {#if isSPM}
             <Button size="sm" variant="outline" onclick={(event) => { event.stopPropagation(); openDetail(item.kode); }}>
@@ -350,7 +361,7 @@
       {/snippet}
     </DataTable>
     <div class="border-t-2 border-black bg-card px-4 py-2 font-mono text-[10px] text-muted-foreground">
-      {isSPM ? 'Klik baris untuk melihat provenance per puskesmas, cakupan upload, dan chart performa.' : 'Data mengikuti kategori dan filter yang dipilih; nilai tetap berasal dari label/indikator master.'}
+      {isSPM ? 'Klik baris untuk melihat sumber angka, cakupan upload, dan performa puskesmas.' : 'Data mengikuti kelompok dan filter yang dipilih; nilai bersumber dari master indikator.'}
     </div>
   {/if}
 </Card>
@@ -365,12 +376,14 @@
       </p>
     </div>
     <div class="flex flex-wrap gap-2">
-      <Button variant="secondary" disabled={monthlyExporting !== '' || monthlyLoading} onclick={() => exportMonthly('xlsx')}>
-        <FileSpreadsheet size={14} /> Excel
-      </Button>
-      <Button variant="secondary" disabled={monthlyExporting !== '' || monthlyLoading} onclick={() => exportMonthly('pdf')}>
-        <FileText size={14} /> PDF
-      </Button>
+      {#if canExport}
+        <Button variant="secondary" disabled={monthlyExporting !== '' || monthlyLoading} onclick={() => exportMonthly('xlsx')}>
+          <FileSpreadsheet size={14} /> Excel
+        </Button>
+        <Button variant="secondary" disabled={monthlyExporting !== '' || monthlyLoading} onclick={() => exportMonthly('pdf')}>
+          <FileText size={14} /> PDF
+        </Button>
+      {/if}
     </div>
   </div>
 
@@ -402,7 +415,7 @@
       {/snippet}
     </DataTable>
     <div class="border-t-2 border-black bg-card px-4 py-2 font-mono text-[10px] text-muted-foreground">
-      Status bulanan memakai perbandingan jumlah layanan bulan itu dengan target bulanan. Bulan tanpa data ditandai NO_DATA.
+      Status bulanan memakai perbandingan jumlah layanan bulan itu dengan target bulanan. Bulan tanpa data ditandai "Belum ada data".
     </div>
   {/if}
 </Card>

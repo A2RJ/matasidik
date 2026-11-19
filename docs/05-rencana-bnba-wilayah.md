@@ -6,6 +6,7 @@
 **Sumber requirement:** `Proses Bisnis Mata Sidik.xlsx`, sheet **Contoh Data**, baris 39; ekstraksi di `docs/03-contoh-data.md:61`. Pengelompokan dashboard: `docs/01-gambaran-umum.md:77-89`; label indikator: `docs/02-daftar-indikator-kinerja.md:15-31`.
 **Terkait:** `README.md:109`; `docs/rules.md:195-196, 362-368`; `docs/04-arsitektur-iku.md:54-97,169`.
 **Track:** A = BNBA & sebaran wilayah; B = pengelompokan dashboard dinamis.
+**Plan final konsolidasi:** [`06-rencana-final.md`](06-rencana-final.md).
 
 ---
 
@@ -351,6 +352,11 @@ Aturan:
 - [x] Filter dashboard per kategori + opsi **Semua** + query owner.
 - [x] Laporan absolut bulanan dari IKU/SPM + target layanan + ekspor XLSX/PDF.
 - [x] Field target layanan tahunan di Master Target.
+- [x] Role `pkm_approver`, pengajuan IKU, dan approval BNBA sebelum Dinas.
+- [x] Penghapusan role/kolom `iku_owner`.
+- [x] Tampilan per peran: sidebar, route guard, tombol aksi, dan tab panduan.
+- [x] Pembersihan label UI dari istilah tech stack/internal.
+- [x] Pembatasan `GET /factors` dan `GET /tindak-lanjut` ke Kabid/Sekretaris/Pimpinan/Admin.
 - [x] Template BNBA menambahkan `kode_kategori` opsional dan validasi classifier.
 - [ ] Audit/isi label sheet 2 untuk kategori selain IKU/SPM.
 - [ ] Target per kategori/label selain SPM.

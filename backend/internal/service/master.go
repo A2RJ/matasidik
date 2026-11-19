@@ -440,7 +440,6 @@ type CreateLabelInput struct {
 	AllowDirectInput  bool   `json:"allow_direct_input"`
 	IsRollupOnly      bool   `json:"is_rollup_only"`
 	PJBidangID        string `json:"pj_bidang_id"`
-	IKUOwnerID        string `json:"iku_owner_id"`
 }
 
 func (s *MasterService) CreateLabel(ctx context.Context, in CreateLabelInput, actor *domain.User) (*domain.Label, error) {
@@ -485,8 +484,8 @@ func (s *MasterService) CreateLabel(ctx context.Context, in CreateLabelInput, ac
 		MasterReleaseID:   in.MasterReleaseID,
 		AggregationMethod: domain.AggregationMethod(in.AggregationMethod),
 		AllowDirectInput:  in.AllowDirectInput, IsRollupOnly: in.IsRollupOnly,
-		PJBidangID: strPtr(in.PJBidangID), IKUOwnerID: strPtr(in.IKUOwnerID),
-		Level: level, Path: path, Aktif: true,
+		PJBidangID: strPtr(in.PJBidangID),
+		Level:      level, Path: path, Aktif: true,
 	}
 	if err := s.repo.CreateLabel(ctx, label); err != nil {
 		return nil, fmt.Errorf("simpan label: %w", err)
@@ -500,6 +499,37 @@ func cleanOptionalID(id *string) *string {
 	}
 	value := strings.TrimSpace(*id)
 	return &value
+}
+
+func (s *MasterService) DeactivateLabel(ctx context.Context, id string, actor *domain.User) (*domain.Label, error) {
+	if actor.Role != domain.RoleAdmin {
+		return nil, domain.Forbidden("hanya admin yang boleh menonaktifkan label")
+	}
+	label, err := s.repo.GetLabelByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	labels, err := s.repo.ListLabels(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, child := range labels {
+		if child.ParentID != nil && *child.ParentID == id {
+			return nil, domain.Conflict("label masih memiliki child aktif; nonaktifkan child terlebih dahulu")
+		}
+	}
+	links, err := s.repo.ListIndicatorLabelsForLabel(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if len(links) > 0 {
+		return nil, domain.Conflict("label masih dipakai indikator; lepaskan relasi indikator terlebih dahulu")
+	}
+	label.Aktif = false
+	if err := s.repo.UpdateLabel(ctx, label); err != nil {
+		return nil, err
+	}
+	return s.repo.GetLabelByID(ctx, id)
 }
 
 func (s *MasterService) resolveCategory(ctx context.Context, categoryID, tipe string) (*domain.DashboardCategory, error) {
@@ -531,7 +561,6 @@ type UpdateLabelInput struct {
 	CategoryID       string  `json:"category_id"`
 	ParentID         *string `json:"parent_id"`
 	PJBidangID       *string `json:"pj_bidang_id"`
-	IKUOwnerID       *string `json:"iku_owner_id"`
 	AllowDirectInput *bool   `json:"allow_direct_input"`
 	IsRollupOnly     *bool   `json:"is_rollup_only"`
 	Aktif            *bool   `json:"aktif"`
@@ -567,9 +596,6 @@ func (s *MasterService) UpdateLabel(ctx context.Context, id string, in UpdateLab
 	}
 	if in.PJBidangID != nil {
 		label.PJBidangID = cleanOptionalID(in.PJBidangID)
-	}
-	if in.IKUOwnerID != nil {
-		label.IKUOwnerID = cleanOptionalID(in.IKUOwnerID)
 	}
 	if in.AllowDirectInput != nil {
 		label.AllowDirectInput = *in.AllowDirectInput

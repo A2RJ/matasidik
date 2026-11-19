@@ -95,6 +95,15 @@ func TestCalculateAndDashboard(t *testing.T) {
 	if len(chart.Faskes) != 2 || len(chart.Series) < 3 {
 		t.Fatalf("chart tidak lengkap: %+v", chart)
 	}
+	scopedChart, err := dash.IKUByFaskes(ctx, domain.DashboardFilter{
+		PeriodeID: "per-2026-05", FaskesID: "faskes-pkm-taliwang",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(scopedChart.Faskes) != 1 || scopedChart.Faskes[0].ID != "faskes-pkm-taliwang" {
+		t.Fatalf("chart belum dibatasi faskes: %+v", scopedChart.Faskes)
+	}
 	export, err := dash.ExportSPM(ctx, domainFilter("per-2026-05"), "xlsx")
 	if err != nil || len(export.Data) == 0 {
 		t.Fatalf("export xlsx gagal: %v", err)

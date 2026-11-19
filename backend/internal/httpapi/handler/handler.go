@@ -19,6 +19,7 @@ type Handler struct {
 	Auth      *service.AuthService
 	Admin     *service.AdminService
 	Master    *service.MasterService
+	IKU       *service.IKUChangeService
 	Subs      *service.SubmissionService
 	Calc      *service.CalculationService
 	Dashboard *service.DashboardService
@@ -26,8 +27,8 @@ type Handler struct {
 	Audit     *service.AuditService
 }
 
-func New(cfg config.Config, repo repository.Repository, auth *service.AuthService, admin *service.AdminService, master *service.MasterService, subs *service.SubmissionService, calc *service.CalculationService, dashboard *service.DashboardService, factor *service.FactorService, audit *service.AuditService) *Handler {
-	return &Handler{Cfg: cfg, Repo: repo, Auth: auth, Admin: admin, Master: master, Subs: subs, Calc: calc, Dashboard: dashboard, Factor: factor, Audit: audit}
+func New(cfg config.Config, repo repository.Repository, auth *service.AuthService, admin *service.AdminService, master *service.MasterService, iku *service.IKUChangeService, subs *service.SubmissionService, calc *service.CalculationService, dashboard *service.DashboardService, factor *service.FactorService, audit *service.AuditService) *Handler {
+	return &Handler{Cfg: cfg, Repo: repo, Auth: auth, Admin: admin, Master: master, IKU: iku, Subs: subs, Calc: calc, Dashboard: dashboard, Factor: factor, Audit: audit}
 }
 
 func (h *Handler) actor(c *gin.Context) *domain.User { return middleware.ActorFrom(c) }

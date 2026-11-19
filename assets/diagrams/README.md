@@ -4,9 +4,9 @@ Tiga belas diagram di folder ini dirender dengan stack-diagram, bukan Mermaid. S
 
 | Diagram | HTML sumber | WebP | Dipakai di |
 | --- | --- | --- | --- |
-| Alur bisnis 6 tahap | `alur-bisnis.html` | `alur-bisnis.webp` | README A.2, `docs/01` §5 |
+| Alur bisnis 7 tahap | `alur-bisnis.html` | `alur-bisnis.webp` | README A.2, `docs/01` §5 |
 | Siklus status data | `status-data.html` | `status-data.webp` | README A.2 |
-| Alur peran (swimlane) | `alur-peran.html` | `alur-peran.webp` | README B.2 |
+| Alur peran (swimlane enam peran) | `alur-peran.html` | `alur-peran.webp` | README B.2 |
 | Model data | `model-data.html` | `model-data.webp` | README B.3 |
 | Alur data IKU end-to-end + trace 3 baris SPM | `alur-data-iku.html` | `alur-data-iku.webp` | README A.7, `docs/04` §10 |
 | Pipa upload background | `alur-upload.html` | `alur-upload.webp` | `docs/04` §3.2 |
@@ -20,7 +20,7 @@ Tiga belas diagram di folder ini dirender dengan stack-diagram, bukan Mermaid. S
 
 Dokumen memakai `<img>` biasa dengan satu WebP per diagram. Tidak ada varian dark mode.
 
-> **Catatan status:** `schema-db.webp` belum diregenerasi setelah penambahan `dashboard_category`, `label.category_id`, `bidang.jenis`, dan `indikator.pj_timker_id`. Generator `gen-schema.py` sudah diperbarui; jalankan `build.sh` saat dependency stack-diagram/Playwright tersedia.
+> **Catatan status:** `schema-db.webp` belum diregenerasi setelah penambahan `dashboard_category`, `label.category_id`, `bidang.jenis`, `indikator.pj_timker_id`, dan tabel `iku_change_*`. Generator `gen-schema.py` sudah diperbarui sebagian; jalankan `build.sh` saat dependency stack-diagram/Playwright tersedia. Diagram `alur-bisnis`, `alur-peran`, dan `alur-workflow` juga menunggu rebuild WebP.
 
 ## Regenerasi
 

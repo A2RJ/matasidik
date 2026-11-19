@@ -77,7 +77,7 @@ func (s *SubmissionService) Upload(ctx context.Context, actor *domain.User, in U
 	if err != nil {
 		return nil, nil, err
 	}
-	wf, err := s.master.GetWorkflowVersion(ctx, "wf-default-v1")
+	wf, err := s.master.GetWorkflowVersion(ctx, "wf-default-v2")
 	if err != nil {
 		return nil, nil, err
 	}
@@ -265,12 +265,12 @@ func (s *SubmissionService) Submit(ctx context.Context, actor *domain.User, id, 
 	if blockers > 0 {
 		return nil, domain.Validation("masih ada baris yang perlu dikoreksi", map[string]any{"blockers": blockers})
 	}
-	if err := s.subs.UpdateSubmissionStatus(ctx, id, domain.StatusDikirim, domain.StepVerifyDinas); err != nil {
+	if err := s.subs.UpdateSubmissionStatus(ctx, id, domain.StatusDikirim, domain.StepApprovePKM); err != nil {
 		return nil, err
 	}
 	_ = s.subs.CreateReview(ctx, &domain.SubmissionReview{
 		SubmissionID: id, Step: string(domain.StepDraftPKM), ReviewerID: &actor.ID,
-		Action: "submit", Notes: strPtr("Dikirim ke verifikasi Dinas"), CreatedAt: now(),
+		Action: "submit", Notes: strPtr("Dikirim ke approval Puskesmas"), CreatedAt: now(),
 	})
 	updated, _ := s.subs.GetSubmission(ctx, id)
 	_ = s.audit.Write(ctx, &actor.ID, "submission.submitted", "submission", id, sub, updated, "", requestID)
@@ -302,6 +302,27 @@ func (s *SubmissionService) Decision(ctx context.Context, actor *domain.User, id
 	var step string
 	switch sub.Status {
 	case domain.StatusDikirim:
+		if sub.Step == domain.StepApprovePKM {
+			if actor.Role != domain.RolePKMApprover {
+				return nil, domain.Forbidden("hanya approver Puskesmas yang boleh memutuskan tahap ini")
+			}
+			if actor.FaskesID == nil || *actor.FaskesID != sub.FaskesID {
+				return nil, domain.Forbidden("submission di luar faskes approver")
+			}
+			if actor.ID == sub.UploaderID {
+				return nil, domain.Forbidden("tidak boleh menyetujui submission sendiri")
+			}
+			step = string(domain.StepApprovePKM)
+			if action == "approve" {
+				nextStatus, nextStep = domain.StatusDikirim, domain.StepVerifyDinas
+			} else {
+				nextStatus, nextStep = domain.StatusDikembalikanPetugas, domain.StepDraftPKM
+			}
+			break
+		}
+		if sub.Step != domain.StepVerifyDinas {
+			return nil, domain.Conflict("submission tidak berada pada tahap verifikasi Dinas")
+		}
 		if actor.Role != domain.RoleVerifier && actor.Role != domain.RoleAdmin {
 			return nil, domain.Forbidden("hanya verifikator Dinas yang boleh memutuskan tahap ini")
 		}

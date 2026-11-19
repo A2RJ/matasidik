@@ -7,6 +7,13 @@ type SubmissionFilter struct {
 	Limit     int
 }
 
+type IKUChangeFilter struct {
+	Status      string
+	FaskesID    string
+	RequestedBy string
+	Limit       int
+}
+
 type AuditFilter struct {
 	EntityType string
 	EntityID   string

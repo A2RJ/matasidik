@@ -10,7 +10,8 @@
     detail = '',
     overlay,
     inline = 'scroll',
-    access = ''
+    access = '',
+    size = 'wide'
   }: {
     src: string;
     alt: string;
@@ -19,6 +20,7 @@
     overlay?: HighlightBox;
     inline?: 'scroll' | 'full';
     access?: string;
+    size?: 'compact' | 'wide';
   } = $props();
 
   let dialog = $state<HTMLDialogElement | null>(null);
@@ -92,7 +94,7 @@
   }}
 />
 
-<figure class="overflow-hidden border-2 border-black bg-card shadow-nb">
+<figure class="overflow-hidden border-2 border-black bg-card shadow-nb" class:mx-auto={size === 'compact'} class:max-w-[30rem]={size === 'compact'}>
   <button
     type="button"
     class="group relative block w-full cursor-zoom-in text-left"
@@ -109,26 +111,25 @@
         <img {src} {alt} class="block w-full" loading="lazy" />
         {#if overlay}
           <div
-            class="pointer-events-none absolute border-4 border-green-600 shadow-[0_0_0_2px_rgba(255,255,255,0.9)]"
+            class="pointer-events-none absolute rounded-xl border-4 border-green-600 shadow-[0_0_0_2px_rgba(255,255,255,0.9)]"
             style={`left:${overlay.left}%;top:${overlay.top}%;width:${overlay.width}%;height:${overlay.height}%;`}
           >
-            <span class="absolute left-1 top-1 bg-green-600 px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-[0.08em] text-white">
-              {overlay.label}
-            </span>
+            {#if overlay.label}
+              <span class="absolute left-1 top-1 bg-green-600 px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-[0.08em] text-white">
+                {overlay.label}
+              </span>
+            {/if}
           </div>
         {/if}
       </div>
     </div>
-    <span class="pointer-events-none absolute right-2 top-2 flex items-center gap-1 border-2 border-black bg-primary px-2 py-1 font-mono text-[9px] font-bold uppercase shadow-nbsm">
-      <Maximize2 size={12} /> Zoom / layar penuh
-    </span>
   </button>
 
   <figcaption class="border-t-2 border-black bg-card px-3 py-3">
     <div class="flex flex-wrap items-center justify-between gap-2">
       <div class="font-mono text-[10px] font-bold uppercase tracking-[0.08em]">{caption}</div>
       <span class="border border-black/30 bg-muted px-1.5 py-0.5 font-mono text-[9px] uppercase text-muted-foreground">
-        klik untuk zoom
+        klik untuk memperbesar
       </span>
     </div>
     {#if detail}<p class="mt-1 text-xs leading-relaxed text-muted-foreground">{detail}</p>{/if}
@@ -207,18 +208,20 @@
       <img {src} {alt} class="block w-full" />
       {#if overlay}
         <div
-          class="pointer-events-none absolute border-4 border-green-500 shadow-[0_0_0_2px_rgba(255,255,255,0.9)]"
+          class="pointer-events-none absolute rounded-xl border-4 border-green-500 shadow-[0_0_0_2px_rgba(255,255,255,0.9)]"
           style={`left:${overlay.left}%;top:${overlay.top}%;width:${overlay.width}%;height:${overlay.height}%;`}
         >
-          <span class="absolute left-1 top-1 bg-green-600 px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-[0.08em] text-white">
-            {overlay.label}
-          </span>
+          {#if overlay.label}
+            <span class="absolute left-1 top-1 bg-green-600 px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-[0.08em] text-white">
+              {overlay.label}
+            </span>
+          {/if}
         </div>
       {/if}
     </div>
   </div>
 
   <div class="border-t-2 border-black bg-card px-3 py-2 text-xs text-muted-foreground">
-    {detail || caption}{#if access} · <b>Cara akses:</b> {access}{/if} · Gunakan tombol zoom atau Layar penuh untuk membaca detail tabel.
+    {detail || caption}{#if access} · <b>Cara akses:</b> {access}{/if} · Gunakan tombol perbesar atau layar penuh untuk membaca detail.
   </div>
 </dialog>

@@ -4,7 +4,7 @@ export type Role =
   | 'dinas_verifier'
   | 'kabid'
   | 'sekretaris'
-  | 'iku_owner'
+  | 'pkm_approver'
   | 'pimpinan'
   | 'admin';
 
@@ -130,7 +130,6 @@ export interface Label {
   allow_direct_input: boolean;
   is_rollup_only: boolean;
   pj_bidang_id?: string;
-  iku_owner_id?: string;
   level: number;
   path?: string;
   aktif: boolean;
@@ -262,6 +261,55 @@ export interface MonthlySPMReport {
   scope_type: string;
   scope_id?: string;
   rows: MonthlySPMRow[];
+}
+
+export interface IKUChangeRequest {
+  id: string;
+  action: 'CREATE' | 'UPDATE' | 'DEACTIVATE';
+  label_id?: string;
+  requested_by: string;
+  faskes_id: string;
+  master_release_id: string;
+  payload_json: string;
+  current_revision_no: number;
+  status: string;
+  applied_label_id?: string;
+  created_at: string;
+  updated_at: string;
+  requested_by_nama?: string;
+  faskes_nama?: string;
+  label_kode?: string;
+  label_nama?: string;
+  applied_label_kode?: string;
+}
+
+export interface IKUChangeRevision {
+  id: string;
+  request_id: string;
+  revision_no: number;
+  payload_json: string;
+  before_json?: string;
+  after_json?: string;
+  created_by: string;
+  created_at: string;
+}
+
+export interface IKUChangeReview {
+  id: string;
+  request_id: string;
+  revision_no: number;
+  step: 'PKM' | 'ADMIN';
+  reviewer_id: string;
+  action: 'approve' | 'reject' | 'return';
+  notes?: string;
+  created_at: string;
+  reviewer_nama?: string;
+}
+
+export interface IKUChangeDetail {
+  request: IKUChangeRequest;
+  revisions: IKUChangeRevision[];
+  reviews: IKUChangeReview[];
 }
 
 export interface SPMFaskesDetail {

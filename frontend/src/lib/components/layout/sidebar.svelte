@@ -2,6 +2,7 @@
   import { page } from '$app/stores';
   import { UserRound, X } from '@lucide/svelte';
   import { APP_NAME, APP_REGION, APP_SUBTITLE, NAV_ITEMS } from '$lib/constants/labels';
+  import { canAccessPath } from '$lib/constants/access';
   import { currentActor } from '$lib/stores/session';
   import { cn } from '$lib/utils';
 
@@ -38,7 +39,7 @@
 
   <nav class="flex-1 space-y-1 overflow-y-auto p-3 nb-scroll">
     <div class="nb-kicker mb-2 px-2">Navigasi</div>
-    {#each NAV_ITEMS.filter((item) => !item.roles || ($currentActor && item.roles.includes($currentActor.role))) as item (item.href)}
+    {#each NAV_ITEMS.filter((item) => canAccessPath($currentActor?.role, item.href)) as item (item.href)}
       {@const active = isActive(item.href, $page.url.pathname)}
       {@const Icon = item.icon}
       <a href={item.href} class={cn('nb-sidebar-link', active && 'active')} onclick={onclose}>

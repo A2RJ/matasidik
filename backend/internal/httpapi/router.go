@@ -42,6 +42,7 @@ func NewRouter(cfg config.Config, h *handler.Handler) *gin.Engine {
 		api.GET("/master/labels", h.Labels)
 		api.POST("/master/labels", h.CreateLabel)
 		api.PATCH("/master/labels/:id", h.UpdateLabel)
+		api.DELETE("/master/labels/:id", h.DeactivateLabel)
 		api.GET("/master/categories", h.Categories)
 		api.POST("/master/categories", h.CreateCategory)
 		api.PATCH("/master/categories/:id", h.UpdateCategory)
@@ -80,6 +81,10 @@ func NewRouter(cfg config.Config, h *handler.Handler) *gin.Engine {
 		api.GET("/iku/values", h.IKUValues)
 		api.GET("/iku/:kode/values", h.IKUValueByKode)
 		api.GET("/iku-values/:id/detail", h.IKUValueDetail)
+		api.POST("/iku/change-requests", h.CreateIKUChange)
+		api.GET("/iku/change-requests", h.IKUChanges)
+		api.GET("/iku/change-requests/:id", h.IKUChangeDetail)
+		api.POST("/iku/change-requests/:id/decision", h.DecideIKUChange)
 
 		api.GET("/factors", h.Factors)
 		api.PUT("/factors/:ikuValueID", h.UpsertFactor)

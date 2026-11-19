@@ -193,7 +193,7 @@ func (s *Store) ListLabels(ctx context.Context) ([]domain.Label, error) {
 	var out []domain.Label
 	err := s.db.SelectContext(ctx, &out, `SELECT l.id, l.kode, l.nama, l.tipe, l.category_id,
 		l.parent_id, l.master_release_id, l.aggregation_method, l.allow_direct_input,
-		l.is_rollup_only, l.pj_bidang_id, l.iku_owner_id, l.level, l.path, l.aktif,
+		l.is_rollup_only, l.pj_bidang_id, l.level, l.path, l.aktif,
 		l.berlaku_dari, l.berlaku_sampai, c.kode AS category_kode, c.nama AS category_nama
 		FROM label l LEFT JOIN dashboard_category c ON c.id = l.category_id
 		WHERE l.aktif = 1 ORDER BY l.level, l.kode`)
@@ -204,7 +204,7 @@ func (s *Store) GetLabelByID(ctx context.Context, id string) (*domain.Label, err
 	var out domain.Label
 	err := s.db.GetContext(ctx, &out, `SELECT l.id, l.kode, l.nama, l.tipe, l.category_id,
 		l.parent_id, l.master_release_id, l.aggregation_method, l.allow_direct_input,
-		l.is_rollup_only, l.pj_bidang_id, l.iku_owner_id, l.level, l.path, l.aktif,
+		l.is_rollup_only, l.pj_bidang_id, l.level, l.path, l.aktif,
 		l.berlaku_dari, l.berlaku_sampai, c.kode AS category_kode, c.nama AS category_nama
 		FROM label l LEFT JOIN dashboard_category c ON c.id = l.category_id
 		WHERE l.id = ?`, id)
@@ -218,7 +218,7 @@ func (s *Store) GetLabelByKode(ctx context.Context, kode, releaseID string) (*do
 	var out domain.Label
 	err := s.db.GetContext(ctx, &out, `SELECT l.id, l.kode, l.nama, l.tipe, l.category_id,
 		l.parent_id, l.master_release_id, l.aggregation_method, l.allow_direct_input,
-		l.is_rollup_only, l.pj_bidang_id, l.iku_owner_id, l.level, l.path, l.aktif,
+		l.is_rollup_only, l.pj_bidang_id, l.level, l.path, l.aktif,
 		l.berlaku_dari, l.berlaku_sampai, c.kode AS category_kode, c.nama AS category_nama
 		FROM label l LEFT JOIN dashboard_category c ON c.id = l.category_id
 		WHERE l.kode = ? AND l.master_release_id = ? AND l.aktif = 1`, kode, releaseID)
@@ -364,12 +364,12 @@ func (s *Store) CreateLabel(ctx context.Context, label *domain.Label) error {
 	}
 	_, err := s.db.ExecContext(ctx, `INSERT INTO label
 		(id, kode, nama, tipe, category_id, parent_id, master_release_id, aggregation_method,
-		 allow_direct_input, is_rollup_only, pj_bidang_id, iku_owner_id, level, path, aktif,
+		 allow_direct_input, is_rollup_only, pj_bidang_id, level, path, aktif,
 		 berlaku_dari, berlaku_sampai)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		label.ID, label.Kode, label.Nama, label.Tipe, nullString(label.CategoryID), label.ParentID,
 		label.MasterReleaseID, label.AggregationMethod, label.AllowDirectInput, label.IsRollupOnly,
-		label.PJBidangID, label.IKUOwnerID, label.Level, label.Path, label.Aktif,
+		label.PJBidangID, label.Level, label.Path, label.Aktif,
 		label.BerlakuDari, label.BerlakuSampai)
 	return err
 }
@@ -377,11 +377,11 @@ func (s *Store) CreateLabel(ctx context.Context, label *domain.Label) error {
 func (s *Store) UpdateLabel(ctx context.Context, label *domain.Label) error {
 	_, err := s.db.ExecContext(ctx, `UPDATE label SET nama = ?, tipe = ?, category_id = ?,
 		parent_id = ?, aggregation_method = ?, allow_direct_input = ?, is_rollup_only = ?,
-		pj_bidang_id = ?, iku_owner_id = ?, aktif = ?, berlaku_dari = ?, berlaku_sampai = ?
+		pj_bidang_id = ?, aktif = ?, berlaku_dari = ?, berlaku_sampai = ?
 		WHERE id = ?`,
 		label.Nama, label.Tipe, nullString(label.CategoryID), label.ParentID,
 		label.AggregationMethod, label.AllowDirectInput, label.IsRollupOnly,
-		label.PJBidangID, label.IKUOwnerID, label.Aktif, label.BerlakuDari,
+		label.PJBidangID, label.Aktif, label.BerlakuDari,
 		label.BerlakuSampai, label.ID)
 	return err
 }

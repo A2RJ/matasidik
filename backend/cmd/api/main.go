@@ -37,6 +37,7 @@ func main() {
 	}
 	admin := service.NewAdminService(store)
 	master := service.NewMasterService(store)
+	iku := service.NewIKUChangeService(store, audit)
 	calc := service.NewCalculationService(store, store)
 
 	seeded, err := store.SeedDemo(ctx)
@@ -53,7 +54,7 @@ func main() {
 	subs := service.NewSubmissionService(store, store, audit, calc, cfg.DataDir, cfg.MaxUploadBytes())
 	dashboard := service.NewDashboardService(store, store, store)
 	factor := service.NewFactorService(store, audit)
-	h := handler.New(cfg, store, auth, admin, master, subs, calc, dashboard, factor, audit)
+	h := handler.New(cfg, store, auth, admin, master, iku, subs, calc, dashboard, factor, audit)
 	router := httpapi.NewRouter(cfg, h)
 
 	runCtx, cancel := context.WithCancel(context.Background())

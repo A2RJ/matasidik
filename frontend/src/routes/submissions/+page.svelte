@@ -1,6 +1,7 @@
 <script lang="ts">
   import { api } from '$lib/api/client';
-  import { periods, selectedPeriod } from '$lib/stores/session';
+  import { goto } from '$app/navigation';
+  import { currentActor, periods, selectedPeriod } from '$lib/stores/session';
   import PageHeader from '$lib/components/ui/page-header.svelte';
   import Card from '$lib/components/ui/card/card.svelte';
   import Button from '$lib/components/ui/button/button.svelte';
@@ -10,7 +11,7 @@
   import Spinner from '$lib/components/ui/spinner.svelte';
   import StatusBadge from '$lib/components/ui/status-badge.svelte';
   import { PAGE_COPY, EMPTY_STATE } from '$lib/constants/labels';
-  import { formatDateTime, truncateHash } from '$lib/utils';
+  import { formatDateTime } from '$lib/utils';
   import type { Submission } from '$lib/types';
   import { Upload, RefreshCw, ArrowRight } from '@lucide/svelte';
 
@@ -19,13 +20,16 @@
   let error = $state('');
 
   let periodOptions = $derived($periods.map((p) => ({ value: p.id, label: p.kode })));
+  let canUpload = $derived(
+    !!$currentActor && ['pkm_operator', 'pkm_pj', 'admin'].includes($currentActor.role)
+  );
   let columns = [
     { key: 'kode', label: 'Kode' },
     { key: 'faskes', label: 'Faskes' },
-    { key: 'uploader', label: 'Uploader' },
+    { key: 'uploader', label: 'Pengunggah' },
     { key: 'periode', label: 'Periode' },
     { key: 'status', label: 'Status' },
-    { key: 'file', label: 'File hash' },
+    { key: 'file', label: 'Berkas' },
     { key: 'updated', label: 'Diperbarui' },
     { key: 'action', label: 'Aksi', class: 'w-24' }
   ];
@@ -50,9 +54,11 @@
 <PageHeader title={PAGE_COPY.submissions.title} description={PAGE_COPY.submissions.description}>
   {#snippet actions()}
     <Button variant="outline" onclick={load}><RefreshCw size={14} /> Muat ulang</Button>
-    <a href="/upload" class="inline-flex h-10 items-center gap-2 border-2 border-black bg-primary px-4 font-mono text-xs font-bold uppercase shadow-nb">
-      <Upload size={14} /> Upload BNBA
-    </a>
+    {#if canUpload}
+      <a href="/upload" class="inline-flex h-10 items-center gap-2 border-2 border-black bg-primary px-4 font-mono text-xs font-bold uppercase shadow-nb">
+        <Upload size={14} /> Upload BNBA
+      </a>
+    {/if}
   {/snippet}
 </PageHeader>
 
@@ -77,14 +83,16 @@
     <div class="p-4">
       <EmptyState title="Belum ada submission" description={EMPTY_STATE.submissions}>
         {#snippet action()}
-          <a href="/upload" class="inline-flex h-10 items-center gap-2 border-2 border-black bg-primary px-4 font-mono text-xs font-bold uppercase shadow-nb">
-            <Upload size={14} /> Mulai upload
-          </a>
+          {#if canUpload}
+            <a href="/upload" class="inline-flex h-10 items-center gap-2 border-2 border-black bg-primary px-4 font-mono text-xs font-bold uppercase shadow-nb">
+              <Upload size={14} /> Mulai upload
+            </a>
+          {/if}
         {/snippet}
       </EmptyState>
     </div>
   {:else}
-    <DataTable {columns} rows={items} onrowclick={(row) => (window.location.href = `/submissions/${row.id}`)}>
+    <DataTable {columns} rows={items} onrowclick={(row) => goto(`/submissions/${row.id}`)}>
       {#snippet cell(item, key)}
         {#if key === 'kode'}
           <span class="font-bold">{item.kode}</span>
@@ -97,7 +105,7 @@
         {:else if key === 'status'}
           <StatusBadge kind="submission" value={item.status} />
         {:else if key === 'file'}
-          <span class="font-mono text-[10px]">{truncateHash(item.file_hash)}</span>
+          <span class="text-[10px]">BNBA</span>
         {:else if key === 'updated'}
           {formatDateTime(item.updated_at)}
         {:else if key === 'action'}

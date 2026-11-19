@@ -113,7 +113,6 @@ type Label struct {
 	AllowDirectInput  bool              `db:"allow_direct_input" json:"allow_direct_input"`
 	IsRollupOnly      bool              `db:"is_rollup_only" json:"is_rollup_only"`
 	PJBidangID        *string           `db:"pj_bidang_id" json:"pj_bidang_id,omitempty"`
-	IKUOwnerID        *string           `db:"iku_owner_id" json:"iku_owner_id,omitempty"`
 	Level             int               `db:"level" json:"level"`
 	Path              *string           `db:"path" json:"path,omitempty"`
 	Aktif             bool              `db:"aktif" json:"aktif"`
@@ -414,6 +413,63 @@ type TindakLanjut struct {
 	PJNama    *string `db:"pj_nama" json:"pj_nama,omitempty"`
 	LabelKode *string `db:"label_kode" json:"label_kode,omitempty"`
 	LabelNama *string `db:"label_nama" json:"label_nama,omitempty"`
+}
+
+type IKUChangeRequest struct {
+	ID                string  `db:"id" json:"id"`
+	Action            string  `db:"action" json:"action"`
+	LabelID           *string `db:"label_id" json:"label_id,omitempty"`
+	RequestedBy       string  `db:"requested_by" json:"requested_by"`
+	FaskesID          string  `db:"faskes_id" json:"faskes_id"`
+	MasterReleaseID   string  `db:"master_release_id" json:"master_release_id"`
+	PayloadJSON       string  `db:"payload_json" json:"payload_json"`
+	CurrentRevisionNo int     `db:"current_revision_no" json:"current_revision_no"`
+	Status            string  `db:"status" json:"status"`
+	AppliedLabelID    *string `db:"applied_label_id" json:"applied_label_id,omitempty"`
+	CreatedAt         string  `db:"created_at" json:"created_at"`
+	UpdatedAt         string  `db:"updated_at" json:"updated_at"`
+	// Join-only fields.
+	RequestedByNama  *string `db:"requested_by_nama" json:"requested_by_nama,omitempty"`
+	FaskesNama       *string `db:"faskes_nama" json:"faskes_nama,omitempty"`
+	LabelKode        *string `db:"label_kode" json:"label_kode,omitempty"`
+	LabelNama        *string `db:"label_nama" json:"label_nama,omitempty"`
+	AppliedLabelKode *string `db:"applied_label_kode" json:"applied_label_kode,omitempty"`
+}
+
+type IKUChangePayload struct {
+	Kode              string `json:"kode"`
+	Nama              string `json:"nama"`
+	CategoryID        string `json:"category_id"`
+	ParentID          string `json:"parent_id"`
+	MasterReleaseID   string `json:"master_release_id"`
+	AggregationMethod string `json:"aggregation_method"`
+	AllowDirectInput  bool   `json:"allow_direct_input"`
+	IsRollupOnly      bool   `json:"is_rollup_only"`
+	PJBidangID        string `json:"pj_bidang_id"`
+}
+
+type IKUChangeRevision struct {
+	ID          string  `db:"id" json:"id"`
+	RequestID   string  `db:"request_id" json:"request_id"`
+	RevisionNo  int     `db:"revision_no" json:"revision_no"`
+	PayloadJSON string  `db:"payload_json" json:"payload_json"`
+	BeforeJSON  *string `db:"before_json" json:"before_json,omitempty"`
+	AfterJSON   *string `db:"after_json" json:"after_json,omitempty"`
+	CreatedBy   string  `db:"created_by" json:"created_by"`
+	CreatedAt   string  `db:"created_at" json:"created_at"`
+}
+
+type IKUChangeReview struct {
+	ID         string  `db:"id" json:"id"`
+	RequestID  string  `db:"request_id" json:"request_id"`
+	RevisionNo int     `db:"revision_no" json:"revision_no"`
+	Step       string  `db:"step" json:"step"`
+	ReviewerID string  `db:"reviewer_id" json:"reviewer_id"`
+	Action     string  `db:"action" json:"action"`
+	Notes      *string `db:"notes" json:"notes,omitempty"`
+	CreatedAt  string  `db:"created_at" json:"created_at"`
+	// Join-only fields.
+	ReviewerNama *string `db:"reviewer_nama" json:"reviewer_nama,omitempty"`
 }
 
 type AuditLog struct {

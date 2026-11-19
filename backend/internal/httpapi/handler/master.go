@@ -71,6 +71,17 @@ func (h *Handler) UpdateLabel(c *gin.Context) {
 	response.OK(c, data)
 }
 
+func (h *Handler) DeactivateLabel(c *gin.Context) {
+	before, _ := h.Repo.GetLabelByID(c.Request.Context(), c.Param("id"))
+	data, err := h.Master.DeactivateLabel(c.Request.Context(), c.Param("id"), h.actor(c))
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	_ = h.Audit.Write(c.Request.Context(), &h.actor(c).ID, "master.label_deactivated", "label", data.ID, before, data, "", h.requestID(c))
+	response.OK(c, data)
+}
+
 func (h *Handler) Categories(c *gin.Context) {
 	data, err := h.Master.Categories(c.Request.Context())
 	if err != nil {

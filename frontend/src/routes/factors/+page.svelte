@@ -11,6 +11,7 @@
   import Spinner from '$lib/components/ui/spinner.svelte';
   import StatusBadge from '$lib/components/ui/status-badge.svelte';
   import { PAGE_COPY, EMPTY_STATE } from '$lib/constants/labels';
+  import { ROLE_LABELS, VALUE_STATUS_LABELS } from '$lib/constants/enums';
   import { formatDateTime, formatPercent } from '$lib/utils';
   import type { FactorRow, TindakLanjut } from '$lib/types';
   import { MessageSquare, Plus, RefreshCw, CheckSquare } from '@lucide/svelte';
@@ -31,7 +32,7 @@
   let tlForm = $state({ ikuValueID: '', masalah: '', rekomendasi: '', pj_user_id: '', status: 'open' });
 
   let periodOptions = $derived($periods.map((p) => ({ value: p.id, label: p.kode })));
-  let userOptions = $derived(($bootstrap?.users ?? []).map((u) => ({ value: u.id, label: `${u.nama} · ${u.role}` })));
+  let userOptions = $derived(($bootstrap?.users ?? []).map((u) => ({ value: u.id, label: `${u.nama} · ${ROLE_LABELS[u.role]}` })));
   let ikuOptions = $derived(factors.map((f) => ({ value: f.iku_value.id, label: `${f.iku_value.label_kode} · ${f.iku_value.label_nama ?? ''}` })));
   let canFactor = $derived($currentActor && ['kabid', 'sekretaris', 'admin'].includes($currentActor.role));
   let canCreateTL = $derived($currentActor && ['pimpinan', 'admin'].includes($currentActor.role));
@@ -40,7 +41,7 @@
   let factorColumns = [
     { key: 'label', label: 'IKU' },
     { key: 'value', label: 'Capaian', class: 'text-right w-28' },
-    { key: 'num', label: 'Num/Den', class: 'text-right w-28' },
+    { key: 'num', label: 'Jumlah/Total', class: 'text-right w-28' },
     { key: 'pendukung', label: 'Faktor pendukung' },
     { key: 'penghambat', label: 'Faktor penghambat' },
     { key: 'action', label: 'Aksi', class: 'w-28' }
@@ -135,7 +136,7 @@
 <PageHeader title={PAGE_COPY.factors.title} description={PAGE_COPY.factors.description}>
   {#snippet actions()}
     <Button variant="outline" onclick={load}><RefreshCw size={14} /> Muat ulang</Button>
-    {#if tab === 'tl'}<Button onclick={openTL} disabled={!canCreateTL}><Plus size={14} /> TL baru</Button>{/if}
+    {#if tab === 'tl' && canCreateTL}<Button onclick={openTL}><Plus size={14} /> TL baru</Button>{/if}
   {/snippet}
 </PageHeader>
 
@@ -143,9 +144,9 @@
   Faktor = analisis kualitatif (pendukung/penghambat), tidak mengubah angka. TL = rencana aksi masalah → rekomendasi → PJ → status.
 </div>
 
-{#if !canFactor}
+{#if !canFactor && $currentActor?.role !== 'pimpinan'}
   <div class="mb-4 border-2 border-black bg-warning p-3 font-mono text-xs font-bold">
-    Hanya Kabid/Sekretaris/Admin yang boleh mengisi faktor. Ganti aktor di kanan atas untuk mencoba alur ini.
+    Hanya Kabid/Sekretaris/Admin yang boleh mengisi faktor.
   </div>
 {/if}
 
@@ -173,11 +174,11 @@
     {#if factors.length === 0}
       <div class="p-6 text-center text-sm text-muted-foreground">{EMPTY_STATE.factors}</div>
     {:else}
-      <DataTable columns={factorColumns} rows={factors}>
+      <DataTable columns={canFactor ? factorColumns : factorColumns.filter((c) => c.key !== 'action')} rows={factors}>
         {#snippet cell(item: FactorRow, key)}
           {#if key === 'label'}
             <div class="font-bold">{item.iku_value.label_kode}</div>
-            <div class="text-[10px] text-muted-foreground">{item.iku_value.label_nama} · {item.iku_value.status}</div>
+            <div class="text-[10px] text-muted-foreground">{item.iku_value.label_nama} · {VALUE_STATUS_LABELS[item.iku_value.status] ?? item.iku_value.status}</div>
           {:else if key === 'value'}
             <span class="font-bold">{formatPercent(item.iku_value.value)}</span>
           {:else if key === 'num'}
@@ -187,9 +188,13 @@
           {:else if key === 'penghambat'}
             <span class="text-[11px]">{item.faktor?.penghambat ?? '—'}</span>
           {:else if key === 'action'}
-            <Button size="sm" variant="outline" onclick={() => openFactor(item)} disabled={!canFactor}>
-              {item.faktor ? 'Ubah' : 'Isi'}
-            </Button>
+            {#if canFactor}
+              <Button size="sm" variant="outline" onclick={() => openFactor(item)}>
+                {item.faktor ? 'Ubah' : 'Isi'}
+              </Button>
+            {:else}
+              <span class="text-muted-foreground">—</span>
+            {/if}
           {/if}
         {/snippet}
       </DataTable>

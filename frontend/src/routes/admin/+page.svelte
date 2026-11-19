@@ -38,7 +38,7 @@
 
   let userColumns = [
     { key: 'nama', label: 'Nama / username' },
-    { key: 'role', label: 'Role efektif', width: '160px' },
+    { key: 'role', label: 'Peran', width: '160px' },
     { key: 'position', label: 'Posisi', width: '220px' },
     { key: 'faskes', label: 'Faskes', width: '180px' },
     { key: 'bidang', label: 'Bidang', width: '180px' },
@@ -55,9 +55,9 @@
   let positionColumns = [
     { key: 'kode', label: 'Kode', width: '170px' },
     { key: 'nama', label: 'Nama jabatan' },
-    { key: 'role', label: 'Role', width: '160px' },
+    { key: 'role', label: 'Peran', width: '160px' },
     { key: 'level', label: 'Level', width: '80px' },
-    { key: 'scope', label: 'Scope', width: '180px' },
+    { key: 'scope', label: 'Lingkup', width: '180px' },
     { key: 'action', label: 'Aksi', width: '90px' }
   ];
 
@@ -97,10 +97,10 @@
         await api.createUser(userForm);
       }
       userOpen = false;
-      message = 'User disimpan.';
+      message = 'Pengguna disimpan.';
       await load();
     } catch (err) {
-      error = err instanceof Error ? err.message : 'Gagal menyimpan user.';
+      error = err instanceof Error ? err.message : 'Gagal menyimpan pengguna.';
     }
   }
 
@@ -160,7 +160,7 @@
   let bidangMap = $derived(new Map((overview?.bidang ?? []).map((b) => [b.id, b])));
 </script>
 
-<PageHeader title="Administrasi" description="Puskesmas, user, dan jabatan struktural dikelola terpisah. Perubahan posisi langsung mengubah role efektif dan routing approval.">
+<PageHeader title="Administrasi" description="Puskesmas, pengguna, dan jabatan struktural dikelola terpisah. Perubahan posisi langsung mengubah peran dan alur persetujuan.">
   {#snippet actions()}
     <Button variant="outline" onclick={load}><RefreshCw size={14} /> Muat ulang</Button>
     {#if tab === 'users'}<Button onclick={() => openUser()}><Plus size={14} /> User</Button>{/if}
@@ -220,7 +220,7 @@
   {/if}
 </Card>
 
-<Modal open={userOpen} title={editingUser ? 'Edit user' : 'Tambah user'} description="Posisi menentukan role efektif dan routing approval." onclose={() => (userOpen = false)}>
+<Modal open={userOpen} title={editingUser ? 'Edit pengguna' : 'Tambah pengguna'} description="Posisi menentukan peran dan alur persetujuan." onclose={() => (userOpen = false)}>
   <div class="grid gap-3 sm:grid-cols-2">
     <div><label class="nb-label" for="un">Username</label><Input id="un" bind:value={userForm.username} /></div>
     <div><label class="nb-label" for="unama">Nama</label><Input id="unama" bind:value={userForm.nama} /></div>
@@ -242,11 +242,11 @@
   <div class="mt-4 flex justify-end gap-2"><Button variant="outline" onclick={() => (faskesOpen = false)}>Batal</Button><Button variant="success" onclick={saveFaskes}>Simpan faskes</Button></div>
 </Modal>
 
-<Modal open={positionOpen} title={editingPosition ? 'Edit jabatan' : 'Tambah jabatan'} description="Jabatan struktural dapat diisi user berbeda tanpa mengubah kode workflow." onclose={() => (positionOpen = false)}>
+<Modal open={positionOpen} title={editingPosition ? 'Edit jabatan' : 'Tambah jabatan'} description="Jabatan struktural dapat diisi pengguna berbeda tanpa mengubah alur persetujuan." onclose={() => (positionOpen = false)}>
   <div class="grid gap-3 sm:grid-cols-2">
     <div><label class="nb-label" for="pk">Kode</label><Input id="pk" bind:value={positionForm.kode} /></div>
     <div><label class="nb-label" for="pn">Nama jabatan</label><Input id="pn" bind:value={positionForm.nama} /></div>
-    <div><label class="nb-label" for="pr">Role efektif</label><Select id="pr" bind:value={positionForm.role} options={roleOptions} /></div>
+    <div><label class="nb-label" for="pr">Peran</label><Select id="pr" bind:value={positionForm.role} options={roleOptions} /></div>
     <div><label class="nb-label" for="pl">Level</label><Input id="pl" type="number" bind:value={positionForm.level} /></div>
     <div><label class="nb-label" for="pb">Bidang</label><Select id="pb" bind:value={positionForm.bidang_id} options={bidangOptions} placeholder="Dinas" /></div>
     <div><label class="nb-label" for="pf">Faskes</label><Select id="pf" bind:value={positionForm.faskes_id} options={faskesOptions} placeholder="Dinas" /></div>

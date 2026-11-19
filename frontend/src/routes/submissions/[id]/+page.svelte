@@ -11,8 +11,12 @@
   import Spinner from '$lib/components/ui/spinner.svelte';
   import StatusBadge from '$lib/components/ui/status-badge.svelte';
   import ProgressSteps from '$lib/components/ui/progress-steps.svelte';
-  import { formatDateTime, formatNumber, formatPercent, truncateHash } from '$lib/utils';
-  import { SUBMISSION_STATUS_LABELS, WORKFLOW_STEP_LABELS } from '$lib/constants/enums';
+  import { formatDateTime, formatNumber, formatPercent } from '$lib/utils';
+  import {
+    REVIEW_ACTION_LABELS,
+    SCOPE_TYPE_LABELS,
+    WORKFLOW_STEP_LABELS
+  } from '$lib/constants/enums';
   import type { SubmissionDetail } from '$lib/types';
   import { ArrowLeft, CheckCircle2, RotateCcw, Download, Send, ShieldCheck } from '@lucide/svelte';
 
@@ -33,8 +37,19 @@
       !!actor &&
       (actor.id === submission.uploader_id || actor.role === 'admin')
   );
+  let canApprovePKM = $derived(
+    !!submission &&
+      submission.status === 'dikirim' &&
+      submission.step === 'APPROVE_PKM' &&
+      !!actor &&
+      actor.role === 'pkm_approver'
+  );
   let canVerify = $derived(
-    !!submission && submission.status === 'dikirim' && !!actor && ['dinas_verifier', 'admin'].includes(actor.role)
+    !!submission &&
+      submission.status === 'dikirim' &&
+      submission.step === 'VERIFY_DINAS' &&
+      !!actor &&
+      ['dinas_verifier', 'admin'].includes(actor.role)
   );
   let canValidate = $derived(
     !!submission &&
@@ -42,15 +57,7 @@
       !!actor &&
       ['kabid', 'sekretaris', 'admin'].includes(actor.role)
   );
-  let step = $derived(
-    submission?.status === 'dikirim'
-      ? 'VERIFY_DINAS'
-      : submission?.status === 'diverifikasi'
-        ? 'VALIDATE_KABID'
-        : submission?.status === 'final'
-          ? 'FINAL'
-          : 'DRAFT_PKM'
-  );
+  let step = $derived(submission?.step ?? 'DRAFT_PKM');
   let columns = [
     { key: 'row', label: 'Baris', class: 'w-16' },
     { key: 'indicator', label: 'Indikator' },
@@ -98,7 +105,7 @@
     error = '';
     try {
       await api.submit(detail.submission.id);
-      message = 'Submission dikirim ke verifikasi Dinas.';
+      message = 'Submission dikirim untuk persetujuan Puskesmas.';
       await load();
     } catch (err) {
       error = err instanceof Error ? err.message : 'Gagal mengirim.';
@@ -131,7 +138,7 @@
 </script>
 
 <PageHeader
-  kicker="Workflow / submission"
+  kicker="Alur / submission"
   title={submission?.kode ?? 'Detail submission'}
   description={submission ? `${submission.faskes_nama} · ${submission.periode_kode} · ${submission.uploader_nama}` : 'Memuat…'}
 >
@@ -144,9 +151,9 @@
         <Send size={14} /> Kirim
       </Button>
     {/if}
-    {#if canVerify || canValidate}
-      <Button variant="success" onclick={() => openDecision('approve')}><CheckCircle2 size={14} /> Approve</Button>
-      <Button variant="destructive" onclick={() => openDecision('return')}><RotateCcw size={14} /> Return</Button>
+    {#if canApprovePKM || canVerify || canValidate}
+      <Button variant="success" onclick={() => openDecision('approve')}><CheckCircle2 size={14} /> Setujui</Button>
+      <Button variant="destructive" onclick={() => openDecision('return')}><RotateCcw size={14} /> Kembalikan</Button>
     {/if}
   {/snippet}
 </PageHeader>
@@ -160,27 +167,27 @@
   <div class="mb-4 grid gap-3 lg:grid-cols-[1fr_340px]">
     <Card>
       <div class="border-b-2 border-black bg-muted px-4 py-3">
-        <div class="nb-kicker">Status workflow</div>
+        <div class="nb-kicker">Status alur</div>
         <div class="mt-1 flex flex-wrap items-center gap-2">
           <StatusBadge kind="submission" value={detail.submission.status} />
           <Badge tone="neutral">{WORKFLOW_STEP_LABELS[detail.submission.step] ?? detail.submission.step}</Badge>
-          <Badge tone={(detail.blockers ?? 0) > 0 ? 'warning' : 'success'}>{detail.blockers ?? 0} blocker</Badge>
+          <Badge tone={(detail.blockers ?? 0) > 0 ? 'warning' : 'success'}>{detail.blockers ?? 0} baris bermasalah</Badge>
         </div>
       </div>
       <div class="p-4">
         <ProgressSteps
           steps={[
             { key: 'DRAFT_PKM', label: 'Draf PKM' },
+            { key: 'APPROVE_PKM', label: 'Approval PKM' },
             { key: 'VERIFY_DINAS', label: 'Verifikasi' },
             { key: 'VALIDATE_KABID', label: 'Validasi' },
             { key: 'FINAL', label: 'Final' }
           ]}
           current={step}
-          percent={step === 'DRAFT_PKM' ? 25 : step === 'VERIFY_DINAS' ? 50 : step === 'VALIDATE_KABID' ? 75 : 100}
+          percent={step === 'DRAFT_PKM' ? 20 : step === 'APPROVE_PKM' ? 40 : step === 'VERIFY_DINAS' ? 60 : step === 'VALIDATE_KABID' ? 80 : 100}
         />
         <div class="mt-4 grid gap-2 font-mono text-[10px] text-muted-foreground sm:grid-cols-2">
-          <div>File: {detail.submission.file_id}</div>
-          <div>Hash: {truncateHash(detail.submission.file_hash)}</div>
+          <div>Berkas: BNBA</div>
           <div>Dibuat: {formatDateTime(detail.submission.created_at)}</div>
           <div>Diperbarui: {formatDateTime(detail.submission.updated_at)}</div>
         </div>
@@ -195,24 +202,24 @@
       <div class="space-y-3 p-4">
         {#if canSubmit}
           <Button class="w-full" variant="success" disabled={processing || (detail.blockers ?? 0) > 0} onclick={submit}>
-            <Send size={14} /> Kirim ke workflow
+            <Send size={14} /> Kirim untuk persetujuan
           </Button>
         {/if}
-        {#if canVerify || canValidate}
+        {#if canApprovePKM || canVerify || canValidate}
           <Button class="w-full" variant="success" onclick={() => openDecision('approve')}>
-            <ShieldCheck size={14} /> Approve
+            <ShieldCheck size={14} /> Setujui
           </Button>
           <Button class="w-full" variant="destructive" onclick={() => openDecision('return')}>
-            <RotateCcw size={14} /> Return + catatan
+            <RotateCcw size={14} /> Kembalikan + catatan
           </Button>
         {/if}
-        {#if !canSubmit && !canVerify && !canValidate}
+        {#if !canSubmit && !canApprovePKM && !canVerify && !canValidate}
           <div class="border-2 border-dashed border-black/40 bg-muted p-3 font-mono text-[10px]">
-            Tidak ada aksi untuk peran/status ini. Ganti aktor di kanan atas atau tunggu tahap berikutnya.
+            Tidak ada tindakan untuk akun Anda pada tahap ini.
           </div>
         {/if}
         <Button variant="outline" class="w-full" onclick={() => downloadFile(detail!.submission.file_id)}>
-          <Download size={14} /> Unduh file asli
+          <Download size={14} /> Unduh berkas asli
         </Button>
       </div>
     </Card>
@@ -220,8 +227,8 @@
 
   <Card class="mb-4">
     <div class="border-b-2 border-black bg-muted px-4 py-3">
-      <div class="nb-kicker">Preview baris</div>
-      <h2 class="mt-1 text-xl">Baris hasil parsing & klasifikasi</h2>
+      <div class="nb-kicker">Rincian baris</div>
+      <h2 class="mt-1 text-xl">Baris data yang terbaca</h2>
     </div>
     <DataTable {columns} rows={detail.rows}>
       {#snippet cell(row, key)}
@@ -229,7 +236,7 @@
           <span class="font-bold">R{row.row_no}</span>
         {:else if key === 'indicator'}
           <div class="font-semibold">{row.indikator_nama ?? row.kode_indikator_raw ?? '—'}</div>
-          <div class="mt-1 font-mono text-[10px] text-muted-foreground">{row.kode_iku_raw ?? '—'} · {row.scope_type}/{row.scope_code ?? '—'}</div>
+          <div class="mt-1 font-mono text-[10px] text-muted-foreground">{row.kode_iku_raw ?? '—'} · {SCOPE_TYPE_LABELS[row.scope_type] ?? row.scope_type} {row.scope_code ?? '—'}</div>
         {:else if key === 'value'}
           <span class="font-bold">{formatPercent(row.nilai)}</span>
           <div class="text-[10px] text-muted-foreground">{formatNumber(row.numerator)}/{formatNumber(row.denominator)}</div>
@@ -258,7 +265,7 @@
           {#each detail.reviews as review (review.id)}
             <div class="border-2 border-black bg-card p-3">
               <div class="flex flex-wrap items-center justify-between gap-2">
-                <div class="font-mono text-[10px] font-bold uppercase">{WORKFLOW_STEP_LABELS[review.step] ?? review.step} · {review.action}</div>
+                <div class="font-mono text-[10px] font-bold uppercase">{WORKFLOW_STEP_LABELS[review.step] ?? review.step} · {REVIEW_ACTION_LABELS[review.action] ?? review.action}</div>
                 <div class="font-mono text-[10px] text-muted-foreground">{formatDateTime(review.created_at)}</div>
               </div>
               <div class="mt-1 text-sm font-semibold">{review.reviewer_nama ?? review.reviewer_id ?? 'Sistem'}</div>
@@ -272,7 +279,7 @@
     <Card>
       <div class="border-b-2 border-black bg-muted px-4 py-3">
         <div class="nb-kicker">Revisi</div>
-        <h2 class="mt-1 text-xl">Riwayat file</h2>
+        <h2 class="mt-1 text-xl">Riwayat berkas</h2>
       </div>
       <div class="space-y-2 p-4">
         {#each detail.revisions as revision (revision.id)}
@@ -288,8 +295,8 @@
 
 <Modal
   open={decisionOpen}
-  title={decisionAction === 'approve' ? 'Approve submission' : 'Return submission'}
-  description={decisionAction === 'approve' ? 'Final wajib catatan penerimaan.' : 'Return wajib catatan perbaikan.'}
+  title={decisionAction === 'approve' ? 'Setujui submission' : 'Kembalikan submission'}
+  description={decisionAction === 'approve' ? 'Final wajib catatan penerimaan.' : 'Pengembalian wajib catatan perbaikan.'}
   onclose={() => (decisionOpen = false)}
 >
   <div class="space-y-3">
@@ -298,7 +305,7 @@
     <div class="flex justify-end gap-2">
       <Button variant="outline" onclick={() => (decisionOpen = false)}>Batal</Button>
       <Button variant={decisionAction === 'approve' ? 'success' : 'destructive'} disabled={processing} onclick={decide}>
-        {decisionAction === 'approve' ? 'Approve' : 'Return'}
+        {decisionAction === 'approve' ? 'Setujui' : 'Kembalikan'}
       </Button>
     </div>
   </div>

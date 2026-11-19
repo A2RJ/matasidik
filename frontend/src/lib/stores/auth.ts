@@ -11,6 +11,26 @@ const NETWORK_MESSAGE = 'Tidak dapat menghubungi server. Periksa koneksi lalu co
 const SERVER_MESSAGE = 'Server sedang bermasalah. Coba lagi beberapa saat.';
 const CREDENTIALS_MESSAGE = 'Username atau password salah.';
 const SESSION_MESSAGE = 'Sesi berakhir. Silakan login kembali.';
+const ACTING_AS_KEY = 'matasidik_acting_as_user';
+
+function readActingAsTarget(): string | null {
+  if (typeof sessionStorage === 'undefined') return null;
+  try {
+    return sessionStorage.getItem(ACTING_AS_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function writeActingAsTarget(userID: string | null) {
+  if (typeof sessionStorage === 'undefined') return;
+  try {
+    if (userID) sessionStorage.setItem(ACTING_AS_KEY, userID);
+    else sessionStorage.removeItem(ACTING_AS_KEY);
+  } catch {
+    // Mode lihat sebagai tetap berjalan di memori bila penyimpanan tab diblokir.
+  }
+}
 
 function isSafeMessage(message: unknown): message is string {
   if (typeof message !== 'string') return false;
@@ -62,6 +82,27 @@ async function postAuth(path: string, body?: unknown): Promise<Response> {
   }
 }
 
+async function resumeActingAs(targetID: string, adminToken: string): Promise<AuthResponse | null> {
+  try {
+    const response = await postAuthWithToken('/api/v1/auth/acting-as', adminToken, { user_id: targetID });
+    if (!response.ok) return null;
+    return await readAuth(response, 'session');
+  } catch {
+    return null;
+  }
+}
+
+async function resolveActingAsSession(result: AuthResponse): Promise<AuthResponse> {
+  const targetID = readActingAsTarget();
+  if (!targetID) return result;
+  if (result.user.role === 'admin' && !result.acting_as) {
+    const resumed = await resumeActingAs(targetID, result.access_token);
+    if (resumed) return resumed;
+  }
+  if (!result.acting_as) writeActingAsTarget(null);
+  return result;
+}
+
 function applyAuth(result: AuthResponse) {
   setAccessToken(result.access_token);
   currentActor.set(result.user);
@@ -71,6 +112,7 @@ function applyAuth(result: AuthResponse) {
 }
 
 export async function login(username: string, password: string): Promise<void> {
+  writeActingAsTarget(null);
   const response = await postAuth('/api/v1/auth/login', { username, password });
   applyAuth(await readAuth(response, 'login'));
 }
@@ -85,7 +127,8 @@ export async function restoreSession(): Promise<boolean> {
       clearAuth();
       return false;
     }
-    applyAuth(await readAuth(response, 'session'));
+    const result = await readAuth(response, 'session');
+    applyAuth(await resolveActingAsSession(result));
     return true;
   } catch {
     clearAuth();
@@ -109,7 +152,9 @@ export async function logout(): Promise<void> {
 export async function startActingAs(userID: string): Promise<void> {
   const token = getAccessToken();
   const response = await postAuthWithToken('/api/v1/auth/acting-as', token, { user_id: userID });
-  applyAuth(await readAuth(response, 'session'));
+  const result = await readAuth(response, 'session');
+  writeActingAsTarget(userID);
+  applyAuth(result);
 }
 
 async function postAuthWithToken(path: string, token: string | null, body: unknown): Promise<Response> {
@@ -129,6 +174,7 @@ async function postAuthWithToken(path: string, token: string | null, body: unkno
 }
 
 export async function stopActingAs(): Promise<void> {
+  writeActingAsTarget(null);
   await restoreSession();
 }
 
@@ -137,6 +183,7 @@ export function clearAuth() {
   currentActor.set(null);
   actingAs.set(null);
   authReady.set(true);
+  writeActingAsTarget(null);
 }
 
 setRefreshHandler(async () => {
@@ -150,8 +197,9 @@ setRefreshHandler(async () => {
       return null;
     }
     const result = await readAuth(response, 'session');
-    applyAuth(result);
-    return result.access_token;
+    const resolved = await resolveActingAsSession(result);
+    applyAuth(resolved);
+    return resolved.access_token;
   } catch {
     clearAuth();
     return null;

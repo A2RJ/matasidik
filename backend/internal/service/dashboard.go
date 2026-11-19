@@ -640,6 +640,16 @@ func (s *DashboardService) IKUByFaskes(ctx context.Context, f domain.DashboardFi
 	if err != nil {
 		return nil, err
 	}
+	if f.FaskesID != "" {
+		scoped := make([]domain.Faskes, 0, 1)
+		for _, fk := range faskesList {
+			if fk.ID == f.FaskesID {
+				scoped = append(scoped, fk)
+				break
+			}
+		}
+		faskesList = scoped
+	}
 	labels, err := s.master.ListLabels(ctx)
 	if err != nil {
 		return nil, err

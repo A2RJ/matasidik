@@ -7,17 +7,17 @@ type Role string
 const (
 	RolePKMOperator Role = "pkm_operator"
 	RolePKMPJ       Role = "pkm_pj"
+	RolePKMApprover Role = "pkm_approver"
 	RoleVerifier    Role = "dinas_verifier"
 	RoleKabid       Role = "kabid"
 	RoleSekretaris  Role = "sekretaris"
-	RoleIKUOwner    Role = "iku_owner"
 	RolePimpinan    Role = "pimpinan"
 	RoleAdmin       Role = "admin"
 )
 
 var AllRoles = []Role{
-	RolePKMOperator, RolePKMPJ, RoleVerifier, RoleKabid,
-	RoleSekretaris, RoleIKUOwner, RolePimpinan, RoleAdmin,
+	RolePKMOperator, RolePKMPJ, RolePKMApprover, RoleVerifier, RoleKabid,
+	RoleSekretaris, RolePimpinan, RoleAdmin,
 }
 
 func (r Role) IsApprover() bool {
@@ -42,6 +42,7 @@ type WorkflowStep string
 
 const (
 	StepDraftPKM      WorkflowStep = "DRAFT_PKM"
+	StepApprovePKM    WorkflowStep = "APPROVE_PKM"
 	StepVerifyDinas   WorkflowStep = "VERIFY_DINAS"
 	StepValidateKabid WorkflowStep = "VALIDATE_KABID"
 	StepFinal         WorkflowStep = "FINAL"

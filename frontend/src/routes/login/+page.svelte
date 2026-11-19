@@ -34,7 +34,7 @@
   const functions = [
     {
       icon: Upload,
-      title: 'Upload terpusat',
+      title: 'Unggah terpusat',
       text: 'Satu pintu untuk data BNBA dari seluruh unit.'
     },
     {
@@ -45,20 +45,21 @@
     {
       icon: Network,
       title: 'Jejak angka',
-      text: 'Setiap nilai dapat dilacak sampai file asli.'
+      text: 'Setiap nilai dapat dilacak sampai berkas asli.'
     },
     {
       icon: FileSpreadsheet,
       title: 'Laporan & tindak lanjut',
-      text: 'Export PDF/Excel, catat faktor, dan pantau TL.'
+      text: 'Unduh PDF/Excel, catat faktor, dan pantau TL.'
     }
   ];
 
   const steps = [
-    { no: '1', title: 'Upload', final: false },
-    { no: '2', title: 'Verifikasi', final: false },
-    { no: '3', title: 'Validasi', final: false },
-    { no: '4', title: 'Final', final: true }
+    { no: '1', title: 'Unggah', final: false },
+    { no: '2', title: 'Persetujuan', final: false },
+    { no: '3', title: 'Verifikasi', final: false },
+    { no: '4', title: 'Validasi', final: false },
+    { no: '5', title: 'Final', final: true }
   ];
 
   async function submit(event: SubmitEvent) {
@@ -200,6 +201,7 @@
           <div class="mt-2 space-y-1">
             <div><b>admin</b> · pengelola aplikasi</div>
             <div><b>siti</b> · pengirim data</div>
+            <div><b>kepalapkm</b> · persetujuan Puskesmas</div>
             <div><b>rina</b> · pemeriksa data</div>
             <div><b>kabid</b> · penyetuju</div>
             <div><b>pimpinan</b> · pembaca dashboard</div>

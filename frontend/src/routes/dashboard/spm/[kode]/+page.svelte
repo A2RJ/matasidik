@@ -9,7 +9,7 @@
   import Spinner from '$lib/components/ui/spinner.svelte';
   import StatusBadge from '$lib/components/ui/status-badge.svelte';
   import MultiBarChart from '$lib/components/dashboard/multi-bar-chart.svelte';
-  import { formatDateTime, formatNumber, formatPercent, truncateHash } from '$lib/utils';
+  import { formatDateTime, formatNumber, formatPercent } from '$lib/utils';
   import type { SPMDetail } from '$lib/types';
   import { ArrowLeft, UploadCloud, XCircle, CheckCircle2 } from '@lucide/svelte';
 
@@ -71,17 +71,23 @@
     { key: 'faskes', label: 'Puskesmas / UPTD', width: '28%' },
     { key: 'status', label: 'Upload', width: '110px' },
     { key: 'value', label: 'Capaian', class: 'text-right', width: '100px' },
-    { key: 'numden', label: 'Num/Den', class: 'text-right', width: '110px' },
-    { key: 'submission', label: 'Submission / file', width: '220px' },
-    { key: 'uploader', label: 'Uploader', width: '140px' },
+    { key: 'numden', label: 'Jumlah/Total', class: 'text-right', width: '110px' },
+    { key: 'submission', label: 'Berkas sumber', width: '220px' },
+    { key: 'uploader', label: 'Pengunggah', width: '140px' },
     { key: 'updated', label: 'Diperbarui', width: '150px' }
   ];
+
+  const componentLabels: Record<string, string> = {
+    IKU: 'IKU',
+    INDIKATOR: 'Indikator',
+    COMPONENT: 'Komponen'
+  };
 </script>
 
 <PageHeader
   kicker="Dashboard / detail SPM"
   title={detail ? `${detail.row.kode} · ${detail.row.indikator}` : `Detail SPM ${kode}`}
-  description="Provenance baris SPM, cakupan upload seluruh puskesmas/UPTD, dan performa antar faskes."
+  description="Rincian sumber angka, cakupan upload seluruh puskesmas/UPTD, dan performa antar faskes."
 >
   {#snippet actions()}
     <a href="/" class="inline-flex h-10 items-center gap-2 border-2 border-black bg-card px-4 font-mono text-xs font-bold uppercase shadow-nbsm">
@@ -110,10 +116,10 @@
         <div><div class="nb-label">Capaian</div><div class="text-2xl font-bold">{formatPercent(detail.row.value)}</div></div>
         <div><div class="nb-label">Target</div><div class="text-2xl font-bold">{formatPercent(detail.row.target, 0)}</div></div>
         <div><div class="nb-label">Gap</div><div class="text-2xl font-bold">{detail.row.gap !== undefined ? `${detail.row.gap > 0 ? '+' : ''}${formatNumber(detail.row.gap, 2)} pp` : '—'}</div></div>
-        <div><div class="nb-label">Num/Den</div><div class="text-2xl font-bold">{formatNumber(detail.row.numerator)}/{formatNumber(detail.row.denominator)}</div></div>
+        <div><div class="nb-label">Jumlah/Total</div><div class="text-2xl font-bold">{formatNumber(detail.row.numerator)}/{formatNumber(detail.row.denominator)}</div></div>
       </div>
-      <div class="border-t-2 border-black bg-card px-4 py-2 font-mono text-[10px] text-muted-foreground">
-        data version {detail.row.data_version ?? '—'} · source hash {truncateHash(detail.row.source_hash)} · calculation run {detail.row.calculation_run_id ?? '—'}
+      <div class="border-t-2 border-black bg-card px-4 py-2 text-[10px] text-muted-foreground">
+        Terakhir diperbarui {formatDateTime(detail.row.updated_at)}
       </div>
     </Card>
     <Card>
@@ -144,7 +150,7 @@
 
   <Card class="mb-4">
     <div class="border-b-2 border-black bg-muted px-4 py-3">
-      <div class="nb-kicker">Cakupan & provenance per puskesmas</div>
+      <div class="nb-kicker">Cakupan & sumber data per puskesmas</div>
       <h2 class="mt-1 text-xl">Siapa sudah upload, siapa belum</h2>
     </div>
     <DataTable columns={faskesColumns} rows={detail.faskes}>
@@ -162,11 +168,11 @@
           {#if f.submission_kode}
             <a href={`/submissions/${f.submission_id}`} class="font-bold underline">{f.submission_kode}</a>
             <div class="mt-1 flex items-center gap-1 text-[10px] text-muted-foreground">
-              {f.file_name ?? 'file'}
+              {f.file_name ?? 'Berkas BNBA'}
               {#if f.file_id}<button class="underline" onclick={() => downloadFile(f.file_id!)}>unduh</button>{/if}
             </div>
           {:else}
-            <span class="text-[10px] text-muted-foreground">Belum ada submission final</span>
+            <span class="text-[10px] text-muted-foreground">Belum ada berkas final</span>
           {/if}
         {:else if key === 'uploader'}
           {f.uploader_nama ?? '—'}
@@ -180,17 +186,17 @@
   {#if detail.provenance && detail.provenance.length > 0}
     <Card>
       <div class="border-b-2 border-black bg-muted px-4 py-3">
-        <div class="nb-kicker">Provenance komponen</div>
-        <h2 class="mt-1 text-xl">Angka ini berasal dari mana</h2>
+        <div class="nb-kicker">Sumber komponen angka</div>
+        <h2 class="mt-1 text-xl">Asal angka</h2>
       </div>
       <div class="overflow-x-auto">
         <table class="nb-table">
-          <thead><tr><th>Komponen</th><th>Tipe</th><th>Num/Den</th><th>Nilai</th><th>Bobot</th><th>Kontribusi</th></tr></thead>
+          <thead><tr><th>Komponen</th><th>Jenis</th><th>Jumlah/Total</th><th>Nilai</th><th>Bobot</th><th>Kontribusi</th></tr></thead>
           <tbody>
             {#each detail.provenance as p (p.id)}
               <tr>
                 <td>{p.indikator_nama ?? p.label_nama ?? p.component_id}</td>
-                <td>{p.component_type}</td>
+                <td>{componentLabels[p.component_type] ?? p.component_type}</td>
                 <td>{formatNumber(p.numerator)}/{formatNumber(p.denominator)}</td>
                 <td>{formatPercent(p.component_value)}</td>
                 <td>{p.weight}</td>

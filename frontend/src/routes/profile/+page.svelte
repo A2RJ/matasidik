@@ -110,7 +110,7 @@
 
 {#if isActing}
   <div class="mb-4 border-2 border-black bg-warning p-3 font-mono text-xs font-bold">
-    Anda sedang actingAs sebagai {$currentActor?.nama}. Kembali ke akun admin untuk mengubah profil.
+    Anda sedang melihat akun {$currentActor?.nama}. Kembali ke akun Admin untuk mengubah profil.
   </div>
 {/if}
 

@@ -48,7 +48,7 @@ func (h *Handler) Job(c *gin.Context) {
 		return
 	}
 	actor := h.actor(c)
-	if actor.Role == domain.RolePKMOperator || actor.Role == domain.RolePKMPJ {
+	if actor.Role == domain.RolePKMOperator || actor.Role == domain.RolePKMPJ || actor.Role == domain.RolePKMApprover {
 		var payload struct {
 			SubmissionID string `json:"submission_id"`
 		}
@@ -57,12 +57,25 @@ func (h *Handler) Job(c *gin.Context) {
 			return
 		}
 		sub, err := h.Repo.GetSubmission(c.Request.Context(), payload.SubmissionID)
-		if err != nil || actor.FaskesID == nil || sub.FaskesID != *actor.FaskesID {
+		if err != nil || !h.canAccessFaskes(c, sub.FaskesID) {
 			response.Error(c, domain.Forbidden("job di luar scope faskes"))
 			return
 		}
 	}
 	response.OK(c, job)
+}
+
+func (h *Handler) canAccessFaskes(c *gin.Context, faskesID string) bool {
+	actor := h.actor(c)
+	if actor == nil {
+		return false
+	}
+	switch actor.Role {
+	case domain.RolePKMOperator, domain.RolePKMPJ, domain.RolePKMApprover:
+		return actor.FaskesID != nil && *actor.FaskesID == faskesID
+	default:
+		return true
+	}
 }
 
 func (h *Handler) Submissions(c *gin.Context) {
@@ -71,7 +84,7 @@ func (h *Handler) Submissions(c *gin.Context) {
 		FaskesID: c.Query("faskes_id"), Limit: limitFromQuery(c, 100),
 	}
 	actor := h.actor(c)
-	if actor.Role == domain.RolePKMOperator || actor.Role == domain.RolePKMPJ {
+	if actor.Role == domain.RolePKMOperator || actor.Role == domain.RolePKMPJ || actor.Role == domain.RolePKMApprover {
 		if actor.FaskesID == nil {
 			response.OK(c, []domain.Submission{})
 			return
@@ -92,12 +105,9 @@ func (h *Handler) SubmissionDetail(c *gin.Context) {
 		response.Error(c, err)
 		return
 	}
-	actor := h.actor(c)
-	if actor.Role == domain.RolePKMOperator || actor.Role == domain.RolePKMPJ {
-		if actor.FaskesID == nil || detail.Submission.FaskesID != *actor.FaskesID {
-			response.Error(c, domain.Forbidden("submission di luar scope faskes"))
-			return
-		}
+	if !h.canAccessFaskes(c, detail.Submission.FaskesID) {
+		response.Error(c, domain.Forbidden("submission di luar scope faskes"))
+		return
 	}
 	response.OK(c, detail)
 }
@@ -139,6 +149,15 @@ func (h *Handler) Decision(c *gin.Context) {
 }
 
 func (h *Handler) Revisions(c *gin.Context) {
+	sub, err := h.Repo.GetSubmission(c.Request.Context(), c.Param("id"))
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	if !h.canAccessFaskes(c, sub.FaskesID) {
+		response.Error(c, domain.Forbidden("revisi di luar scope faskes"))
+		return
+	}
 	data, err := h.Subs.Revisions(c.Request.Context(), c.Param("id"))
 	if err != nil {
 		response.Error(c, err)
@@ -154,9 +173,9 @@ func (h *Handler) File(c *gin.Context) {
 		return
 	}
 	actor := h.actor(c)
-	if actor.Role == domain.RolePKMOperator || actor.Role == domain.RolePKMPJ {
+	if actor.Role == domain.RolePKMOperator || actor.Role == domain.RolePKMPJ || actor.Role == domain.RolePKMApprover {
 		sub, err := h.Repo.GetSubmissionByFileID(c.Request.Context(), file.ID)
-		if err != nil || actor.FaskesID == nil || sub.FaskesID != *actor.FaskesID {
+		if err != nil || !h.canAccessFaskes(c, sub.FaskesID) {
 			response.Error(c, domain.Forbidden("file di luar scope faskes"))
 			return
 		}

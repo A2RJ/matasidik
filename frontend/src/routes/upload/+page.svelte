@@ -14,6 +14,7 @@
   import StatusBadge from '$lib/components/ui/status-badge.svelte';
   import PreviewRow from '$lib/components/upload/preview-row.svelte';
   import { PAGE_COPY, EMPTY_STATE } from '$lib/constants/labels';
+  import { JOB_STATUS_LABELS } from '$lib/constants/enums';
   import { formatNumber, parseProgress } from '$lib/utils';
   import type { Job, SubmissionDetail, SubmissionRow } from '$lib/types';
   import { UploadCloud, FileSpreadsheet, CheckCircle2, ArrowRight } from '@lucide/svelte';
@@ -35,6 +36,10 @@
   let allowedRole = $derived(
     $currentActor && ['pkm_operator', 'pkm_pj', 'admin'].includes($currentActor.role)
   );
+  let canChooseFaskes = $derived($currentActor?.role === 'admin');
+  let currentFaskesNama = $derived(
+    faskesOptions.find((option) => option.value === faskesId)?.label ?? 'Faskes akun'
+  );
   let blockers = $derived(detail?.blockers ?? 0);
   let matchedCount = $derived(detail?.rows.filter((r) => r.classification_status === 'MATCHED').length ?? 0);
 
@@ -55,11 +60,11 @@
       job = result;
       if (result.status === 'done') return result;
       if (result.status === 'failed' || result.status === 'dead') {
-        throw new Error(result.last_error ?? 'Job gagal diproses.');
+        throw new Error(result.last_error ?? 'Proses berkas gagal.');
       }
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
-    throw new Error('Job belum selesai setelah 2 menit.');
+    throw new Error('Proses berkas belum selesai setelah 2 menit.');
   }
 
   async function loadDetail(id: string) {
@@ -71,7 +76,7 @@
 
   async function upload() {
     if (!file) {
-      error = 'Pilih file BNBA terlebih dahulu.';
+      error = 'Pilih berkas BNBA terlebih dahulu.';
       return;
     }
     const period = $periods.find((p) => p.id === $selectedPeriod);
@@ -98,7 +103,7 @@
         await pollJob(result.job.id);
       }
       await loadDetail(result.submission.id);
-      message = `File tersimpan sebagai ${result.submission.kode}. Periksa preview sebelum kirim.`;
+      message = `Berkas tersimpan sebagai ${result.submission.kode}. Periksa pratinjau sebelum dikirim.`;
     } catch (err) {
       if (err instanceof ApiError) error = err.message;
       else error = err instanceof Error ? err.message : 'Upload gagal.';
@@ -111,13 +116,13 @@
     if (!detail) return;
     const selected = rowSelections[row.id];
     if (!selected) {
-      error = 'Pilih IKU leaf terlebih dahulu.';
+      error = 'Pilih IKU rincian terlebih dahulu.';
       return;
     }
     savingRow = row.id;
     error = '';
     try {
-      await api.updateRow(detail.submission.id, row.id, selected, 'Koreksi IKU di preview');
+      await api.updateRow(detail.submission.id, row.id, selected, 'Koreksi IKU pada pratinjau');
       await loadDetail(detail.submission.id);
       message = `Baris R${row.row_no} diperbarui.`;
     } catch (err) {
@@ -146,7 +151,7 @@
 
 {#if !allowedRole}
   <div class="mb-4 border-2 border-black bg-warning p-3 font-mono text-xs font-bold">
-    Aktor saat ini tidak punya peran upload. Ganti ke Siti (Puskesmas) atau Admin di kanan atas.
+    Akun Anda tidak memiliki akses untuk mengunggah data BNBA.
   </div>
 {/if}
 
@@ -154,11 +159,11 @@
   <Card>
     <div class="border-b-2 border-black bg-secondary px-4 py-3">
       <div class="nb-kicker">Langkah 1</div>
-      <h2 class="mt-1 text-xl">Pilih file & periode</h2>
+      <h2 class="mt-1 text-xl">Pilih berkas & periode</h2>
     </div>
     <CardContent class="space-y-4">
       <div>
-        <label class="nb-label" for="file">File BNBA (.csv / .xlsx)</label>
+        <label class="nb-label" for="file">Berkas BNBA (.csv / .xlsx)</label>
         <input
           id="file"
           type="file"
@@ -177,17 +182,21 @@
         <Select id="period" bind:value={$selectedPeriod} options={periodOptions} placeholder="Pilih periode" />
       </div>
       <div>
-        <label class="nb-label" for="faskes">Faskes pengupload</label>
-        <Select id="faskes" bind:value={faskesId} options={faskesOptions} placeholder="Pilih faskes" />
+        <label class="nb-label" for="faskes">Faskes pengunggah</label>
+        {#if canChooseFaskes}
+          <Select id="faskes" bind:value={faskesId} options={faskesOptions} placeholder="Pilih faskes" />
+        {:else}
+          <div class="border-2 border-black bg-muted px-3 py-2 font-mono text-xs font-bold">{currentFaskesNama}</div>
+        {/if}
       </div>
       <Button class="w-full" size="lg" onclick={upload} disabled={uploading || !allowedRole}>
         {#if uploading}<Spinner label="Mengunggah…" />{:else}<UploadCloud size={16} /> Upload & proses{/if}
       </Button>
       <a href="/api/v1/master/template" class="block text-center font-mono text-[10px] font-bold underline">
-        Unduh template CSV
+        Unduh template BNBA
       </a>
       <p class="text-center font-mono text-[10px] text-muted-foreground">
-        <code>kode_kategori</code> opsional; <code>kode_iku</code> adalah kode label/IKU leaf.
+        Kolom <code>kode_kategori</code> opsional; kolom <code>kode_iku</code> harus memakai kode IKU rincian, bukan IKU induk.
       </p>
       {#if message}<div class="border-2 border-black bg-success p-2 font-mono text-[10px] font-bold">{message}</div>{/if}
       {#if error}<div class="border-2 border-black bg-destructive p-2 font-mono text-[10px] font-bold">{error}</div>{/if}
@@ -198,7 +207,7 @@
     <Card>
       <div class="border-b-2 border-black bg-primary px-4 py-3">
         <div class="nb-kicker">Langkah 2</div>
-        <h2 class="mt-1 text-xl">Proses background</h2>
+        <h2 class="mt-1 text-xl">Proses berkas</h2>
       </div>
       <CardContent>
         {#if job}
@@ -214,13 +223,13 @@
           />
           <div class="mt-3 flex flex-wrap items-center gap-2 font-mono text-[10px]">
             <Badge tone={job.status === 'done' ? 'success' : job.status === 'failed' ? 'danger' : 'info'}>
-              Job {job.status}
+              Status: {JOB_STATUS_LABELS[job.status] ?? job.status}
             </Badge>
-            <span>{String(progress.rows ?? 0)} baris · {String(progress.matched ?? 0)} matched</span>
+            <span>{String(progress.rows ?? 0)} baris · {String(progress.matched ?? 0)} sesuai</span>
           </div>
         {:else}
           <div class="py-6 text-center text-sm text-muted-foreground">
-            Progress akan muncul setelah file diunggah. UI polling setiap ±1 detik.
+            Progres akan muncul setelah berkas diunggah dan diperbarui otomatis selama proses.
           </div>
         {/if}
       </CardContent>
@@ -230,21 +239,21 @@
       <Card>
         <div class="flex flex-wrap items-center justify-between gap-3 border-b-2 border-black bg-muted px-4 py-3">
           <div>
-            <div class="nb-kicker">Langkah 3 · Preview</div>
+            <div class="nb-kicker">Langkah 3 · Pratinjau</div>
             <h2 class="mt-1 text-xl">{detail.submission.kode}</h2>
             <div class="mt-1 font-mono text-[10px] text-muted-foreground">
               {detail.submission.faskes_nama} · {detail.submission.periode_kode} · {detail.submission.uploader_nama}
             </div>
           </div>
           <div class="flex flex-wrap gap-2">
-            <Badge tone="success">{matchedCount} matched</Badge>
-            <Badge tone={blockers > 0 ? 'warning' : 'success'}>{blockers} blocker</Badge>
+            <Badge tone="success">{matchedCount} sesuai</Badge>
+            <Badge tone={blockers > 0 ? 'warning' : 'success'}>{blockers} baris perlu diperbaiki</Badge>
             <StatusBadge kind="submission" value={detail.submission.status} />
           </div>
         </div>
 
         {#if detail.rows.length === 0}
-          <div class="p-4"><EmptyState title="Belum ada baris" description="File mungkin masih diproses atau gagal diparse." /></div>
+          <div class="p-4"><EmptyState title="Belum ada baris" description="Berkas mungkin masih diproses atau gagal dibaca." /></div>
         {:else}
           <div>
             {#each detail.rows as row (row.id)}
@@ -259,10 +268,10 @@
           </div>
           <div class="flex flex-wrap items-center justify-between gap-3 border-t-2 border-black bg-card px-4 py-3">
             <div class="font-mono text-[10px] text-muted-foreground">
-              Tombol Kirim aktif hanya jika tidak ada blocker. Perubahan IKU tercatat di audit.
+              Tombol Kirim aktif jika tidak ada baris yang perlu diperbaiki. Perubahan IKU tercatat pada jejak audit.
             </div>
             <Button variant="success" disabled={submitting || blockers > 0} onclick={submit}>
-              {#if submitting}<Spinner label="Mengirim…" />{:else}<CheckCircle2 size={16} /> Kirim ke workflow <ArrowRight size={14} />{/if}
+              {#if submitting}<Spinner label="Mengirim…" />{:else}<CheckCircle2 size={16} /> Kirim untuk persetujuan <ArrowRight size={14} />{/if}
             </Button>
           </div>
         {/if}

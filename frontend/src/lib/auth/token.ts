@@ -1,5 +1,6 @@
 let accessToken: string | null = null;
 let refreshHandler: (() => Promise<string | null>) | null = null;
+let refreshPromise: Promise<string | null> | null = null;
 
 export function setAccessToken(token: string | null) {
   accessToken = token;
@@ -11,9 +12,15 @@ export function getAccessToken(): string | null {
 
 export function setRefreshHandler(handler: (() => Promise<string | null>) | null) {
   refreshHandler = handler;
+  refreshPromise = null;
 }
 
 export async function tryRefresh(): Promise<string | null> {
   if (!refreshHandler) return null;
-  return refreshHandler();
+  if (!refreshPromise) {
+    refreshPromise = refreshHandler().finally(() => {
+      refreshPromise = null;
+    });
+  }
+  return refreshPromise;
 }

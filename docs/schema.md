@@ -2,11 +2,11 @@
 
 > **Status implementasi pilot.** Skema ini adalah kontrak database aplikasi pada implementasi awal. Pemilik proyek meminta **SQLite lebih dulu** dan **PASETO v4.local**. `docs/rules.md` §4 menyebut PostgreSQL 16 + PASETO untuk produksi; karena itu, migrasi ke PostgreSQL wajib dilakukan sebelum produksi dan tetap mengikuti aturan proyek.
 >
-> Cakupan: **31 tabel domain** + `schema_migrations`, mencakup master, submission, kalkulasi, faktor/TL, audit, auth, jabatan struktural, dan kategori dashboard dinamis.
+> Cakupan: **34 tabel domain** + `schema_migrations`, mencakup master, submission, kalkulasi, faktor/TL, audit, auth, jabatan struktural, kategori dashboard dinamis, dan pengajuan IKU.
 >
 > Diagram tabel, kolom, dan relasi: [`../assets/diagrams/schema-db.webp`](../assets/diagrams/schema-db.webp) · sumber HTML: [`../assets/diagrams/schema-db.html`](../assets/diagrams/schema-db.html) · generator: [`../assets/diagrams/gen-schema.py`](../assets/diagrams/gen-schema.py).
 >
-> **Catatan:** diagram `schema-db` belum diregenerasi setelah penambahan `dashboard_category`, `label.category_id`, `bidang.jenis`, dan `indikator.pj_timker_id`; generator sudah diperbarui, WebP menunggu build ulang.
+> **Catatan:** diagram `schema-db` belum diregenerasi setelah penambahan `dashboard_category`, `label.category_id`, `bidang.jenis`, `indikator.pj_timker_id`, dan tabel `iku_change_*`; generator sudah diperbarui sebagian, WebP menunggu build ulang.
 
 ## 1. Prinsip
 
@@ -40,6 +40,7 @@
 | Taksonomi & target | `dashboard_category`, `label`, `indikator`, `indikator_label`, `iku_komponen`, `target`, `capaian_tahunan`, `dashboard_row` |
 | Submission & file | `file_object`, `submission`, `submission_revision`, `submission_group`, `submission_row`, `submission_review`, `job` |
 | Nilai & kalkulasi | `indicator_value`, `calculation_run`, `iku_value`, `iku_value_detail` |
+| Pengajuan IKU | `iku_change_request`, `iku_change_revision`, `iku_change_review` |
 | Faktor, TL & audit | `faktor`, `tindak_lanjut`, `audit_log` |
 | Internal | `schema_migrations` |
 
@@ -209,7 +210,6 @@ Taksonomi sekaligus node IKU. **`parent_id` adalah hierarki**, bukan parsing tit
 | `allow_direct_input` | INTEGER | NOT NULL | Leaf yang boleh menerima upload |
 | `is_rollup_only` | INTEGER | NOT NULL | Induk murni rollup |
 | `pj_bidang_id` | TEXT | FK → `bidang.id` | Pemilik data |
-| `iku_owner_id` | TEXT | FK → `users.id` | Pemilik publikasi |
 | `level` | INTEGER | NOT NULL | Kedalaman hierarki |
 | `path` | TEXT |  | Path bantu tampilan |
 | `aktif` | INTEGER | NOT NULL | Soft delete |
@@ -349,7 +349,7 @@ Satu pengajuan BNBA.
 | `file_id` | TEXT | FK → `file_object.id` | File aktif |
 | `file_hash` | TEXT | NOT NULL | Hash file |
 | `status` | TEXT | NOT NULL | 7 status formal |
-| `step` | TEXT | NOT NULL | `DRAFT_PKM`, `VERIFY_DINAS`, `VALIDATE_KABID`, `FINAL`, `SPECIAL_CHANGE` |
+| `step` | TEXT | NOT NULL | `DRAFT_PKM`, `APPROVE_PKM`, `VERIFY_DINAS`, `VALIDATE_KABID`, `FINAL`, `SPECIAL_CHANGE` |
 | `master_release_id` | TEXT | FK → `master_release.id` | Release dipin |
 | `workflow_version_id` | TEXT | FK → `workflow_version.id` | Workflow dipin |
 | `idempotency_key` | TEXT | UNIQUE partial | Cegah upload ganda |
@@ -445,6 +445,53 @@ Antrean background SQLite. Klaim job memakai transaksi `BEGIN IMMEDIATE`; bukan 
 | `finished_at` | TEXT |  | Selesai |
 
 ---
+
+### 6.8 `iku_change_request`
+
+Pengajuan perubahan master IKU oleh operator/PJ Puskesmas. Hanya Admin yang mempublikasikan.
+
+| Kolom | Tipe | Constraint | Keterangan |
+| --- | --- | --- | --- |
+| `id` | TEXT | PK | UUID pengajuan |
+| `action` | TEXT | CHECK `CREATE/UPDATE/DEACTIVATE` | Jenis pengajuan |
+| `label_id` | TEXT | FK → `label.id` | IKU lama untuk update/deactivate |
+| `requested_by` | TEXT | FK → `users.id` | Operator/PJ pengaju |
+| `faskes_id` | TEXT | FK → `faskes.id` | Faskes asal |
+| `master_release_id` | TEXT | FK → `master_release.id` | Release tujuan |
+| `payload_json` | TEXT | NOT NULL | Usulan field IKU |
+| `current_revision_no` | INTEGER | NOT NULL | Revisi terakhir |
+| `status` | TEXT | CHECK | Status approval |
+| `applied_label_id` | TEXT | FK → `label.id` | IKU hasil publish |
+| `created_at` / `updated_at` | TEXT | NOT NULL | Waktu |
+
+### 6.9 `iku_change_revision`
+
+Snapshot immutable payload setiap submit/revisi.
+
+| Kolom | Tipe | Constraint | Keterangan |
+| --- | --- | --- | --- |
+| `id` | TEXT | PK | UUID revisi |
+| `request_id` | TEXT | FK → `iku_change_request.id` | Pengajuan |
+| `revision_no` | INTEGER | UNIQUE per request | Nomor revisi |
+| `payload_json` | TEXT | NOT NULL | Payload |
+| `before_json` / `after_json` | TEXT | | Diff |
+| `created_by` | TEXT | FK → `users.id` | Aktor |
+| `created_at` | TEXT | NOT NULL | Waktu |
+
+### 6.10 `iku_change_review`
+
+Riwayat keputusan per tahap.
+
+| Kolom | Tipe | Constraint | Keterangan |
+| --- | --- | --- | --- |
+| `id` | TEXT | PK | UUID review |
+| `request_id` | TEXT | FK → `iku_change_request.id` | Pengajuan |
+| `revision_no` | INTEGER | NOT NULL | Revisi yang diputus |
+| `step` | TEXT | CHECK `PKM/ADMIN` | Tahap |
+| `reviewer_id` | TEXT | FK → `users.id` | Approver |
+| `action` | TEXT | CHECK `approve/reject/return` | Keputusan |
+| `notes` | TEXT | | Catatan |
+| `created_at` | TEXT | NOT NULL | Waktu |
 
 ## 7. Nilai dan kalkulasi
 
@@ -618,6 +665,9 @@ Internal migrasi.
 | `iku_value_detail` | `iku_value`/`label` | N:1 | FK |
 | `faktor` | `iku_value`/`periode`/`users` | N:1 | FK |
 | `tindak_lanjut` | `iku_value`/`periode`/`users` | N:1 | FK |
+| `iku_change_request` | `users`/`faskes`/`label`/`master_release` | N:1 | FK pengaju, faskes, IKU lama, release |
+| `iku_change_revision` | `iku_change_request`/`users` | N:1 | `request_id`, `created_by` |
+| `iku_change_review` | `iku_change_request`/`users` | N:1 | `request_id`, `reviewer_id` |
 | `audit_log` | `users` | N:1 | `actor_id` |
 
 ## 10. Index dan constraint penting
@@ -650,11 +700,13 @@ Internal migrasi.
 
 | Enum | Nilai |
 | --- | --- |
-| Role | `pkm_operator`, `pkm_pj`, `dinas_verifier`, `kabid`, `sekretaris`, `iku_owner`, `pimpinan`, `admin` |
+| Role | `pkm_operator`, `pkm_pj`, `pkm_approver`, `dinas_verifier`, `kabid`, `sekretaris`, `pimpinan`, `admin` |
 | Category jenis | `LABEL`, `OWNER` |
 | Bidang jenis | `bidang`, `sekretariat`, `timker` |
+| IKU change status | `draf`, `menunggu_puskesmas`, `dikembalikan_puskesmas`, `menunggu_admin`, `dikembalikan_admin`, `disetujui`, `ditolak`, `dibatalkan` |
+| IKU change review step | `PKM`, `ADMIN` |
 | Submission status | `draf`, `dikirim`, `diverifikasi`, `dikembalikan_petugas`, `dikembalikan_verifikator`, `final`, `diubah_khusus` |
-| Workflow step | `DRAFT_PKM`, `VERIFY_DINAS`, `VALIDATE_KABID`, `FINAL`, `SPECIAL_CHANGE` |
+| Workflow step | `DRAFT_PKM`, `APPROVE_PKM`, `VERIFY_DINAS`, `VALIDATE_KABID`, `FINAL`, `SPECIAL_CHANGE` |
 | Classification | `MATCHED`, `MISMATCH`, `UNKNOWN_IKU`, `UNKNOWN_INDICATOR`, `IKU_ROLLUP_ONLY`, `AMBIGUOUS`, `DUPLICATE`, `INVALID_VALUE`, `SCOPE_DENIED` |
 | Value status | `COMPLETE`, `PARTIAL`, `NO_DATA`, `STALE` |
 | TL status | `open`, `in_progress`, `done`, `cancelled` |
@@ -664,12 +716,14 @@ Internal migrasi.
 
 Seed idempotent di `backend/internal/repository/sqlite/migrations/002_seed.sql` dan `demo_seed.go` mengisi:
 
-- 7 pengguna awal (Siti, Rina, dr. Ahmad, Sekretaris, Kepala Dinas, Admin, PJ Gizi) dengan username dan password hash bcrypt.
-- 7 jabatan struktural + tabel `auth_session`.
-- Login awal: `admin`, `siti`, `rina`, `kabid`, `pimpinan`, `sekretaris`, `pjgizi` — password `password123` (ganti sebelum produksi).
+- 8 pengguna awal (Siti, Rina, dr. Ahmad, Sekretaris, Kepala Dinas, Admin, PJ Gizi, Kepala PKM Taliwang) dengan username dan password hash bcrypt.
+- 8 jabatan struktural + tabel `auth_session`.
+- Login awal: `admin`, `siti`, `kepalapkm`, `rina`, `kabid`, `pimpinan`, `sekretaris`, `pjgizi` — password `password123` (ganti sebelum produksi).
 - 2 faskes (PKM Taliwang, PKM Jereweh), wilayah contoh, dan bidang/timker dengan `jenis`.
 - 2 periode (2026-05, 2026-06).
-- 1 master release 2026 + workflow `default_3_level`.
+- 1 master release 2026 + workflow `default_3_level` v1 (lama) dan `default_pkm_approval` v2 (baru).
+- 1 akun approver Puskesmas `kepalapkm` untuk faskes PKM Taliwang.
+- Tabel pengajuan IKU (`iku_change_request`, `iku_change_revision`, `iku_change_review`) dibuat pada migrasi 009.
 - 8 `dashboard_category`: IKU, IKK, SPM, RIBK, Program, Kegiatan, Sub Kegiatan, dan Bidang/Sekretariat/Tim Kerja (`OWNER`). Kategori ke-9 tidak di-seed.
 - Label seed di-backfill ke kategori IKU/SPM; label baru wajib memilih kategori.
 - IKU `IKU-2026-001` (induk) dengan anak `.01`, `.02`, `.03`.

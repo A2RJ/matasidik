@@ -164,7 +164,6 @@ TABLES = {
         ("allow_direct_input", "INTEGER", "masukan langsung"),
         ("is_rollup_only", "INTEGER", "induk rollup"),
         ("pj_bidang_id", "TEXT", "FK → bidang"),
-        ("iku_owner_id", "TEXT", "FK → users"),
         ("level", "INTEGER", "kedalaman"),
         ("path", "TEXT", "path hierarki"),
         ("aktif", "INTEGER", ""),
@@ -546,7 +545,7 @@ html_doc = f'''<!DOCTYPE html>
     <span>SQLite pilot · pola repositori · siap migrasi PostgreSQL</span>
   </div>
   <div class="foot">
-    <span>schema.md · 31 tabel · 1 berkas SQLite + volume berkas lokal</span>
+    <span>schema.md · 34 tabel · 1 berkas SQLite + volume berkas lokal</span>
     <span>icons: Lucide · dibuat dengan <a href="https://github.com/caru-ini/stack-diagram" target="_blank" rel="noopener">stack-diagram</a></span>
   </div>
 </div>

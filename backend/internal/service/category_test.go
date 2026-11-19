@@ -157,6 +157,45 @@ func TestCategoryMasterAndIndicatorLabels(t *testing.T) {
 	}
 }
 
+func TestAdminDirectLabelCRUD(t *testing.T) {
+	ctx := context.Background()
+	store := newTestStore(t)
+	admin, err := store.GetUser(ctx, "usr-admin")
+	if err != nil {
+		t.Fatal(err)
+	}
+	operator, err := store.GetUser(ctx, "usr-siti")
+	if err != nil {
+		t.Fatal(err)
+	}
+	master := service.NewMasterService(store)
+	label, err := master.CreateLabel(ctx, service.CreateLabelInput{
+		Kode: "IKU-ADMIN-GLOBAL", Nama: "IKU Admin Global", CategoryID: "cat-iku",
+		MasterReleaseID: "mr-2026", AggregationMethod: "RATIO_OF_SUMS", AllowDirectInput: true,
+	}, admin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := master.CreateLabel(ctx, service.CreateLabelInput{
+		Kode: "IKU-OPERATOR-DENIED", Nama: "Tidak boleh", CategoryID: "cat-iku",
+		MasterReleaseID: "mr-2026", AggregationMethod: "RATIO_OF_SUMS", AllowDirectInput: true,
+	}, operator); err == nil {
+		t.Fatal("operator tidak boleh CRUD label langsung")
+	}
+	if _, err := master.DeactivateLabel(ctx, label.ID, admin); err != nil {
+		t.Fatal(err)
+	}
+	labels, err := store.ListLabels(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, item := range labels {
+		if item.Kode == "IKU-ADMIN-GLOBAL" {
+			t.Fatal("label admin masih aktif setelah deactivate")
+		}
+	}
+}
+
 func TestCreateCategoryAndDeactivate(t *testing.T) {
 	ctx := context.Background()
 	store := newTestStore(t)

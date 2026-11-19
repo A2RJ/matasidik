@@ -5,6 +5,7 @@
   import StatusBadge from '$lib/components/ui/status-badge.svelte';
   import Spinner from '$lib/components/ui/spinner.svelte';
   import { formatNumber, formatPercent } from '$lib/utils';
+  import { SCOPE_TYPE_LABELS } from '$lib/constants/enums';
   import type { Label, SubmissionRow } from '$lib/types';
   import { Save } from '@lucide/svelte';
 
@@ -33,8 +34,8 @@
         <div class="font-semibold">{row.indikator_nama ?? row.kode_indikator_raw ?? '—'}</div>
         <div class="mt-1 flex flex-wrap gap-1">
           <Badge tone="neutral">{row.kode_iku_raw ?? '—'}</Badge>
-          <Badge tone="neutral">{row.scope_type}/{row.scope_code ?? '—'}</Badge>
-          {#if row.matched_indikator_id}<Badge tone="info">{row.indikator_kode ?? row.matched_indikator_id}</Badge>{/if}
+          <Badge tone="neutral">{SCOPE_TYPE_LABELS[row.scope_type] ?? row.scope_type} {row.scope_code ?? '—'}</Badge>
+          {#if row.matched_indikator_id}<Badge tone="info">{row.indikator_kode ?? 'Indikator'}</Badge>{/if}
         </div>
       </div>
     </div>
@@ -53,16 +54,16 @@
 
   <div class="mt-3 grid items-end gap-3 md:grid-cols-[1fr_280px_110px]">
     <div>
-      <div class="nb-label">IKU leaf terpilih</div>
-      <Select bind:value options={labels.map((label) => ({ value: label.kode, label: label.kode }))} placeholder="Pilih IKU leaf" />
+      <div class="nb-label">IKU rincian terpilih</div>
+      <Select bind:value options={labels.map((label) => ({ value: label.kode, label: label.kode }))} placeholder="Pilih IKU rincian" />
       <div class="mt-1 min-h-4 font-mono text-[10px] text-muted-foreground">
-        {selectedName || 'Pilih IKU leaf yang valid untuk indikator ini'}
+        {selectedName || 'Pilih IKU rincian yang valid untuk indikator ini'}
       </div>
     </div>
     <div class="hidden md:block">
       <div class="nb-label">Klasifikasi</div>
       <div class="border-2 border-black bg-muted px-2 py-2 font-mono text-[10px]">
-        {row.matched_label_id ? row.iku_kode ?? row.matched_label_id : 'Belum ada IKU'}
+        {row.iku_kode ?? row.iku_nama ?? 'Belum ada IKU'}
       </div>
     </div>
     <Button variant="outline" disabled={saving} onclick={onsave}>

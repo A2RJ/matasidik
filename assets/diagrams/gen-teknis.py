@@ -201,32 +201,35 @@ open(f"{OUT}/alur-upload.html", "w").write(page(
 
 
 # ------------------------------------------------------------------ 2. WORKFLOW
-w, h = 1360, 620
+w, h = 1560, 620
 groups = [
-    group(70, 100, 1020, 260, "Alur utama pengajuan", "gb", "workflow"),
-    group(960, 370, 200, 180, "Pasca-final", "ga", "audit"),
+    group(70, 100, 1220, 260, "Alur utama pengajuan", "gb", "workflow"),
+    group(1160, 370, 200, 180, "Pasca-final", "ga", "audit"),
 ]
 nodes = [
-    node(160, 160, "DRAFT_PKM", "Puskesmas / PJ", "draf"),
-    node(460, 160, "VERIFY_DINAS", "Verifikator Dinas", "verif"),
-    node(760, 160, "VALIDATE_KABID", "Kabid / Sekretaris", "valid"),
-    node(1060, 160, "FINAL", "kunci + hitung", "final"),
-    node(1060, 430, "SPECIAL_CHANGE", "Kabid + Admin", "ubah"),
+    node(160, 160, "DRAFT_PKM", "Operator Puskesmas/PJ", "draf"),
+    node(400, 160, "APPROVE_PKM", "Puskesmas Approver", "valid"),
+    node(640, 160, "VERIFY_DINAS", "Verifikator Dinas", "verif"),
+    node(880, 160, "VALIDATE_KABID", "Kabid / Sekretaris", "valid"),
+    node(1120, 160, "FINAL", "kunci + hitung", "final"),
+    node(1120, 430, "SPECIAL_CHANGE", "Kabid + Admin", "ubah"),
 ]
 edges = [
-    edge("M194 190 H426", "e", "kirim", 310, 182),
-    edge("M494 190 H726", "e", "setujui", 610, 182),
-    edge("M794 190 H1026", "e", "setujui + catatan", 910, 182),
-    edge("M1060 264 V426", "n dash", "ubah paksa + alasan", 1052, 345, anchor="end"),
-    edge("M1090 426 V264", "n dash", "versi baru", 1098, 345, anchor="start"),
-    edge("M460 264 V330 H160 V264", "n dash", "revisi + catatan", 310, 322),
-    edge("M760 264 V400 H460 V264", "n dash", "revisi", 610, 392),
+    edge("M194 190 H334", "e", "kirim", 264, 182),
+    edge("M434 190 H574", "e", "setujui", 504, 182),
+    edge("M674 190 H814", "e", "setujui", 744, 182),
+    edge("M914 190 H1054", "e", "setujui + catatan", 984, 182),
+    edge("M1120 264 V426", "n dash", "ubah paksa + alasan", 1112, 345, anchor="end"),
+    edge("M1150 426 V264", "n dash", "versi baru", 1158, 345, anchor="start"),
+    edge("M400 264 V330 H160 V264", "n dash", "revisi + catatan", 280, 322),
+    edge("M640 264 V400 H400 V264", "n dash", "revisi", 520, 392),
+    edge("M880 264 V360 H640 V264", "n dash", "revisi", 760, 352),
 ]
 legend = [("", "alur utama"), ("n dash", "pengembalian / pasca-final")]
 open(f"{OUT}/alur-workflow.html", "w").write(page(
     "Alur Persetujuan Berjenjang",
     "MATA SIDIK / alur kerja",
-    "Bawaan tiga tingkat dengan jalur pengembalian eksplisit; final mengunci data, perubahan pasca-final lewat kewenangan khusus.",
+    "Approval Puskesmas, Dinas, dan Kabid dengan jalur pengembalian eksplisit; final mengunci data, perubahan pasca-final lewat kewenangan khusus.",
     w, h, groups, nodes, edges, legend,
     "versi alur kerja dipatok per pengajuan · tidak ada persetujuan otomatis saat SLA lewat"))
 

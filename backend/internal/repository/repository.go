@@ -95,6 +95,18 @@ type SubmissionRepository interface {
 	CountBlockingRows(ctx context.Context, submissionID string) (int, error)
 }
 
+type IKUChangeRepository interface {
+	CreateIKUChangeRequest(ctx context.Context, request *domain.IKUChangeRequest) error
+	GetIKUChangeRequest(ctx context.Context, id string) (*domain.IKUChangeRequest, error)
+	ListIKUChangeRequests(ctx context.Context, f domain.IKUChangeFilter) ([]domain.IKUChangeRequest, error)
+	UpdateIKUChangeRequestPayload(ctx context.Context, id, payloadJSON string, revisionNo int, updatedAt string) error
+	UpdateIKUChangeRequestStatus(ctx context.Context, id, status string, appliedLabelID *string, updatedAt string) error
+	AddIKUChangeRevision(ctx context.Context, revision *domain.IKUChangeRevision) error
+	ListIKUChangeRevisions(ctx context.Context, requestID string) ([]domain.IKUChangeRevision, error)
+	AddIKUChangeReview(ctx context.Context, review *domain.IKUChangeReview) error
+	ListIKUChangeReviews(ctx context.Context, requestID string) ([]domain.IKUChangeReview, error)
+}
+
 type JobRepository interface {
 	GetJob(ctx context.Context, id string) (*domain.Job, error)
 	ClaimJob(ctx context.Context, workerID, now string) (*domain.Job, error)
@@ -139,6 +151,7 @@ type Repository interface {
 	UserRepository
 	AuthRepository
 	MasterRepository
+	IKUChangeRepository
 	SubmissionRepository
 	JobRepository
 	ValueRepository

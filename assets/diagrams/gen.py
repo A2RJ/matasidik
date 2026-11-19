@@ -96,34 +96,38 @@ def page(title, kicker, lede, w, h, groups, nodes, edges, legend, foot="icons: L
 
 
 # ---------------------------------------------------------------- 1. ALUR BISNIS
-w, h = 1340, 600
+w, h = 1560, 600
 groups = [
-    group(20, 100, 200, 210, "Puskesmas", "ga", "pkm"),
-    group(250, 100, 1060, 210, "Dinas Kesehatan", "gb", "dinas"),
+    group(20, 100, 200, 210, "Operator Puskesmas/PJ", "ga", "pkm"),
+    group(240, 100, 220, 210, "Puskesmas Approver", "ga", "valid"),
+    group(480, 100, 1060, 210, "Dinas Kesehatan", "gb", "dinas"),
 ]
 nodes = [
-    node(120, 160, "Input Data", "Puskesmas / PJ Program", "input", width=180),
-    node(340, 160, "Verifikasi", "Petugas Dinas", "verif"),
-    node(560, 160, "Validasi", "Kabid / Sekretaris", "valid"),
-    node(780, 160, "Pengolahan", "Sistem + faktor Kabid", "engine", width=170),
-    node(1000, 160, "Dashboard", "Semua peran", "dash"),
-    node(1220, 160, "Keputusan", "Kepala Dinas + TL", "keputusan"),
+    node(120, 160, "Input + BNBA", "Operator Puskesmas/PJ", "input", width=180),
+    node(360, 160, "Approval", "Puskesmas Approver", "valid"),
+    node(600, 160, "Verifikasi", "Petugas Dinas", "verif"),
+    node(820, 160, "Validasi", "Kabid / Sekretaris", "valid"),
+    node(1040, 160, "Pengolahan", "Sistem + faktor Kabid", "engine", width=170),
+    node(1260, 160, "Dashboard", "Semua peran", "dash"),
+    node(1480, 160, "Keputusan", "Kepala Dinas + TL", "keputusan"),
 ]
 edges = [
-    edge("M156 190 H304", "e", "kirim + BNBA", 230, 182),
-    edge("M376 190 H524", "e", "setuju", 450, 182),
-    edge("M596 190 H744", "e", "final", 670, 182),
-    edge("M816 190 H964", "e", "capaian", 890, 182),
-    edge("M1036 190 H1184", "e", "arahan", 1110, 182),
-    edge("M560 280 V370 H340 V280", "n dash", "kembalikan", 450, 362),
-    edge("M340 280 V430 H120 V280", "n dash", "revisi", 230, 422),
-    edge("M1220 280 V500 H110 V280", "n dash", "pemantauan TL + faktor", 665, 492),
+    edge("M210 190 H294", "e", "kirim + BNBA", 252, 182),
+    edge("M426 190 H534", "e", "setuju", 480, 182),
+    edge("M666 190 H754", "e", "setuju", 710, 182),
+    edge("M886 190 H955", "e", "final", 920, 182),
+    edge("M1125 190 H1194", "e", "capaian", 1160, 182),
+    edge("M1326 190 H1414", "e", "arahan", 1370, 182),
+    edge("M820 280 V370 H600 V280", "n dash", "kembalikan", 710, 362),
+    edge("M600 280 V430 H360 V280", "n dash", "kembalikan", 480, 422),
+    edge("M360 280 V430 H120 V280", "n dash", "revisi", 240, 422),
+    edge("M1480 280 V500 H110 V280", "n dash", "pemantauan TL + faktor", 795, 492),
 ]
 legend = [("", "alur utama"), ("n dash", "pengembalian / siklus")]
 open(f"{OUT}/alur-bisnis.html", "w").write(page(
     "Alur Bisnis MATA SIDIK",
     "MATA SIDIK / proses bisnis",
-    "Enam tahap dari input Puskesmas sampai keputusan pimpinan, lengkap dengan jalur pengembalian data, faktor kualitatif, dan TL.",
+    "Tujuh tahap dari input Operator Puskesmas/PJ dan approval Puskesmas sampai keputusan pimpinan, lengkap dengan jalur pengembalian data, faktor kualitatif, dan TL.",
     w, h, groups, nodes, edges, legend))
 
 # ---------------------------------------------------------------- 2. STATUS DATA
@@ -155,60 +159,64 @@ open(f"{OUT}/status-data.html", "w").write(page(
     w, h, groups, nodes, edges, legend))
 
 # ---------------------------------------------------------------- 3. ALUR PERAN
-w, h = 1360, 800
+w, h = 1620, 800
 groups = [
-    group(20, 80, 240, 660, "Puskesmas / PJ Program", "gb", "pkm"),
-    group(280, 80, 240, 660, "Verifikator Dinas", "gb", "verif"),
-    group(540, 80, 240, 660, "Kabid / Sekretaris", "gb", "kabid"),
-    group(800, 80, 240, 660, "Sistem MATA SIDIK", "gb", "engine"),
-    group(1060, 80, 240, 660, "Pimpinan", "gb", "pimpinan"),
+    group(20, 80, 240, 660, "Operator Puskesmas/PJ", "gb", "pkm"),
+    group(280, 80, 240, 660, "Puskesmas Approver", "gb", "valid"),
+    group(540, 80, 240, 660, "Verifikator Dinas", "gb", "verif"),
+    group(800, 80, 240, 660, "Kabid / Sekretaris", "gb", "kabid"),
+    group(1060, 80, 240, 660, "Sistem MATA SIDIK", "gb", "engine"),
+    group(1320, 80, 240, 660, "Pimpinan", "gb", "pimpinan"),
 ]
 nodes = [
     # row 1 — alur utama
-    node(140, 170, "Input + BNBA", "Puskesmas", "pkm"),
-    node(400, 170, "Verifikasi", "petugas dinas", "verif"),
-    node(660, 170, "Validasi final", "kabid / sekretaris", "valid"),
-    node(920, 170, "Olah data", "sistem + agregasi", "engine"),
-    node(1180, 170, "Dashboard", "capaian + tren", "dash"),
+    node(140, 170, "Input + BNBA", "operator pengupload", "pkm"),
+    node(400, 170, "Approval BNBA", "Puskesmas approver", "valid"),
+    node(660, 170, "Verifikasi", "petugas dinas", "verif"),
+    node(920, 170, "Validasi final", "kabid / sekretaris", "valid"),
+    node(1180, 170, "Olah data", "sistem + agregasi", "engine"),
+    node(1440, 170, "Dashboard", "capaian + tren", "dash"),
     # row 2 — pengembalian & arahan
-    node(140, 390, "Perbaiki data", "revisi", "perbaiki"),
-    node(400, 390, "Kembalikan", "+ catatan", "kembali"),
+    node(140, 390, "Perbaiki data", "revisi operator", "perbaiki"),
+    node(400, 390, "Kembalikan", "approval Puskesmas", "kembali"),
     node(660, 390, "Kembalikan", "ke verifikator", "kembali"),
-    node(1180, 390, "Arahan + TL", "pimpinan → PJ", "keputusan"),
+    node(1440, 390, "Arahan + TL", "pimpinan → PJ", "keputusan"),
     # row 3 — penyelesaian
     node(140, 610, "Kirim ulang", "data revisi", "kirim"),
-    node(400, 610, "Setujui", "verifikasi ulang", "valid"),
-    node(660, 610, "Isi faktor", "pendukung / penghambat", "faktor"),
-    node(920, 610, "Perbarui dashboard", "faktor + capaian", "dash"),
-    node(1180, 610, "Pantau TL", "status penyelesaian", "tl"),
+    node(400, 610, "Setujui", "approval Puskesmas", "valid"),
+    node(920, 610, "Isi faktor", "pendukung / penghambat", "faktor"),
+    node(1180, 610, "Perbarui dashboard", "faktor + capaian", "dash"),
+    node(1440, 610, "Pantau TL", "status penyelesaian", "tl"),
 ]
 edges = [
     # row 1
-    edge("M176 200 H364", "e", "kirim", 270, 192),
-    edge("M436 200 H624", "e", "setuju", 530, 192),
-    edge("M696 200 H884", "e", "final", 790, 192),
-    edge("M956 200 H1144", "e", "sajikan", 1050, 192),
+    edge("M176 200 H334", "e", "kirim", 255, 192),
+    edge("M466 200 H594", "e", "setuju", 530, 192),
+    edge("M726 200 H854", "e", "setuju", 790, 192),
+    edge("M986 200 H1114", "e", "final", 1050, 192),
+    edge("M1246 200 H1374", "e", "sajikan", 1310, 192),
     # cabang pengembalian
     edge("M400 276 V384", "n dash", "jika belum", 410, 330),
-    edge("M660 276 V384", "n dash", "jika perlu diperiksa", 670, 330),
-    edge("M660 420 H436", "n dash", "perlu diperiksa", 548, 412),
+    edge("M660 276 V384", "n dash", "jika belum", 670, 330),
+    edge("M920 276 V384", "n dash", "jika perlu diperiksa", 930, 330),
+    edge("M660 420 H466", "n dash", "perlu diperiksa", 563, 412),
     edge("M400 420 H176", "n dash", "revisi", 288, 412),
     # row 3
-    edge("M176 640 H364", "e", "kirim ulang", 270, 632),
-    edge("M436 640 H624", "e", "setuju", 530, 632),
-    edge("M696 640 H884", "e", "faktor", 790, 632),
-    # TL ditetapkan pimpinan, lalu dipantau
-    edge("M1180 496 V604", "n dash", "TL", 1190, 550),
-    # vertikal & elbow
-    edge("M1180 276 V384", "n dash", "arahan", 1190, 330),
     edge("M140 496 V604", "n dash", "kirim ulang", 150, 550),
-    edge("M920 276 V530 H650 V604", "n dash", "minta faktor", 785, 522),
+    edge("M176 640 H334", "e", "kirim ulang", 255, 632),
+    edge("M466 640 H854", "e", "setujui", 660, 632),
+    edge("M986 640 H1114", "e", "faktor", 1050, 632),
+    edge("M1246 640 H1374", "e", "pantau", 1310, 632),
+    # TL & faktor
+    edge("M1440 496 V604", "n dash", "TL", 1450, 550),
+    edge("M1440 276 V384", "n dash", "arahan", 1450, 330),
+    edge("M1180 276 V530 H920 V604", "n dash", "minta faktor", 1050, 522),
 ]
 legend = [("", "alur utama"), ("n dash", "pengembalian / arahan / TL")]
 open(f"{OUT}/alur-peran.html", "w").write(page(
     "Alur Peran MATA SIDIK",
     "MATA SIDIK / serah terima",
-    "Swimlane lima peran: siapa mengirim, memeriksa, memvalidasi, mengolah, mengisi faktor, serta menetapkan dan memantau TL.",
+    "Swimlane enam peran: operator mengirim, Puskesmas menyetujui, Dinas memverifikasi, Kabid memvalidasi, sistem mengolah, dan pimpinan memberi arahan.",
     w, h, groups, nodes, edges, legend))
 
 # ---------------------------------------------------------------- 4. MODEL DATA

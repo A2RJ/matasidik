@@ -22,7 +22,7 @@ func dashboardFilter(c *gin.Context) domain.DashboardFilter {
 func (h *Handler) scopedDashboardFilter(c *gin.Context) domain.DashboardFilter {
 	f := dashboardFilter(c)
 	actor := h.actor(c)
-	if actor != nil && (actor.Role == domain.RolePKMOperator || actor.Role == domain.RolePKMPJ) && actor.FaskesID != nil {
+	if actor != nil && (actor.Role == domain.RolePKMOperator || actor.Role == domain.RolePKMPJ || actor.Role == domain.RolePKMApprover) && actor.FaskesID != nil {
 		f.FaskesID = *actor.FaskesID
 		f.ScopeType = "FASKES"
 		f.ScopeID = *actor.FaskesID

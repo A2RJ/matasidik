@@ -30,7 +30,7 @@
       await startActingAs(target);
       await goto('/');
     } catch (err) {
-      error = err instanceof Error ? err.message : 'ActingAs gagal.';
+      error = err instanceof Error ? err.message : 'Gagal beralih akun.';
     } finally {
       busy = false;
     }
@@ -64,13 +64,13 @@
       </div>
     </div>
     {#if $actingAs}
-      <Badge tone="warning">ActingAs · {$actingAs.nama}</Badge>
+      <Badge tone="warning">Dilihat oleh {$actingAs.nama}</Badge>
       <Button size="sm" variant="outline" disabled={busy} onclick={stop}><ShieldCheck size={13} /> Kembali</Button>
     {:else if $currentActor.role === 'admin'}
       <div class="hidden min-w-56 xl:block">
-        <Select bind:value={target} options={targetOptions} placeholder="Bertindak sebagai…" />
+        <Select bind:value={target} options={targetOptions} placeholder="Lihat sebagai…" />
       </div>
-      <Button size="sm" variant="secondary" disabled={busy} onclick={act}><UserCog size={13} /> ActingAs</Button>
+      <Button size="sm" variant="secondary" disabled={busy} onclick={act}><UserCog size={13} /> Lihat</Button>
     {/if}
     <Button size="sm" variant="ghost" onclick={signOut}><LogOut size={13} /> Keluar</Button>
   {/if}

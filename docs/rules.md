@@ -113,6 +113,7 @@ docs/
   03-contoh-data.md
   04-arsitektur-iku.md
   05-rencana-bnba-wilayah.md
+  06-rencana-final.md
 assets/
   diagrams/README.md       # katalog dan cara regenerasi diagram
 ```
@@ -217,7 +218,7 @@ Aturan:
 | Status | Arti | Boleh dilakukan oleh |
 | --- | --- | --- |
 | `draf` | Baru diinput, belum dikirim | Puskesmas/PJ |
-| `dikirim` | Menunggu verifikasi | Sistem (terkunci untuk pengirim) |
+| `dikirim` | Menunggu approval Puskesmas atau verifikasi Dinas (lihat `step`) | Puskesmas Approver / Verifikator |
 | `diverifikasi` | Lolos cek Dinas, menunggu validasi | Verifikator |
 | `dikembalikan_petugas` | Belum sesuai, kembali ke tahap 1 + catatan | Verifikator |
 | `dikembalikan_verifikator` | Perlu cek, kembali ke tahap 2 | Kabid/Sekretaris |
@@ -226,7 +227,8 @@ Aturan:
 
 ### 6.2 Aturan workflow
 
-- Default: `DRAFT_PKM → VERIFY_DINAS → VALIDATE_KABID → FINAL`.
+- Default: `DRAFT_PKM → APPROVE_PKM → VERIFY_DINAS → VALIDATE_KABID → FINAL`.
+- Status `dikirim` mencakup dua step: `APPROVE_PKM` (menunggu Puskesmas) dan `VERIFY_DINAS` (menunggu Dinas). Filter antrean memakai `step`.
 - Approval bertingkat **dinamis tetapi berversi**; versi workflow di-pin per submission agar perubahan alur tidak mengubah pengajuan berjalan.
 - Submission lintas bidang dipecah per pemilik data via `SUBMISSION_GROUP`.
 - Return wajib catatan; final wajib catatan penerimaan.
@@ -235,6 +237,15 @@ Aturan:
 - Final mengunci data dan memicu kalkulasi.
 - Perubahan pasca-final hanya lewat `SPECIAL_CHANGE`: alasan wajib, **dual approval** (Kabid/Sekretaris + Admin), dan audit.
 - Jangan mengubah data final langsung di database atau UI.
+
+### 6.3 Pengajuan master IKU
+
+- Operator Puskesmas mengajukan `CREATE`/`UPDATE`/`DEACTIVATE` IKU untuk faskesnya.
+- Pengajuan masuk ke Puskesmas approver faskes yang sama; setelah disetujui baru masuk ke Admin.
+- Admin adalah satu-satunya yang mempublikasikan IKU, dan dapat melakukan CRUD IKU global langsung dari Master.
+- Reject/return wajib catatan; operator dapat revisi dan mengajukan ulang.
+- Tidak ada self-approval.
+- Perubahan pasca-publish mengikuti audit dan mekanisme versi master.
 
 ---
 
@@ -378,16 +389,26 @@ Nilai SPM adalah **proyeksi** dari nilai terhitung, bukan angka yang diketik ula
 
 ### 10.1 Matriks hak akses
 
-| Aksi | Puskesmas/PJ | Verifikator Dinas | Kabid/Sekretaris | Pimpinan | Admin |
-| --- | --- | --- | --- | --- | --- |
-| Input/kirim + upload BNBA | ✅ | ❌ | ❌ | ❌ | ✅ (bantuan) |
-| Verifikasi/kembalikan ke pengirim | ❌ | ✅ | ❌ | ❌ | ❌ |
-| Validasi final/kembalikan ke verifikator | ❌ | ❌ | ✅ | ❌ | ❌ |
-| Ubah data final (khusus + audit) | ❌ | ❌ | ✅ terbatas | ❌ | ✅ dual approval |
-| Isi faktor pendukung/penghambat | ❌ | ❌ | ✅ wajib | ❌ | ❌ |
-| Lihat dashboard semua filter | milik sendiri | bidangnya | bidangnya | ✅ semua | ✅ |
-| Beri arahan / tetapkan TL | ❌ | ❌ | terima | ✅ beri | ❌ |
-| Kelola master + user | ❌ | ❌ | ❌ | ❌ | ✅ |
+| Aksi | Operator/PJ Puskesmas | Kepala Puskesmas | Verifikator Dinas | Kabid/Sekretaris | Pimpinan | Admin |
+| --- | --- | --- | --- | --- | --- | --- |
+| Input/kirim + unggah BNBA | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ bantuan |
+| Persetujuan BNBA tahap Puskesmas | ❌ | ✅ faskes sendiri | ❌ | ❌ | ❌ | ❌ |
+| Verifikasi/kembalikan ke pengirim | ❌ | ❌ | ✅ | ❌ | ❌ | ✅ bantuan |
+| Validasi final/kembalikan ke verifikator | ❌ | ❌ | ❌ | ✅ | ❌ | ✅ bantuan |
+| Ubah data final (khusus + audit) | ❌ | ❌ | ❌ | ✅ terbatas | ❌ | ✅ dual approval |
+| Isi faktor pendukung/penghambat | ❌ | ❌ | ❌ | ✅ wajib | baca | ✅ |
+| Lihat dashboard | milik sendiri | milik sendiri | bidangnya | bidangnya | ✅ semua | ✅ semua |
+| Beri arahan / tetapkan TL | ❌ | ❌ | ❌ | terima + ubah status | ✅ beri | ✅ |
+| Kelola master + user | ❌ | ❌ | ❌ | lihat + target | ❌ | ✅ |
+| Ajukan IKU | ✅ operator | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Setujui IKU tahap Puskesmas | ❌ | ✅ faskes sendiri | ❌ | ❌ | ❌ | ❌ |
+| Setujui/publikasikan IKU final | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
+| CRUD IKU global | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
+| Lihat jejak audit | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ |
+
+**Role tambahan `pkm_approver`:** hanya untuk faskes sendiri; boleh approve/reject submission BNBA pada step `APPROVE_PKM` dan pengajuan IKU pada status `menunggu_puskesmas`. Tidak boleh upload, tidak boleh mempublikasikan IKU, dan tidak boleh menyetujui pengajuannya sendiri. Admin tidak boleh melewati approval Puskesmas.
+
+**Batas IKU:** pengajuan IKU hanya dibuat Operator Puskesmas. `pkm_pj` tidak boleh mengajukan IKU. Admin boleh CRUD IKU global dari Master; Operator tidak boleh CRUD langsung. Publikasi pengajuan tetap melalui Admin setelah approval Puskesmas.
 
 ### 10.2 Keamanan
 
@@ -405,6 +426,21 @@ Nilai SPM adalah **proyeksi** dari nilai terhitung, bukan angka yang diketik ula
 
 Setiap keputusan/transisi wajib mencatat: **siapa, kapan, apa, catatan, diff, versi**. Audit tidak boleh dihapus. Data final terkunci; perubahan lewat mekanisme khusus.
 
+### 10.4 Aturan tampilan per peran dan label UI
+
+- **Satu sumber aturan akses.** Sidebar, penjaga rute, dan tombol aksi wajib memakai `frontend/src/lib/constants/access.ts`; jangan menduplikasi daftar peran di banyak komponen.
+- **Menu mengikuti peran.** Menu yang tidak relevan tidak ditampilkan. Membuka URL langsung di luar peran menampilkan halaman **Akses terbatas**, bukan isi halaman.
+- **Aksi mengikuti peran.** Aksi yang tidak menjadi kewenangan disembunyikan, bukan hanya dinonaktifkan. Contoh: ekspor dashboard, template BNBA, unggah, pengajuan IKU, tambah/ubah master, faktor, TL, dan administrasi.
+- **Scope faskes.** Operator/PJ Puskesmas memakai faskes sendiri tanpa pemilih faskes. `pkm_approver` hanya melihat pengajuan dan dashboard faskes sendiri. Admin dapat memilih faskes.
+- **Endpoint ikut dibatasi.** `GET /api/v1/factors` dan `GET /api/v1/tindak-lanjut` hanya untuk Kabid, Sekretaris, Pimpinan, dan Admin. Pembatasan UI tidak boleh menjadi satu-satunya kontrol.
+- **Panduan mengikuti peran.** Tab panduan in-app disaring sesuai peran yang login; Admin dapat membuka semua panduan karena perannya global.
+- **Mode lihat sebagai.** Admin yang masuk ke akun lain harus tetap berada pada akun target saat refresh/reload dalam tab yang sama. Tombol **Kembali** menghapus mode. Jangan menyimpan access token di storage; simpan hanya ID target per tab.
+- **Navigasi internal memakai router.** Jangan memakai `window.location.href` untuk perpindahan halaman internal karena memicu reload penuh dan berpotensi menghapus state sesi/mode lihat sebagai.
+- **Label UI bersih.** Label menu, tombol, kolom, status, pesan, dan panduan tidak boleh memuat nama tech stack, nama tabel, nama field internal, atau istilah implementasi. Gunakan istilah layanan berbahasa Indonesia.
+- **Istilah yang dilarang muncul di UI:** `provenance`, `source hash`, `data version`, `calculation run`, `IKU_VALUE`, `SUBMISSION_*`, `RATIO_OF_SUMS`, `Num/Den`, `blocker`, `job`, `background`, `polling`, `endpoint`, `API`, `JSON`, `worker`, `payload`, `schema`, `append-only`, `ActingAs`, `Direct input`, `Rollup`, `Parent`, `Scope`, `Owner`.
+- **Padanan label yang dipakai:** `Jejak Audit`, `Sumber angka`, `Jumlah/Total`, `Proses berkas`, `baris bermasalah`, `Input langsung`, `Nilai dari komponen`, `IKU induk`, `Cara hitung`, `Lingkup`, `Pengunggah`.
+- **Konsistensi istilah.** Jika label berubah, perbarui sidebar, judul halaman, tombol, pesan, dan panduan dalam satu perubahan.
+
 ---
 
 ## 11. Aturan diagram dan visualisasi
@@ -420,9 +456,9 @@ Setiap keputusan/transisi wajib mencatat: **siapa, kapan, apa, catatan, diff, ve
 
 | Diagram | Dipakai di | Isi |
 | --- | --- | --- |
-| `alur-bisnis` | README A.2, `docs/01` §5 | Enam tahap bisnis + pengembalian + tindak lanjut |
+| `alur-bisnis` | README A.2, `docs/01` §5 | Tujuh tahap bisnis + approval Puskesmas + pengembalian + tindak lanjut |
 | `status-data` | README A.2 | Siklus status + dua jalur pengembalian |
-| `alur-peran` | README B.2 | Swimlane lima peran |
+| `alur-peran` | README B.2 | Swimlane enam peran |
 | `model-data` | README B.3 | Master vs transaksi vs audit |
 | `alur-data-iku` | README A.7, `docs/04` §10 | End-to-end IKU + 3 baris SPM |
 | `alur-upload` | `docs/04` §3.2 | Upload background |
@@ -478,7 +514,7 @@ Setiap keputusan/transisi wajib mencatat: **siapa, kapan, apa, catatan, diff, ve
 | 8 | Setiap keputusan menyimpan aktor, waktu, catatan, diff, versi | Audit dan pertanggungjawaban |
 | 9 | Modular monolith + worker, PostgreSQL, volume lokal | Tanpa Redis, tanpa object storage |
 | 10 | Backend Go + Gin, frontend Svelte, auth tanpa Keycloak | Deployment sederhana, satu origin |
-| 11 | Default approval tiga level | `DRAFT_PKM → VERIFY_DINAS → VALIDATE_KABID → FINAL` |
+| 11 | Default approval dengan Puskesmas | `DRAFT_PKM → APPROVE_PKM → VERIFY_DINAS → VALIDATE_KABID → FINAL` |
 | 12 | Semua flow memakai stack-diagram | Tanpa Mermaid/Graphviz/ASCII flow |
 | 13 | README di root; dokumen proyek di `docs/` | Tautan dan aset harus disesuaikan |
 | 14 | R3 contoh dikoreksi ke `.03` | Capaian 90,00/95,00/100,00; induk 92,39% |
