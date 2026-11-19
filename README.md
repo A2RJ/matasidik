@@ -375,7 +375,7 @@ Gap/edge case P0–P2, acceptance criteria, dan roadmap ada di [`docs/04-arsitek
 
 ## B.10 Menjalankan implementasi pilot
 
-Implementasi pilot memakai **Go Gin + SQLite + PASETO v4.local** dan **SvelteKit + shadcn-svelte/neobrutalism**. Login memakai username/password, refresh token HttpOnly, RBAC, dan actingAs admin. Database + data awal dibuat otomatis saat API pertama kali berjalan.
+Implementasi pilot memakai **Go Gin + SQLite + PASETO v4.local** dan **SvelteKit + shadcn-svelte/neobrutalism**. Login memakai username/password, refresh token HttpOnly, RBAC, dan mode **lihat sebagai** Admin. Database + data awal dibuat otomatis saat API pertama kali berjalan.
 
 ```bash
 # terminal 1 — backend + worker inline
@@ -386,18 +386,21 @@ go run ./cmd/api
 cd frontend
 npm install
 npm run dev
+
+# hentikan proses pengembangan dari root repo
+./shutdown.sh
 ```
 
 - API: `http://localhost:8080` · frontend dev: `http://localhost:5173` (proxy `/api`).
 - Login awal: `admin`, `siti`, `kepalapkm`, `rina`, `kabid`, `pimpinan`, `sekretaris`, `pjgizi` — password `password123` (ganti sebelum produksi).
 - Set `APP_AUTH_KEY` (64 hex chars = 32 byte) agar access token tetap valid setelah restart; jika kosong API memakai kunci acak sementara (refresh token di DB tetap bekerja).
-- Access token PASETO v4.local 30 menit; refresh token HttpOnly 7 hari; admin dapat memakai **ActingAs**.
-- Halaman login menampilkan fungsi aplikasi di kiri dan form di kanan; alur empat langkah ditampilkan sebagai satu baris ringkas tanpa label jabatan: upload → verifikasi → validasi → final.
+- Access token PASETO v4.local 30 menit; refresh token HttpOnly 7 hari; admin dapat memakai mode **lihat sebagai** dan tetap berada di akun target saat reload/refresh.
+- Halaman login menampilkan fungsi aplikasi di kiri dan form di kanan; alur lima langkah ditampilkan sebagai satu baris ringkas tanpa label jabatan: unggah → persetujuan Puskesmas → verifikasi → validasi → final.
 - Semua user dapat membuka **Profil** untuk mengubah nama tampilan dan password sendiri; peran, jabatan, dan faskes tetap diatur admin.
 - Admin mengisi **Capaian tahunan** di halaman Master. Dashboard periode 2026 otomatis memakai capaian 2025; ganti periode ke 2027 berarti memakai capaian 2026 tanpa menimpa histori.
 - Build frontend: `npm run build`; Go menyajikan `frontend/build` pada `APP_WEB_DIR`.
 - Test: `cd backend && go test ./...` · `cd frontend && npm run check`.
-- Template BNBA: `periode;kode_faskes;kode_kategori;kode_iku;...`; `kode_kategori` opsional, `kode_iku` adalah kode label/IKU leaf.
+- Template BNBA: `periode;kode_faskes;kode_kategori;kode_iku;...`; `kode_kategori` opsional, `kode_iku` adalah kode IKU rincian.
 - Laporan absolut bulanan: `GET /dashboard/spm/monthly?tahun=2026` dan ekspor XLSX/PDF; memakai target layanan tahunan (`target_layanan_tahunan`) dan status bulanan vs target bulanan.
 - Data awal: submission final `S-2026-05-001`, 3 baris, induk 92,39%.
 - Reset data: hapus `backend/data/` lalu jalankan API lagi.
