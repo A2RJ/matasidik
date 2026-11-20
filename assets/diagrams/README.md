@@ -20,7 +20,7 @@ Tiga belas diagram di folder ini dirender dengan stack-diagram, bukan Mermaid. S
 
 Dokumen memakai `<img>` biasa dengan satu WebP per diagram. Tidak ada varian dark mode.
 
-> **Catatan status:** `schema-db.webp` belum diregenerasi setelah penambahan `dashboard_category`, `label.category_id`, `bidang.jenis`, `indikator.pj_timker_id`, dan tabel `iku_change_*`. Generator `gen-schema.py` sudah diperbarui sebagian; jalankan `build.sh` saat dependency stack-diagram/Playwright tersedia. Diagram `alur-bisnis`, `alur-peran`, dan `alur-workflow` juga menunggu rebuild WebP.
+> **Catatan status:** `schema-db.webp` belum diregenerasi setelah penambahan `dashboard_category`, `label.category_id`, `bidang.jenis`, `indikator.pj_timker_id`, `indikator.tipe_nilai`, periode tahunan (`bulan = 0`), tabel `desa_faskes_mapping`, dan tabel `iku_change_*`. Generator `gen-schema.py` sudah diperbarui sebagian; jalankan `build.sh` saat dependency stack-diagram/Playwright tersedia. Diagram `alur-bisnis`, `alur-peran`, dan `alur-workflow` juga menunggu rebuild WebP.
 
 ## Regenerasi
 

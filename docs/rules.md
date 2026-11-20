@@ -189,8 +189,9 @@ Aturan:
 - `kode_kategori` opsional; jika diisi, harus sama dengan kategori label pada `dashboard_category`.
 - `kode_indikator` adalah identitas baris data.
 - `periode` mengikat ke `MASTER_RELEASE` yang berlaku.
-- `numerator`/`denominator` wajib untuk rasio/persentase; `nilai` boleh diturunkan.
-- `scope_type`/`scope_code` menentukan desa/puskesmas/kecamatan/kabupaten. Jika kosong, pakai scope uploader **dengan peringatan**.
+- `numerator`/`denominator` wajib untuk `RATIO`; `nilai` wajib untuk `COUNT`/`SCALAR`. Jangan mewajibkan denominator untuk count/scalar.
+- `periode` bulanan memakai `YYYY-MM`; periode tahunan memakai `YYYY`.
+- `scope_type`/`scope_code` menentukan desa/kecamatan/kabupaten; faskes adalah pengunggah, bukan scope. Jika kosong, pakai scope uploader **dengan peringatan**.
 - Klasifikasi harus **deterministik**: `MATCHED`, `MISMATCH`, `IKU_ROLLUP_ONLY`, `AMBIGUOUS`, `DUPLICATE`.
 - Baris ambigu/mismatch/duplikat masuk **karantina**; jangan menebak IKU.
 - Hanya IKU leaf/direct-input yang boleh menerima upload. **IKU induk tidak menerima input langsung.**
@@ -253,15 +254,17 @@ Aturan:
 
 ### 7.1 Rumus dasar
 
-- `target_bulanan = target_tahunan / 12` (contoh 2000 → 166,67; target bulanan persentase = 8,33%).
+- `target_bulanan = target_tahunan / 12` untuk periode bulanan (contoh 2000 → 166,67; target bulanan persentase = 8,33%). Untuk periode tahunan (`bulan = 0`), `target_bulanan = target_tahunan`.
 - Target layanan absolut disimpan terpisah di `target_layanan_tahunan`/`target_layanan_bulanan`; jangan mencampurnya dengan target capaian persentase.
-- `capaian_% = realisasi / target × 100` per periode.
-- Simpan **numerator dan denominator**, bukan hanya persentase.
+- Untuk `RATIO` persen, `capaian_% = realisasi / target × 100` per periode. Satuan `Rasio` non-persen memakai `num/den` tanpa `×100`.
+- Untuk `COUNT`/`SCALAR`, realisasi adalah nilai dan dibandingkan langsung dengan target; jangan memaksa menjadi persen.
+- Simpan **numerator dan denominator** untuk rasio, serta **nilai** untuk count/scalar.
 - Tampilkan pembulatan yang konsisten (contoh 2 desimal), tetapi **jangan membulatkan data mentah** yang dipakai kalkulasi.
 
 ### 7.2 IKU induk
 
-- IKU induk memakai `RATIO_OF_SUMS`: `Σ numerator / Σ denominator` dari komponen eksplisit `IKU_KOMPONEN`.
+- IKU induk rasio memakai `RATIO_OF_SUMS`: `Σ numerator / Σ denominator` dari komponen eksplisit `IKU_KOMPONEN`.
+- IKU induk count memakai `SUM`; agregasi induk scalar belum ditetapkan.
 - **Bukan rata-rata persentase anak.**
 - Setiap anak menyimpan kontribusi di `IKU_VALUE_DETAIL` (`component_type = CHILD_IKU`, numerator, denominator, bobot).
 - IKU leaf diturunkan dari `INDICATOR_VALUE`; IKU induk diturunkan dari detail anak.
@@ -372,12 +375,12 @@ Nilai SPM adalah **proyeksi** dari nilai terhitung, bukan angka yang diketik ula
 - `MASTER_RELEASE` membundel master per tahun; upload mengikat ke release yang berlaku.
 - Tambah indikator = **versi baru**; nonaktifkan = `berlaku_sampai` + `status_aktif=false`.
 - **Jangan hapus fisik** data master agar tren historis utuh.
-- Setiap versi indikator wajib mengisi: satuan baku, definisi + numerator/denominator, label (many-to-many via `INDIKATOR_LABEL`), sifat input, frekuensi, level wilayah, PJ bidang/timker.
+- Setiap versi indikator wajib mengisi: satuan baku, `tipe_nilai` (`RATIO`/`COUNT`/`SCALAR`), definisi + numerator/denominator untuk rasio atau nilai untuk count/scalar, label (many-to-many via `INDIKATOR_LABEL`), sifat input, frekuensi, level wilayah, PJ bidang/timker.
 - Kode: `IKU-2026-001`, `IND-001`; kode stabil, versi terpisah.
 
 ### 9.3 Agregasi wilayah dan sifat data
 
-- Alur agregasi: **Desa → Puskesmas → Kecamatan → Kabupaten**.
+- Alur agregasi: **Desa → Puskesmas domisili → Kecamatan → Kabupaten**. Mapping desa → puskesmas domisili disimpan berversi di `desa_faskes_mapping`; jangan menebak dari `faskes.wilayah_id` atau uploader.
 - Kasus kematian ibu/balita wajib bisa di-drill-down.
 - UHH hanya level kabupaten, input 1×/tahun.
 - BNBA line-level dipetakan lewat profil dataset, bukan per baris.
@@ -532,9 +535,9 @@ Setiap keputusan/transisi wajib mencatat: **siapa, kapan, apa, catatan, diff, ve
 | 4 | Target sama untuk semua faskes atau berbeda per wilayah | Belum diputuskan | Tanya Dinas |
 | 5 | PII di BNBA dan kebijakan masking/enkripsi | Belum diputuskan | Tanya Dinas; batasi akses sementara |
 | 6 | Retensi file dan backup | Belum diputuskan | Tanya Dinas; minimal sesuai audit |
-| 7 | Format BNBA final | Belum diputuskan | Tentukan template resmi sebelum implementasi parser |
+| 7 | Format BNBA final | Diputuskan pilot 2026-11-20: satu template `BNBA-Semua-Satuan.xlsx` dengan sheet `Rasio`/`Nilai` dan satu kolom `periode` | Konfirmasi Dinas untuk produksi; format lama tetap diarsipkan |
 | 8 | Duplikasi 3 baris ibu hamil di katalog | Belum diputuskan | Gabung atau bedakan (TW1/Mei/absolut?) |
-| 9 | Satuan baku (`%` vs `Persentase` vs `(%)`, dll.) | Belum diputuskan | Normalisasi sebelum engine |
+| 9 | Satuan baku (`%` vs `Persentase` vs `(%)`, dll.) | Diputuskan pilot 2026-11-20: `tipe_nilai` eksplisit (`RATIO`/`COUNT`/`SCALAR`); varian teks dipetakan sesuai master | Konfirmasi Dinas untuk definisi produksi |
 | 10 | PJ Data untuk semua indikator | Belum lengkap | Lengkapi Bidang + Timker/Subbag |
 | 11 | Level approval tambahan di luar default 3 | Belum diputuskan | Konfigurasi hanya jika disetujui |
 | 12 | Integrasi SIKN | Belum diputuskan | Jangan implementasi tanpa spesifikasi |

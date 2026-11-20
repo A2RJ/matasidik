@@ -230,7 +230,7 @@ func (s *Store) GetLabelByKode(ctx context.Context, kode, releaseID string) (*do
 
 func (s *Store) ListIndicators(ctx context.Context) ([]domain.Indikator, error) {
 	var out []domain.Indikator
-	err := s.db.SelectContext(ctx, &out, `SELECT i.id, i.kode, i.nama, i.satuan, i.definisi,
+	err := s.db.SelectContext(ctx, &out, `SELECT i.id, i.kode, i.nama, i.satuan, i.tipe_nilai, i.definisi,
 		i.numerator_label, i.denominator_label, i.sifat_input, i.frekuensi, i.pj_bidang_id,
 		i.pj_timker_id, COALESCE(t.nama, i.pj_timker) AS pj_timker, i.aktif
 		FROM indikator i LEFT JOIN bidang t ON t.id = i.pj_timker_id
@@ -240,7 +240,7 @@ func (s *Store) ListIndicators(ctx context.Context) ([]domain.Indikator, error) 
 
 func (s *Store) GetIndicatorByID(ctx context.Context, id string) (*domain.Indikator, error) {
 	var out domain.Indikator
-	err := s.db.GetContext(ctx, &out, `SELECT i.id, i.kode, i.nama, i.satuan, i.definisi,
+	err := s.db.GetContext(ctx, &out, `SELECT i.id, i.kode, i.nama, i.satuan, i.tipe_nilai, i.definisi,
 		i.numerator_label, i.denominator_label, i.sifat_input, i.frekuensi, i.pj_bidang_id,
 		i.pj_timker_id, COALESCE(t.nama, i.pj_timker) AS pj_timker, i.aktif
 		FROM indikator i LEFT JOIN bidang t ON t.id = i.pj_timker_id
@@ -253,7 +253,7 @@ func (s *Store) GetIndicatorByID(ctx context.Context, id string) (*domain.Indika
 
 func (s *Store) GetIndicatorByKode(ctx context.Context, kode string) (*domain.Indikator, error) {
 	var out domain.Indikator
-	err := s.db.GetContext(ctx, &out, `SELECT i.id, i.kode, i.nama, i.satuan, i.definisi,
+	err := s.db.GetContext(ctx, &out, `SELECT i.id, i.kode, i.nama, i.satuan, i.tipe_nilai, i.definisi,
 		i.numerator_label, i.denominator_label, i.sifat_input, i.frekuensi, i.pj_bidang_id,
 		i.pj_timker_id, COALESCE(t.nama, i.pj_timker) AS pj_timker, i.aktif
 		FROM indikator i LEFT JOIN bidang t ON t.id = i.pj_timker_id
@@ -337,10 +337,10 @@ func (s *Store) CreateIndicator(ctx context.Context, indikator *domain.Indikator
 	}
 	defer tx.Rollback()
 	if _, err := tx.ExecContext(ctx, `INSERT INTO indikator
-		(id, kode, nama, satuan, definisi, numerator_label, denominator_label, sifat_input, frekuensi,
+		(id, kode, nama, satuan, tipe_nilai, definisi, numerator_label, denominator_label, sifat_input, frekuensi,
 		 pj_bidang_id, pj_timker_id, pj_timker, aktif)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		indikator.ID, indikator.Kode, indikator.Nama, indikator.Satuan, indikator.Definisi,
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		indikator.ID, indikator.Kode, indikator.Nama, indikator.Satuan, indikator.TipeNilai, indikator.Definisi,
 		indikator.NumeratorLabel, indikator.DenominatorLabel, indikator.SifatInput, indikator.Frekuensi,
 		indikator.PJBidangID, indikator.PJTimkerID, indikator.PJTimker, indikator.Aktif); err != nil {
 		return fmt.Errorf("simpan indikator: %w", err)

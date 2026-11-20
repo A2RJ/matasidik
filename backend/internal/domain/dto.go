@@ -50,6 +50,8 @@ type DashboardSPMItem struct {
 	CalculationRunID *string  `json:"calculation_run_id,omitempty"`
 	SourceHash       *string  `json:"source_hash,omitempty"`
 	DataVersion      *string  `json:"data_version,omitempty"`
+	TipeNilai        string   `json:"tipe_nilai,omitempty"`
+	Satuan           string   `json:"satuan,omitempty"`
 	Target           float64  `json:"target"`
 	BaselinePrev     *float64 `json:"baseline_prev,omitempty"`
 	BaselineYear     int      `json:"baseline_year,omitempty"`
@@ -124,14 +126,16 @@ type IKUValueWrite struct {
 }
 
 type DashboardSummary struct {
-	Total        int      `json:"total"`
-	OnTarget     int      `json:"on_target"`
-	BelowTarget  int      `json:"below_target"`
-	NoTarget     int      `json:"no_target"`
-	NoData       int      `json:"no_data"`
-	Average      float64  `json:"average"`
-	ParentValue  *float64 `json:"parent_value,omitempty"`
-	ParentStatus string   `json:"parent_status"`
+	Total           int      `json:"total"`
+	OnTarget        int      `json:"on_target"`
+	BelowTarget     int      `json:"below_target"`
+	NoTarget        int      `json:"no_target"`
+	NoData          int      `json:"no_data"`
+	Average         float64  `json:"average"`
+	ParentValue     *float64 `json:"parent_value,omitempty"`
+	ParentStatus    string   `json:"parent_status"`
+	ParentTipeNilai string   `json:"parent_tipe_nilai,omitempty"`
+	ParentSatuan    string   `json:"parent_satuan,omitempty"`
 }
 
 type DashboardCategoryResult struct {
@@ -175,14 +179,32 @@ type SPMFaskesDetail struct {
 	Numerator      *float64 `json:"numerator,omitempty"`
 	Denominator    *float64 `json:"denominator,omitempty"`
 	Value          *float64 `json:"value,omitempty"`
+	TipeNilai      string   `json:"tipe_nilai,omitempty"`
+	Satuan         string   `json:"satuan,omitempty"`
 	Status         string   `json:"status"`
 	UpdatedAt      *string  `json:"updated_at,omitempty"`
 }
 
+type SPMWilayahDetail struct {
+	ScopeType   string   `json:"scope_type"`
+	ScopeID     string   `json:"scope_id"`
+	ScopeKode   string   `json:"scope_kode"`
+	ScopeNama   string   `json:"scope_nama"`
+	Uploaded    bool     `json:"uploaded"`
+	Numerator   *float64 `json:"numerator,omitempty"`
+	Denominator *float64 `json:"denominator,omitempty"`
+	Value       *float64 `json:"value,omitempty"`
+	TipeNilai   string   `json:"tipe_nilai,omitempty"`
+	Satuan      string   `json:"satuan,omitempty"`
+	Status      string   `json:"status"`
+	UpdatedAt   *string  `json:"updated_at,omitempty"`
+}
+
 type SPMDetail struct {
-	Row        DashboardSPMItem  `json:"row"`
-	Faskes     []SPMFaskesDetail `json:"faskes"`
-	Provenance []IKUValueDetail  `json:"provenance,omitempty"`
+	Row        DashboardSPMItem   `json:"row"`
+	Faskes     []SPMFaskesDetail  `json:"faskes"`
+	Wilayah    []SPMWilayahDetail `json:"wilayah"`
+	Provenance []IKUValueDetail   `json:"provenance,omitempty"`
 }
 
 type ChartFaskes struct {
@@ -192,9 +214,11 @@ type ChartFaskes struct {
 }
 
 type ChartSeries struct {
-	Kode   string     `json:"kode"`
-	Nama   string     `json:"nama"`
-	Values []*float64 `json:"values"`
+	Kode      string     `json:"kode"`
+	Nama      string     `json:"nama"`
+	TipeNilai string     `json:"tipe_nilai,omitempty"`
+	Satuan    string     `json:"satuan,omitempty"`
+	Values    []*float64 `json:"values"`
 }
 
 type IKUChart struct {

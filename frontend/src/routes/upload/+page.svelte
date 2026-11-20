@@ -30,7 +30,7 @@
   let savingRow = $state<string | null>(null);
   let message = $state('');
 
-  let periodOptions = $derived($periods.map((p) => ({ value: p.id, label: p.kode })));
+  let periodOptions = $derived($periods.map((p) => ({ value: p.id, label: p.bulan === 0 ? `${p.tahun} (tahunan)` : p.kode })));
   let faskesOptions = $derived(($bootstrap?.faskes ?? []).map((f) => ({ value: f.id, label: f.nama })));
   let progress = $derived(parseProgress(job?.progress_json));
   let allowedRole = $derived(
@@ -70,7 +70,7 @@
   async function loadDetail(id: string) {
     detail = await api.submission(id);
     const next: Record<string, string> = {};
-    for (const row of detail.rows) next[row.id] = row.iku_kode ?? '';
+    for (const row of detail.rows) next[row.id] = row.kode_iku_raw ?? row.iku_kode ?? '';
     rowSelections = next;
   }
 
@@ -192,11 +192,13 @@
       <Button class="w-full" size="lg" onclick={upload} disabled={uploading || !allowedRole}>
         {#if uploading}<Spinner label="Mengunggah…" />{:else}<UploadCloud size={16} /> Upload & proses{/if}
       </Button>
-      <a href="/api/v1/master/template" class="block text-center font-mono text-[10px] font-bold underline">
-        Unduh template BNBA
+      <a href="/templates/BNBA-Semua-Satuan.xlsx" download class="block text-center font-mono text-[10px] font-bold underline">
+        Unduh template BNBA semua satuan
       </a>
       <p class="text-center font-mono text-[10px] text-muted-foreground">
-        Kolom <code>kode_kategori</code> opsional; kolom <code>kode_iku</code> harus memakai kode IKU rincian, bukan IKU induk.
+        Kolom <code>kode_kategori</code> opsional; <code>kode_iku</code> boleh beberapa kode dipisah <code>;</code>; label pertama = utama/konteks.
+        Template memakai satu kolom <code>periode</code> untuk <code>YYYY-MM-DD</code>, <code>YYYY-MM</code>, atau <code>YYYY</code>.
+        Rasio memakai sheet <code>Rasio</code>; count/scalar memakai sheet <code>Nilai</code>. Periode harian baru format, belum dihitung.
       </p>
       {#if message}<div class="border-2 border-black bg-success p-2 font-mono text-[10px] font-bold">{message}</div>{/if}
       {#if error}<div class="border-2 border-black bg-destructive p-2 font-mono text-[10px] font-bold">{error}</div>{/if}

@@ -303,7 +303,7 @@ Setiap transisi tulis `AUDIT_LOG` (who/when/what + catatan).
 
 ## B.6 Aturan teknis kunci
 
-- `target_bulanan = target_tahunan / 12` (contoh 2000 → 166,67). Target bulanan persentase = 8,33%.
+- `target_bulanan = target_tahunan / 12` untuk periode bulanan (contoh 2000 → 166,67). Untuk periode tahunan (`bulan = 0`), `target_bulanan = target_tahunan`.
 - `capaian_% = realisasi / target × 100` per periode; simpan pembilang–penyebut, bukan hanya %.
 - Status workflow lihat enum formal di B.5; setiap transisi tulis `AUDIT_LOG`.
 - Upload BNBA: validasi header template Puskesmas, tolak baris tanpa domisili (desa/puskesmas/kecamatan), simpan file asli + hasil parsing untuk audit.
@@ -397,7 +397,10 @@ npm run dev
 - Admin mengisi **Capaian tahunan** di halaman Master. Dashboard periode 2026 otomatis memakai capaian 2025; ganti periode ke 2027 berarti memakai capaian 2026 tanpa menimpa histori.
 - Build frontend: `npm run build`; Go menyajikan `frontend/build` pada `APP_WEB_DIR`.
 - Test: `cd backend && go test ./...` · `cd frontend && npm run check`.
-- Template BNBA: `periode;kode_faskes;kode_kategori;kode_iku;...`; `kode_kategori` opsional, `kode_iku` adalah kode IKU rincian.
+- Header CSV legacy: `periode;kode_faskes;kode_kategori;kode_iku;...`; `kode_kategori` opsional, `kode_iku` adalah kode IKU rincian. Untuk upload baru gunakan template XLSX utama di bawah.
+- Template BNBA utama: `assets/templates/bnba/final/BNBA-Semua-Satuan.xlsx`; sheet `Rasio` dan `Nilai`, satu kolom `periode` untuk `YYYY-MM-DD`, `YYYY-MM`, atau `YYYY`. Tidak ada template tahunan terpisah; data tahunan memakai `periode=YYYY`. IKU/indikator dinamis dari master, banyak label per indikator (`kode_iku` dipisah `;`), scope `DESA`/`KECAMATAN`/`KABUPATEN`; faskes adalah pengunggah. Detail: [`docs/05` §10.18](docs/05-rencana-bnba-wilayah.md#1018-satu-template-untuk-semua-satuan-dan-periode-2026-11-20).
+- Mapping desa → puskesmas domisili dikelola di Master → **Mapping Desa**; agregasi faskes memakai mapping aktif, fallback ke uploader hanya bila desa belum punya nilai.
+- Parser dan kalkulasi mendukung `RATIO` (numerator/denominator), `COUNT`/`SCALAR` (nilai), serta periode bulanan/tahunan. `template-bnba-dinamis.xlsx` tetap kompatibel untuk rasio legacy; format harian baru tersedia di template, belum dihitung.
 - Laporan absolut bulanan: `GET /dashboard/spm/monthly?tahun=2026` dan ekspor XLSX/PDF; memakai target layanan tahunan (`target_layanan_tahunan`) dan status bulanan vs target bulanan.
 - Data awal: submission final `S-2026-05-001`, 3 baris, induk 92,39%.
 - Reset data: hapus `backend/data/` lalu jalankan API lagi.

@@ -82,11 +82,45 @@ func parseXLSX(path string) ([]RawRow, error) {
 	if len(sheets) == 0 {
 		return nil, fmt.Errorf("xlsx tidak punya sheet")
 	}
-	records, err := f.GetRows(sheets[0])
-	if err != nil {
-		return nil, err
+	// Template final memisahkan pola nilai ke sheet Rasio/Nilai. File lama
+	// memakai satu sheet Data. Petunjuk/Referensi/Contoh tidak pernah dibaca
+	// sebagai data. Jika tidak ada nama yang dikenal, fallback ke sheet pertama
+	// agar file CSV-like/legacy tetap kompatibel.
+	var dataSheets []string
+	for _, name := range sheets {
+		switch strings.ToLower(strings.TrimSpace(name)) {
+		case "data", "rasio", "nilai":
+			dataSheets = append(dataSheets, name)
+		}
 	}
-	return rowsFromRecords(records)
+	if len(dataSheets) == 0 {
+		dataSheets = sheets[:1]
+	}
+	var out []RawRow
+	for _, name := range dataSheets {
+		records, err := f.GetRows(name)
+		if err != nil {
+			return nil, fmt.Errorf("baca sheet %s: %w", name, err)
+		}
+		rows, err := rowsFromRecords(records)
+		if err != nil {
+			// Sheet pola yang tidak dipakai boleh kosong; sheet data lain
+			// tetap diproses.
+			if len(dataSheets) > 1 && strings.Contains(err.Error(), "tidak memiliki baris data") {
+				continue
+			}
+			return nil, fmt.Errorf("sheet %s: %w", name, err)
+		}
+		offset := len(out)
+		for i := range rows {
+			rows[i].RowNo = offset + i + 1
+		}
+		out = append(out, rows...)
+	}
+	if len(out) == 0 {
+		return nil, fmt.Errorf("file tidak memiliki baris data")
+	}
+	return out, nil
 }
 
 func rowsFromRecords(records [][]string) ([]RawRow, error) {

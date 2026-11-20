@@ -73,6 +73,12 @@ func (s *Store) migrate() error {
 		return err
 	}
 	sort.Slice(entries, func(i, j int) bool { return entries[i].Name() < entries[j].Name() })
+	fkDisabled := false
+	defer func() {
+		if fkDisabled {
+			_, _ = s.db.Exec(`PRAGMA foreign_keys = ON`)
+		}
+	}()
 	for _, entry := range entries {
 		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".sql") {
 			continue
@@ -92,6 +98,14 @@ func (s *Store) migrate() error {
 		if err != nil {
 			return err
 		}
+		// Migrasi 010 membangun ulang tabel periode. Foreign keys harus
+		// dimatikan sebelum transaksi karena PRAGMA tidak berlaku di dalamnya.
+		if version == 10 {
+			if _, err := s.db.Exec(`PRAGMA foreign_keys = OFF`); err != nil {
+				return fmt.Errorf("matikan foreign keys: %w", err)
+			}
+			fkDisabled = true
+		}
 		tx, err := s.db.Beginx()
 		if err != nil {
 			return err
@@ -107,6 +121,12 @@ func (s *Store) migrate() error {
 		}
 		if err := tx.Commit(); err != nil {
 			return err
+		}
+		if version == 10 {
+			if _, err := s.db.Exec(`PRAGMA foreign_keys = ON`); err != nil {
+				return fmt.Errorf("nyalakan foreign keys: %w", err)
+			}
+			fkDisabled = false
 		}
 	}
 	return nil

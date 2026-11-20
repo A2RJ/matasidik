@@ -16,7 +16,7 @@
   import MultiBarChart from '$lib/components/dashboard/multi-bar-chart.svelte';
   import { PAGE_COPY, TABLE_LABELS, EMPTY_STATE } from '$lib/constants/labels';
   import { DISPLAY_STATUS_LABELS, STATUS_TARGET_NOTE } from '$lib/constants/enums';
-  import { formatPercent, formatNumber } from '$lib/utils';
+  import { formatPercent, formatNumber, formatMetric, formatGap } from '$lib/utils';
   import type { DashboardItem, DashboardSummary, IKUChart, MonthlySPMReport, MonthlySPMRow } from '$lib/types';
   import { BookOpen, Download, RefreshCw, Target, Activity, AlertTriangle, Database, Network, FileSpreadsheet, FileText } from '@lucide/svelte';
 
@@ -31,11 +31,25 @@
   let monthlyError = $state('');
   let monthlyExporting = $state('');
   let filterFaskes = $state('');
+  let filterWilayah = $state('');
   let filterStatus = $state('');
   let filterCategory = $state('SPM');
 
-  let periodOptions = $derived($periods.map((p) => ({ value: p.id, label: p.kode })));
+  let periodOptions = $derived($periods.map((p) => ({ value: p.id, label: p.bulan === 0 ? `${p.tahun} (tahunan)` : p.kode })));
   let faskesOptions = $derived(($bootstrap?.faskes ?? []).map((f) => ({ value: f.id, label: f.nama })));
+  let wilayahOptions = $derived(
+    [...($bootstrap?.wilayah ?? [])]
+      .sort((a, b) => {
+        const order: Record<string, number> = { kabupaten: 0, kecamatan: 1, desa: 2 };
+        return (order[a.level] ?? 9) - (order[b.level] ?? 9) || a.nama.localeCompare(b.nama);
+      })
+      .map((w) => ({
+        value: `${w.level.toUpperCase()}|${w.id}`,
+        label: `${w.level === 'kabupaten' ? 'Kab.' : w.level === 'kecamatan' ? 'Kec.' : 'Desa'} ${w.nama}`
+      }))
+  );
+  let filterScopeType = $derived(filterWilayah ? filterWilayah.split('|')[0] : '');
+  let filterScopeID = $derived(filterWilayah ? filterWilayah.split('|')[1] : '');
   let categoryOptions = $derived([
     { value: 'ALL', label: 'Semua' },
     ...($bootstrap?.categories ?? []).filter((c) => c.aktif).map((c) => ({ value: c.kode, label: c.nama }))
@@ -95,13 +109,23 @@
   async function load() {
     const period = $selectedPeriod;
     if (!period) return;
+    const useScope = filterWilayah !== '';
+    const activeFaskes = useScope ? '' : filterFaskes;
+    const activeScopeType = useScope ? filterScopeType : '';
+    const activeScopeID = useScope ? filterScopeID : '';
     loading = true;
     error = '';
     try {
       if (filterCategory === 'SPM') {
         const [dashboard, chartData] = await Promise.all([
-          api.dashboard({ periode: period, faskes_id: filterFaskes || undefined, status: filterStatus || undefined }),
-          api.ikuByFaskes({ periode: period, faskes_id: filterFaskes || undefined })
+          api.dashboard({
+            periode: period,
+            faskes_id: activeFaskes || undefined,
+            scope_type: activeScopeType || undefined,
+            scope_id: activeScopeID || undefined,
+            status: filterStatus || undefined
+          }),
+          api.ikuByFaskes({ periode: period, faskes_id: activeFaskes || undefined })
         ]);
         items = dashboard.items;
         summary = dashboard.summary;
@@ -109,7 +133,9 @@
       } else {
         const result = await api.dashboardCategory(filterCategory, {
           periode: period,
-          faskes_id: filterFaskes || undefined,
+          faskes_id: activeFaskes || undefined,
+          scope_type: activeScopeType || undefined,
+          scope_id: activeScopeID || undefined,
           status: filterStatus || undefined
         });
         items = result.items;
@@ -126,6 +152,7 @@
   $effect(() => {
     const period = $selectedPeriod;
     const faskes = filterFaskes;
+    const wilayah = filterWilayah;
     const status = filterStatus;
     const category = filterCategory;
     if (period) void load();
@@ -133,10 +160,16 @@
 
   async function loadMonthly() {
     if (!monthlyYear) return;
+    const useScope = filterWilayah !== '';
+    const activeFaskes = useScope ? '' : filterFaskes;
     monthlyLoading = true;
     monthlyError = '';
     try {
-      monthlyReport = await api.spmMonthly(monthlyYear);
+      monthlyReport = await api.spmMonthly(monthlyYear, {
+        scope_type: useScope ? filterScopeType : undefined,
+        scope_id: useScope ? filterScopeID : undefined,
+        faskes_id: activeFaskes || undefined
+      });
     } catch (err) {
       monthlyError = err instanceof Error ? err.message : 'Gagal memuat laporan bulanan.';
     } finally {
@@ -146,14 +179,23 @@
 
   $effect(() => {
     const year = monthlyYear;
+    const scopeType = filterScopeType;
+    const scopeID = filterScopeID;
+    const faskes = filterFaskes;
     if (year) void loadMonthly();
   });
 
   async function exportMonthly(format: 'xlsx' | 'pdf') {
     monthlyExporting = format;
     monthlyError = '';
+    const useScope = filterWilayah !== '';
+    const activeFaskes = useScope ? '' : filterFaskes;
     try {
-      const result = await api.spmMonthlyExport(monthlyYear, format);
+      const result = await api.spmMonthlyExport(monthlyYear, format, {
+        scope_type: useScope ? filterScopeType : undefined,
+        scope_id: useScope ? filterScopeID : undefined,
+        faskes_id: activeFaskes || undefined
+      });
       const url = URL.createObjectURL(result.blob);
       const a = document.createElement('a');
       a.href = url;
@@ -169,22 +211,20 @@
 
   function openDetail(kode: string) {
     const params = new URLSearchParams({ periode: $selectedPeriod });
-    if (filterFaskes) params.set('faskes_id', filterFaskes);
+    if (filterWilayah) {
+      if (filterScopeType) params.set('scope_type', filterScopeType);
+      if (filterScopeID) params.set('scope_id', filterScopeID);
+    } else if (filterFaskes) {
+      params.set('faskes_id', filterFaskes);
+    }
     void goto(`/dashboard/spm/${kode}?${params.toString()}`);
   }
 
-  async function downloadTemplate() {
-    try {
-      const result = await api.downloadTemplate();
-      const url = URL.createObjectURL(result.blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = result.filename;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      error = err instanceof Error ? err.message : 'Template gagal diunduh.';
-    }
+  function downloadTemplate() {
+    const a = document.createElement('a');
+    a.href = '/templates/BNBA-Semua-Satuan.xlsx';
+    a.download = 'BNBA-Semua-Satuan.xlsx';
+    a.click();
   }
 
   async function exportData(format: 'xlsx' | 'pdf') {
@@ -231,7 +271,7 @@
 <div class="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
   <StatCard
     label={isSPM ? 'IKU induk · Kesehatan Ibu' : 'Total baris kategori'}
-    value={isSPM ? (summary?.parent_value !== undefined ? formatPercent(summary.parent_value) : '—') : `${summary?.total ?? 0}`}
+    value={isSPM ? (summary?.parent_value !== undefined ? formatMetric(summary.parent_value, { tipe_nilai: summary.parent_tipe_nilai, satuan: summary.parent_satuan }) : '—') : `${summary?.total ?? 0}`}
     hint={isSPM ? `Status ${DISPLAY_STATUS_LABELS[summary?.parent_status ?? 'NO_DATA'] ?? 'Belum ada data'} · dihitung dari komponen` : `Kategori ${filterCategory}`}
     tone="primary"
   >
@@ -248,7 +288,7 @@
   <StatCard
     label="Di bawah target"
     value={`${summary?.below_target ?? 0}`}
-    hint={`rata-rata capaian ${formatPercent(summary?.average)}`}
+    hint={`rata-rata capaian rasio ${formatPercent(summary?.average)}`}
     tone="warning"
   >
     {#snippet icon()}<AlertTriangle size={18} />{/snippet}
@@ -269,7 +309,7 @@
       <div class="nb-kicker">Filter dashboard</div>
       <h2 class="mt-1 text-xl">Periode & cakupan</h2>
     </div>
-    <div class="grid gap-2 sm:grid-cols-4">
+    <div class="grid gap-2 sm:grid-cols-5">
       <div class="min-w-44">
         <label class="nb-label" for="period">Periode</label>
         <Select id="period" bind:value={$selectedPeriod} options={periodOptions} placeholder="Pilih periode" />
@@ -279,6 +319,10 @@
         <Select id="category" bind:value={filterCategory} options={categoryOptions} placeholder="Pilih kelompok" />
       </div>
       {#if canSeeAllFaskes}
+        <div class="min-w-48">
+          <label class="nb-label" for="wilayah">Wilayah</label>
+          <Select id="wilayah" bind:value={filterWilayah} options={wilayahOptions} placeholder="Semua wilayah" allowEmpty />
+        </div>
         <div class="min-w-48">
           <label class="nb-label" for="faskes">Faskes/UPTD</label>
           <Select id="faskes" bind:value={filterFaskes} options={faskesOptions} placeholder="Semua faskes" allowEmpty />
@@ -292,13 +336,13 @@
   </div>
 </Card>
 
-{#if isSPM}
+{#if isSPM && !filterWilayah}
   <Card class="mb-6">
     <div class="flex flex-wrap items-center justify-between gap-3 border-b-2 border-black bg-card px-4 py-3">
       <div>
         <div class="nb-kicker">Performa antar puskesmas/UPTD</div>
         <h2 class="mt-1 text-xl">Capaian per puskesmas</h2>
-        <p class="mt-1 text-xs text-muted-foreground">Setiap warna mewakili satu IKU; bandingkan capaian antar faskes pada periode aktif.</p>
+        <p class="mt-1 text-xs text-muted-foreground">Setiap warna mewakili satu IKU rasio persen; count/scalar dan rasio non-persen tampil di tabel capaian.</p>
       </div>
       <Badge tone="info">Semua IKU</Badge>
     </div>
@@ -335,20 +379,20 @@
         {:else if key === 'category'}
           <span class="font-mono text-[10px]">{item.category_nama ?? item.category_kode ?? '—'}</span>
         {:else if key === 'target'}
-          {item.target > 0 ? formatPercent(item.target, 0) : '—'}
+          {item.target > 0 ? formatMetric(item.target, item, 0) : '—'}
         {:else if key === 'baselinePrev'}
-          {formatPercent(item.baseline_prev, 0)}
+          {formatMetric(item.baseline_prev, item, 0)}
         {:else if key === 'baselineTW1'}
-          {formatPercent(item.baseline_tw1, 1)}
+          {formatMetric(item.baseline_tw1, item, 1)}
         {:else if key === 'value'}
-          <span class="font-bold">{formatPercent(item.value)}</span>
-          {#if item.numerator !== undefined && item.denominator !== undefined}
+          <span class="font-bold">{formatMetric(item.value, item)}</span>
+          {#if (!item.tipe_nilai || item.tipe_nilai === 'RATIO') && item.numerator !== undefined && item.denominator !== undefined}
             <div class="text-[10px] text-muted-foreground">{formatNumber(item.numerator)}/{formatNumber(item.denominator)}</div>
           {/if}
         {:else if key === 'status'}
           <StatusBadge kind="display" value={item.display_status} />
         {:else if key === 'gap'}
-          {item.gap !== undefined ? `${item.gap > 0 ? '+' : ''}${formatNumber(item.gap, 2)} pp` : '—'}
+          {formatGap(item.gap, item)}
         {:else if key === 'owner'}
           {item.owner_nama ?? '—'}
         {:else if key === 'trace'}

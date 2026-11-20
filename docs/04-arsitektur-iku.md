@@ -86,8 +86,9 @@ Nilainya tetap **satu** di `INDICATOR_VALUE`. Label hanya menentukan di dashboar
 | `LABEL_VERSION` | `label_id`, `master_release_id`, `nama`, `parent_id`, `path`, `level`, `berlaku_dari`, `berlaku_sampai` | Versi nama/hierarki per release |
 | `IKU_PROFILE` | `label_version_id`, `aggregation_method`, `formula_json`, `pj_bidang_id`, `pj_timker_id`, `allow_direct_input`, `is_rollup_only` | Aturan khusus IKU |
 | `INDIKATOR` | `id`, `kode`, `status_aktif` | Identitas stabil indikator |
-| `INDIKATOR_VERSION` | `indikator_id`, `master_release_id`, `nama`, `satuan_baku`, `definisi`, `numerator_label`, `denominator_label`, `sifat_input`, `frekuensi`, `pj_bidang_id`, `pj_timker_id`, `berlaku_dari`, `berlaku_sampai` | Definisi yang dipakai engine |
+| `INDIKATOR_VERSION` | `indikator_id`, `master_release_id`, `nama`, `satuan_baku`, `tipe_nilai`, `definisi`, `numerator_label`, `denominator_label`, `sifat_input`, `frekuensi`, `pj_bidang_id`, `pj_timker_id`, `berlaku_dari`, `berlaku_sampai` | Definisi yang dipakai engine |
 | `INDIKATOR_LABEL` | `indikator_version_id`, `label_version_id`, `bobot`, `is_primary` | **Many-to-many**: indikator ↔ label/IKU |
+| `DESA_FASKES_MAPPING` | `desa_id`, `faskes_id`, `berlaku_dari`, `berlaku_sampai`, `aktif` | Mapping berversi desa → puskesmas domisili |
 | `IKU_KOMPONEN` | `parent_label_version_id`, `tipe_komponen` (`INDIKATOR`/`CHILD_IKU`), `komponen_id`, `bobot`, `sort`, `aggregation_method` | **Graf kalkulasi** induk–anak |
 | `TARGET` | `indikator_version_id`/`label_version_id`, `periode_id`, `scope_type`, `scope_id`, `target_tahunan`, `target_bulanan` | Target per periode dan scope |
 | `PERIODE` | `id`, `tahun`, `bulan`, `status` (`open`/`locked`), `is_late_allowed` | Batas pelaporan |
@@ -165,9 +166,9 @@ Aturan:
 - `kode_iku` = konteks pengelompokan dan validasi routing (kode label/IKU leaf).
 - `kode_kategori` = opsional; jika diisi, harus sama dengan kategori label pada `dashboard_category`.
 - `kode_indikator` = identitas baris data.
-- `periode` = mengikat ke `MASTER_RELEASE` yang berlaku.
-- `numerator`/`denominator` wajib untuk indikator rasio/persentase; `nilai` boleh diturunkan.
-- `scope_type`/`scope_code` menentukan wilayah (desa/puskesmas/kecamatan/kabupaten). Jika kosong, memakai scope uploader dengan peringatan.
+- `periode` = mengikat ke `MASTER_RELEASE` yang berlaku; `YYYY-MM` untuk bulanan, `YYYY` untuk tahunan.
+- `tipe_nilai` indikator menentukan kontrak: `RATIO` wajib `numerator`/`denominator` (> 0); `COUNT`/`SCALAR` wajib `nilai` (tanpa denominator).
+- `scope_type`/`scope_code` menentukan wilayah (desa/kecamatan/kabupaten); faskes adalah pengunggah, bukan scope. Jika kosong, memakai scope uploader dengan peringatan.
 - Untuk BNBA line-level, pemetaan dilakukan di **profil dataset**, bukan per baris: profil menentukan kolom mana yang menjadi numerator/denominator dan indikator turunan mana yang dihasilkan.
 
 ### 3.2 Pipa proses background
@@ -319,7 +320,7 @@ Matriks lengkap ada di `README.md` B.4 dan `docs/rules.md` §10.1. Aturan teknis
 | Metode | Dipakai untuk | Contoh |
 | --- | --- | --- |
 | `SUM` | Jumlah kasus/layanan | Jumlah kematian ibu |
-| `RATIO_OF_SUMS` | Persentase/rate | `(Σ numerator) / (Σ denominator) × 100` |
+| `RATIO_OF_SUMS` | Persentase/rate | `(Σ numerator) / (Σ denominator) × 100`; satuan `Rasio` non-persen tanpa `×100` |
 | `WEIGHTED_AVERAGE` | Indeks/nilai komposit | Indeks dengan bobot per komponen |
 | `FORMULA` | Kombinasi indikator langsung + IKU anak | `0,7 × anak + 0,3 × indikator_langsung` |
 | `NONE` | IKU hanya kelompok tampilan | Tanpa nilai sendiri |
@@ -672,6 +673,7 @@ Jika nanti butuh analisis log terpusat, kirim stdout container ke Loki/ELK tanpa
 | `GET` | `/api/v1/dashboard/spm/{kode}/detail?periode=2026-05` | Coverage faskes + provenance |
 | `GET` | `/api/v1/dashboard/iku-by-faskes` | Data chart multi-series |
 | `GET` | `/api/v1/dashboard/spm/{kode}/trace?periode=2026-05` | Rantai trace sampai `FILE_OBJECT` |
+| `GET/POST/DELETE` | `/api/v1/master/mapping-desa` | Mapping desa → puskesmas domisili (Admin) |
 | `GET/POST/PATCH/DELETE` | `/api/v1/master/capaian-tahunan` | Capaian tahun sebelumnya per Indikator/IKU (Admin) |
 | `GET` | `/api/v1/files/{id}` | Stream file dengan cek auth/scope |
 | `GET/POST/PATCH` | `/api/v1/admin/{users,faskes,positions}` | Administrasi user, faskes, jabatan |

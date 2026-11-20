@@ -223,12 +223,15 @@ func exportXLSX(items []domain.DashboardSPMItem, summary *domain.DashboardSummar
 	_ = f.SetCellStyle(sheet, "A1", "L1", headerStyle)
 	for i, item := range items {
 		row := i + 2
+		numDen := fmt.Sprintf("%s/%s", formatNumber(item.Numerator, 0), formatNumber(item.Denominator, 0))
+		if item.TipeNilai == string(domain.TipeCount) || item.TipeNilai == string(domain.TipeScalar) {
+			numDen = strings.TrimSpace(formatNumber(item.Value, 2) + " " + item.Satuan)
+		}
 		values := []any{
 			item.Kode, item.Indikator, deref(item.LabelKode), item.Target,
 			formatNumber(item.BaselinePrev, 2), formatNumber(item.BaselineTW1, 2),
 			formatNumber(item.Value, 2), statusText(item.DisplayStatus), formatNumber(item.Gap, 2),
-			fmt.Sprintf("%s/%s", formatNumber(item.Numerator, 0), formatNumber(item.Denominator, 0)),
-			deref(item.SourceHash), deref(item.DataVersion),
+			numDen, deref(item.SourceHash), deref(item.DataVersion),
 		}
 		for j, v := range values {
 			cell, _ := excelize.CoordinatesToCellName(j+1, row)
@@ -275,11 +278,15 @@ func exportPDF(items []domain.DashboardSPMItem, summary *domain.DashboardSummary
 	pdf.Ln(-1)
 	pdf.SetFont("Helvetica", "", 6.8)
 	for _, item := range items {
+		numDen := fmt.Sprintf("%s/%s", formatNumber(item.Numerator, 0), formatNumber(item.Denominator, 0))
+		if item.TipeNilai == string(domain.TipeCount) || item.TipeNilai == string(domain.TipeScalar) {
+			numDen = strings.TrimSpace(formatNumber(item.Value, 2) + " " + item.Satuan)
+		}
 		values := []string{
 			item.Kode, truncate(item.Indikator, 62), fmt.Sprintf("%.0f", item.Target),
 			formatNumber(item.BaselinePrev, 1), formatNumber(item.BaselineTW1, 1),
 			formatNumber(item.Value, 2), statusText(item.DisplayStatus), formatNumber(item.Gap, 2),
-			fmt.Sprintf("%s/%s", formatNumber(item.Numerator, 0), formatNumber(item.Denominator, 0)),
+			numDen,
 		}
 		for i, v := range values {
 			align := "L"

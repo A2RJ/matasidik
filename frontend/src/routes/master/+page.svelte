@@ -20,10 +20,10 @@
     SCOPE_TYPE_LABELS
   } from '$lib/constants/enums';
   import { formatDateTime, formatPercent } from '$lib/utils';
-  import type { Bidang, CapaianTahunan, DashboardCategory, Indicator, Label, Target } from '$lib/types';
-  import { Plus, RefreshCw, Database, Tag, Target as TargetIcon, CalendarDays, History } from '@lucide/svelte';
+  import type { Bidang, CapaianTahunan, DashboardCategory, DesaFaskesMapping, Indicator, Label, Target } from '$lib/types';
+  import { Plus, RefreshCw, Database, Tag, Target as TargetIcon, CalendarDays, History, Network } from '@lucide/svelte';
 
-  let activeTab = $state<'indicators' | 'preview' | 'labels' | 'categories' | 'bidang' | 'targets' | 'baselines' | 'periods'>('indicators');
+  let activeTab = $state<'indicators' | 'preview' | 'labels' | 'categories' | 'bidang' | 'mapping' | 'targets' | 'baselines' | 'periods'>('indicators');
   let loading = $state(false);
   let error = $state('');
   let message = $state('');
@@ -36,6 +36,7 @@
   let editingCategory = $state<DashboardCategory | null>(null);
   let editingBidang = $state<Bidang | null>(null);
   let targetOpen = $state(false);
+  let mappingOpen = $state(false);
   let baselineOpen = $state(false);
   let editingBaseline = $state<CapaianTahunan | null>(null);
   let baselineYear = $state(String(new Date().getFullYear() - 1));
@@ -43,7 +44,7 @@
   let baselinesLoading = $state(false);
 
   let indForm = $state({
-    kode: '', nama: '', satuan: '%', definisi: '', numerator_label: '', denominator_label: '',
+    kode: '', nama: '', satuan: '%', tipe_nilai: 'RATIO', frekuensi: 'bulanan', definisi: '', numerator_label: '', denominator_label: '',
     labelIDs: [] as string[], primaryLabelID: '', pjBidangID: '', pjTimkerID: ''
   });
   let labelForm = $state({
@@ -53,6 +54,7 @@
   let categoryForm = $state({ kode: '', nama: '', jenis: 'LABEL', urutan: '0', aktif: true });
   let bidangForm = $state({ kode: '', nama: '', jenis: 'bidang', parentID: '', aktif: true });
   let targetForm = $state({ labelID: '', periodID: '', target_tahunan: '100', target_layanan_tahunan: '' });
+  let mappingForm = $state({ desaID: '', faskesID: '', berlakuDari: new Date().toISOString().slice(0, 10) });
   let baselineForm = $state({ target: '', tahun: String(new Date().getFullYear() - 1), nilai: '', catatan: '' });
 
   let labels = $derived($bootstrap?.labels ?? []);
@@ -61,6 +63,7 @@
   let periods = $derived($bootstrap?.periods ?? []);
   let categories = $derived($bootstrap?.categories ?? []);
   let bidangList = $derived($bootstrap?.bidang ?? []);
+  let desaFaskes = $derived($bootstrap?.desa_faskes ?? []);
   let isAdmin = $derived($currentActor?.role === 'admin' || $currentActor?.role === 'kabid' || $currentActor?.role === 'sekretaris');
   let canMaster = $derived($currentActor?.role === 'admin');
 
@@ -71,7 +74,9 @@
   let bidangOptions = $derived(bidangList.filter((b) => b.aktif && b.jenis !== 'timker').map((b) => ({ value: b.id, label: `${b.kode} · ${b.nama}` })));
   let timkerOptions = $derived(bidangList.filter((b) => b.aktif && b.jenis === 'timker').map((b) => ({ value: b.id, label: `${b.kode} · ${b.nama}` })));
   let selectedLabelOptions = $derived(labelOptions.filter((o) => indForm.labelIDs.includes(o.value)));
-  let periodOptions = $derived(periods.map((p) => ({ value: p.id, label: p.kode })));
+  let periodOptions = $derived(periods.map((p) => ({ value: p.id, label: p.bulan === 0 ? `${p.tahun} (tahunan)` : p.kode })));
+  let desaOptions = $derived(($bootstrap?.wilayah ?? []).filter((w) => w.level === 'desa').map((w) => ({ value: w.id, label: `${w.kode} · ${w.nama}` })));
+  let faskesOptions = $derived(($bootstrap?.faskes ?? []).map((f) => ({ value: f.id, label: `${f.kode} · ${f.nama}` })));
   let parentOptions = $derived([{ value: '', label: 'Tanpa induk' }, ...labelOptions]);
   let bidangParentOptions = $derived([
     { value: '', label: 'Tanpa induk' },
@@ -87,6 +92,7 @@
     { key: 'kode', label: 'Kode', class: 'w-32' },
     { key: 'nama', label: 'Indikator' },
     { key: 'satuan', label: 'Satuan', class: 'w-24' },
+    { key: 'tipe', label: 'Tipe nilai', class: 'w-28' },
     { key: 'sifat', label: 'Sifat input', class: 'w-32' },
     { key: 'frekuensi', label: 'Frekuensi', class: 'w-28' },
     { key: 'pj', label: 'PJ' }
@@ -125,6 +131,13 @@
     { key: 'parent', label: 'Induk', class: 'w-48' },
     { key: 'aktif', label: 'Status', class: 'w-28' },
     { key: 'action', label: 'Aksi', class: 'w-24' }
+  ];
+  let mappingColumns = [
+    { key: 'desa', label: 'Desa' },
+    { key: 'faskes', label: 'Puskesmas Domisili' },
+    { key: 'berlaku', label: 'Berlaku dari', class: 'w-32' },
+    { key: 'status', label: 'Status', class: 'w-24' },
+    { key: 'action', label: 'Aksi', class: 'w-32' }
   ];
   let targetColumns = [
     { key: 'label', label: 'Label' },
@@ -177,7 +190,7 @@
 
   function resetIndicatorForm() {
     indForm = {
-      kode: '', nama: '', satuan: '%', definisi: '', numerator_label: '', denominator_label: '',
+      kode: '', nama: '', satuan: '%', tipe_nilai: 'RATIO', frekuensi: 'bulanan', definisi: '', numerator_label: '', denominator_label: '',
       labelIDs: [], primaryLabelID: '', pjBidangID: '', pjTimkerID: ''
     };
   }
@@ -203,6 +216,42 @@
       await reload();
     } catch (err) {
       error = err instanceof Error ? err.message : 'Gagal membuat indikator.';
+    }
+  }
+
+  function openMapping() {
+    mappingForm = { desaID: '', faskesID: '', berlakuDari: new Date().toISOString().slice(0, 10) };
+    mappingOpen = true;
+  }
+
+  async function saveMapping() {
+    error = '';
+    if (!mappingForm.desaID || !mappingForm.faskesID) {
+      error = 'Desa dan puskesmas wajib dipilih.';
+      return;
+    }
+    try {
+      await api.upsertDesaFaskesMapping({
+        desa_id: mappingForm.desaID,
+        faskes_id: mappingForm.faskesID,
+        berlaku_dari: mappingForm.berlakuDari
+      });
+      mappingOpen = false;
+      message = 'Mapping desa diperbarui.';
+      await reload();
+    } catch (err) {
+      error = err instanceof Error ? err.message : 'Gagal menyimpan mapping desa.';
+    }
+  }
+
+  async function deactivateMapping(item: DesaFaskesMapping) {
+    if (!confirm(`Nonaktifkan mapping ${item.desa_nama ?? item.desa_id}?`)) return;
+    try {
+      await api.deactivateDesaFaskesMapping(item.id);
+      message = 'Mapping desa dinonaktifkan.';
+      await reload();
+    } catch (err) {
+      error = err instanceof Error ? err.message : 'Gagal menonaktifkan mapping.';
     }
   }
 
@@ -484,6 +533,10 @@
       {#if canMaster}
         <Button onclick={() => openBidang()}><Plus size={14} /> Bidang/Timker</Button>
       {/if}
+    {:else if activeTab === 'mapping'}
+      {#if canMaster}
+        <Button onclick={openMapping}><Plus size={14} /> Mapping desa</Button>
+      {/if}
     {:else if activeTab === 'targets'}
       <Button onclick={() => (targetOpen = true)} disabled={!isAdmin}><Plus size={14} /> Target</Button>
     {:else if activeTab === 'baselines'}
@@ -502,6 +555,7 @@
   <Button variant={activeTab === 'labels' ? 'default' : 'outline'} onclick={() => (activeTab = 'labels')}><Tag size={14} /> Label & IKU ({labels.length})</Button>
   <Button variant={activeTab === 'categories' ? 'default' : 'outline'} onclick={() => (activeTab = 'categories')}><Tag size={14} /> Kategori ({categories.length})</Button>
   <Button variant={activeTab === 'bidang' ? 'default' : 'outline'} onclick={() => (activeTab = 'bidang')}><Tag size={14} /> Bidang/Timker ({bidangList.length})</Button>
+  <Button variant={activeTab === 'mapping' ? 'default' : 'outline'} onclick={() => (activeTab = 'mapping')}><Network size={14} /> Mapping Desa ({desaFaskes.filter((m) => m.aktif).length})</Button>
   <Button variant={activeTab === 'targets' ? 'default' : 'outline'} onclick={() => (activeTab = 'targets')}><TargetIcon size={14} /> Target ({targets.length})</Button>
   <Button variant={activeTab === 'baselines' ? 'default' : 'outline'} onclick={() => (activeTab = 'baselines')}><History size={14} /> Capaian tahunan ({baselines.length})</Button>
   <Button variant={activeTab === 'periods' ? 'default' : 'outline'} onclick={() => (activeTab = 'periods')}><CalendarDays size={14} /> Periode ({periods.length})</Button>
@@ -529,6 +583,7 @@
         {#if key === 'kode'}<span class="font-bold">{item.kode}</span>
         {:else if key === 'nama'}<span class="font-semibold">{item.nama}</span><div class="text-[10px] text-muted-foreground">{item.definisi ?? 'Definisi belum diisi'}</div>
         {:else if key === 'satuan'}{item.satuan}
+        {:else if key === 'tipe'}{item.tipe_nilai}
         {:else if key === 'sifat'}{item.sifat_input}
         {:else if key === 'frekuensi'}{item.frekuensi}
         {:else if key === 'pj'}{item.pj_timker ?? item.pj_bidang_id ?? '—'}
@@ -621,6 +676,27 @@
         {/if}
       {/snippet}
     </DataTable>
+  {:else if activeTab === 'mapping'}
+    <DataTable columns={canMaster ? mappingColumns : mappingColumns.filter((c) => c.key !== 'action')} rows={desaFaskes}>
+      {#snippet cell(item: DesaFaskesMapping, key)}
+        {#if key === 'desa'}
+          <div class="font-semibold">{item.desa_nama ?? item.desa_id}</div>
+          <div class="font-mono text-[10px] text-muted-foreground">{item.desa_kode ?? item.desa_id}</div>
+        {:else if key === 'faskes'}
+          <div class="font-semibold">{item.faskes_nama ?? item.faskes_id}</div>
+          <div class="font-mono text-[10px] text-muted-foreground">{item.faskes_kode ?? item.faskes_id}</div>
+        {:else if key === 'berlaku'}{item.berlaku_dari}
+        {:else if key === 'status'}<Badge tone={item.aktif ? 'success' : 'neutral'}>{item.aktif ? 'Aktif' : 'Nonaktif'}</Badge>
+        {:else if key === 'action'}
+          {#if canMaster && item.aktif}
+            <Button size="sm" variant="ghost" onclick={() => deactivateMapping(item)}>Nonaktifkan</Button>
+          {/if}
+        {/if}
+      {/snippet}
+    </DataTable>
+    <div class="border-t-2 border-black bg-card px-4 py-2 font-mono text-[10px] text-muted-foreground">
+      Mapping aktif menentukan puskesmas domisili untuk agregasi nilai desa. Perubahan mapping menutup versi lama dan menyimpan versi baru.
+    </div>
   {:else if activeTab === 'targets'}
     <DataTable columns={targetColumns} rows={targets}>
       {#snippet cell(item: Target, key)}
@@ -668,7 +744,7 @@
       {#snippet cell(item, key)}
         {#if key === 'kode'}<span class="font-bold">{item.kode}</span>
         {:else if key === 'tahun'}{item.tahun}
-        {:else if key === 'bulan'}{item.bulan}
+        {:else if key === 'bulan'}{item.bulan === 0 ? 'Tahunan' : item.bulan}
         {:else if key === 'status'}<Badge tone={item.status === 'open' ? 'success' : 'warning'}>{item.status}</Badge>
         {/if}
       {/snippet}
@@ -681,6 +757,21 @@
     <div><label class="nb-label" for="ik">Kode</label><Input id="ik" bind:value={indForm.kode} placeholder="IND-013" /></div>
     <div><label class="nb-label" for="in">Nama</label><Input id="in" bind:value={indForm.nama} placeholder="Nama indikator" /></div>
     <div><label class="nb-label" for="is">Satuan</label><Input id="is" bind:value={indForm.satuan} placeholder="% / orang / kasus" /></div>
+    <div>
+      <label class="nb-label" for="it">Tipe nilai</label>
+      <Select id="it" bind:value={indForm.tipe_nilai} options={[
+        { value: 'RATIO', label: 'Rasio / persentase' },
+        { value: 'COUNT', label: 'Jumlah / count' },
+        { value: 'SCALAR', label: 'Nilai tunggal / scalar' }
+      ]} placeholder="Pilih tipe nilai" />
+    </div>
+    <div>
+      <label class="nb-label" for="if">Frekuensi</label>
+      <Select id="if" bind:value={indForm.frekuensi} options={[
+        { value: 'bulanan', label: 'Bulanan' },
+        { value: 'tahunan', label: 'Tahunan (1×/tahun)' }
+      ]} placeholder="Pilih frekuensi" />
+    </div>
     <div>
       <label class="nb-label" for="il">Label Indikator (bisa lebih dari satu)</label>
       <select id="il" multiple bind:value={indForm.labelIDs} class="nb-select min-h-32 w-full">
@@ -755,6 +846,27 @@
   <div class="mt-4 flex justify-end gap-2">
     <Button variant="outline" onclick={() => (bidangOpen = false)}>Batal</Button>
     <Button variant="success" onclick={saveBidang}>Simpan bidang/timker</Button>
+  </div>
+</Modal>
+
+<Modal open={mappingOpen} title="Mapping desa → puskesmas" description="Satu desa memiliki satu puskesmas domisili aktif. Simpan versi baru untuk memindahkan domisili." onclose={() => (mappingOpen = false)}>
+  <div class="grid gap-3 sm:grid-cols-2">
+    <div class="sm:col-span-2">
+      <label class="nb-label" for="md">Desa</label>
+      <Select id="md" bind:value={mappingForm.desaID} options={desaOptions} placeholder="Pilih desa" />
+    </div>
+    <div class="sm:col-span-2">
+      <label class="nb-label" for="mf">Puskesmas domisili</label>
+      <Select id="mf" bind:value={mappingForm.faskesID} options={faskesOptions} placeholder="Pilih puskesmas" />
+    </div>
+    <div class="sm:col-span-2">
+      <label class="nb-label" for="mb">Berlaku dari</label>
+      <Input id="mb" type="date" bind:value={mappingForm.berlakuDari} />
+    </div>
+  </div>
+  <div class="mt-4 flex justify-end gap-2">
+    <Button variant="outline" onclick={() => (mappingOpen = false)}>Batal</Button>
+    <Button variant="success" onclick={saveMapping}>Simpan mapping</Button>
   </div>
 </Modal>
 

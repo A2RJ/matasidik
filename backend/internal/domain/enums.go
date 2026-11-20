@@ -85,6 +85,18 @@ const (
 	ValueStale    ValueStatus = "STALE"
 )
 
+// TipeNilai adalah bentuk nilai indikator. RATIO memakai
+// numerator/denominator; COUNT dan SCALAR memakai nilai tunggal.
+type TipeNilai string
+
+const (
+	TipeRatio  TipeNilai = "RATIO"
+	TipeCount  TipeNilai = "COUNT"
+	TipeScalar TipeNilai = "SCALAR"
+)
+
+var AllTipeNilai = []TipeNilai{TipeRatio, TipeCount, TipeScalar}
+
 // AggregationMethod adalah metode agregasi IKU.
 type AggregationMethod string
 

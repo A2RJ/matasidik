@@ -174,6 +174,7 @@ func (s *Store) GetRows(ctx context.Context, submissionID string) ([]domain.Subm
 		sr.scope_type, sr.scope_code, sr.nilai, sr.numerator, sr.denominator,
 		sr.classification_status, sr.error_message, sr.created_at,
 		i.kode AS indikator_kode, i.nama AS indikator_nama,
+		i.tipe_nilai, i.satuan,
 		l.kode AS iku_kode, l.nama AS iku_nama
 		FROM submission_row sr
 		LEFT JOIN indikator i ON i.id = sr.matched_indikator_id
@@ -189,6 +190,7 @@ func (s *Store) GetRow(ctx context.Context, rowID string) (*domain.SubmissionRow
 		sr.scope_type, sr.scope_code, sr.nilai, sr.numerator, sr.denominator,
 		sr.classification_status, sr.error_message, sr.created_at,
 		i.kode AS indikator_kode, i.nama AS indikator_nama,
+		i.tipe_nilai, i.satuan,
 		l.kode AS iku_kode, l.nama AS iku_nama
 		FROM submission_row sr
 		LEFT JOIN indikator i ON i.id = sr.matched_indikator_id
@@ -216,12 +218,34 @@ func (s *Store) UpdateRowClassification(ctx context.Context, rowID, labelID stri
 }
 
 func (s *Store) UpsertIndicatorValueForRow(ctx context.Context, row *domain.SubmissionRow, sub *domain.Submission) error {
-	if row.MatchedIndikatorID == nil || row.Numerator == nil || row.Denominator == nil {
-		return domain.Validation("baris belum memiliki indikator/numerator/denominator", nil)
+	if row.MatchedIndikatorID == nil {
+		return domain.Validation("baris belum memiliki indikator", nil)
 	}
-	value := 0.0
-	if *row.Denominator > 0 {
-		value = *row.Numerator / *row.Denominator * 100
+	var tipeNilai, satuan string
+	if err := s.db.GetContext(ctx, &tipeNilai, `SELECT tipe_nilai FROM indikator WHERE id = ?`, *row.MatchedIndikatorID); err != nil {
+		return err
+	}
+	_ = s.db.GetContext(ctx, &satuan, `SELECT satuan FROM indikator WHERE id = ?`, *row.MatchedIndikatorID)
+	numerator, denominator, value := 0.0, 0.0, 0.0
+	switch domain.TipeNilai(tipeNilai) {
+	case domain.TipeRatio:
+		if row.Numerator == nil || row.Denominator == nil || *row.Denominator <= 0 {
+			return domain.Validation("baris rasio belum memiliki numerator/denominator valid", nil)
+		}
+		numerator, denominator = *row.Numerator, *row.Denominator
+		multiplier := 100.0
+		if strings.HasPrefix(strings.ToLower(strings.TrimSpace(satuan)), "rasio") {
+			multiplier = 1
+		}
+		value = numerator / denominator * multiplier
+	case domain.TipeCount, domain.TipeScalar:
+		if row.Value == nil {
+			return domain.Validation("baris count/scalar belum memiliki nilai", nil)
+		}
+		numerator = *row.Value
+		value = *row.Value
+	default:
+		return domain.Validation("tipe nilai indikator tidak dikenal", nil)
 	}
 	var existingID string
 	_ = s.db.GetContext(ctx, &existingID, `SELECT id FROM indicator_value WHERE submission_row_id = ?`, row.ID)
@@ -231,13 +255,13 @@ func (s *Store) UpsertIndicatorValueForRow(ctx context.Context, row *domain.Subm
 			 numerator, denominator, value, status, data_version, created_at)
 			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'COMPLETE', 'preview', ?)`,
 			uuid.NewString(), row.ID, *row.MatchedIndikatorID, sub.PeriodeID, sub.FaskesID,
-			row.ScopeType, nullString(row.ScopeCode), *row.Numerator, *row.Denominator, value, nowRFC3339())
+			row.ScopeType, nullString(row.ScopeCode), numerator, denominator, value, nowRFC3339())
 		return err
 	}
 	_, err := s.db.ExecContext(ctx, `UPDATE indicator_value SET indikator_id = ?, faskes_id = ?,
 		scope_type = ?, scope_id = ?, numerator = ?, denominator = ?, value = ?, status = 'COMPLETE'
 		WHERE id = ?`, *row.MatchedIndikatorID, sub.FaskesID, row.ScopeType, nullString(row.ScopeCode),
-		*row.Numerator, *row.Denominator, value, existingID)
+		numerator, denominator, value, existingID)
 	return err
 }
 

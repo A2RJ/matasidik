@@ -192,6 +192,40 @@ func (h *Handler) CreateIndicator(c *gin.Context) {
 	response.Created(c, ind)
 }
 
+func (h *Handler) DesaFaskesMappings(c *gin.Context) {
+	data, err := h.Master.DesaFaskesMappings(c.Request.Context())
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	response.OK(c, data)
+}
+
+func (h *Handler) UpsertDesaFaskesMapping(c *gin.Context) {
+	var in service.DesaFaskesMappingInput
+	if !h.bind(c, &in) {
+		return
+	}
+	data, err := h.Master.UpsertDesaFaskesMapping(c.Request.Context(), in, h.actor(c))
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	_ = h.Audit.Write(c.Request.Context(), &h.actor(c).ID, "master.desa_faskes_upserted",
+		"desa_faskes_mapping", data.ID, nil, data, "", h.requestID(c))
+	response.OK(c, data)
+}
+
+func (h *Handler) DeactivateDesaFaskesMapping(c *gin.Context) {
+	if err := h.Master.DeactivateDesaFaskesMapping(c.Request.Context(), c.Param("id"), h.actor(c)); err != nil {
+		response.Error(c, err)
+		return
+	}
+	_ = h.Audit.Write(c.Request.Context(), &h.actor(c).ID, "master.desa_faskes_deactivated",
+		"desa_faskes_mapping", c.Param("id"), nil, nil, "", h.requestID(c))
+	response.OK(c, gin.H{"ok": true})
+}
+
 func (h *Handler) Targets(c *gin.Context) {
 	data, err := h.Master.Targets(c.Request.Context(), c.Query("periode"))
 	if err != nil {

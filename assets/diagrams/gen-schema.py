@@ -105,13 +105,24 @@ TABLES = {
         ("parent_id", "TEXT", "FK → bidang"),
         ("aktif", "INTEGER", "soft delete"),
     ]),
-    "periode": (0, "Bulan pelaporan; mengikat unggahan.", [
+    "periode": (0, "Periode pelaporan; bulanan atau tahunan.", [
         ("id", "TEXT", "PK"),
         ("tahun", "INTEGER", ""),
-        ("bulan", "INTEGER", "1–12"),
-        ("kode", "TEXT", "UNIQUE · 2026-05"),
+        ("bulan", "INTEGER", "0 tahunan; 1–12 bulanan"),
+        ("kode", "TEXT", "UNIQUE · 2026-05 / 2026"),
         ("status", "TEXT", "open|locked"),
         ("is_late_allowed", "INTEGER", "late policy"),
+    ]),
+    "desa_faskes_mapping": (0, "Mapping berversi desa → puskesmas domisili.", [
+        ("id", "TEXT", "PK"),
+        ("desa_id", "TEXT", "FK → wilayah (desa)"),
+        ("faskes_id", "TEXT", "FK → faskes"),
+        ("berlaku_dari", "TEXT", "YYYY-MM-DD"),
+        ("berlaku_sampai", "TEXT", "versi"),
+        ("aktif", "INTEGER", "satu aktif per desa"),
+        ("created_by", "TEXT", "FK → users"),
+        ("created_at", "TEXT", ""),
+        ("updated_at", "TEXT", ""),
     ]),
     "master_release": (0, "Bundel data induk per tahun.", [
         ("id", "TEXT", "PK"),
@@ -175,6 +186,7 @@ TABLES = {
         ("kode", "TEXT", "UNIQUE · IND-001"),
         ("nama", "TEXT", ""),
         ("satuan", "TEXT", "satuan baku"),
+        ("tipe_nilai", "TEXT", "RATIO|COUNT|SCALAR"),
         ("definisi", "TEXT", "definisi operasional"),
         ("numerator_label", "TEXT", ""),
         ("denominator_label", "TEXT", ""),
@@ -199,7 +211,7 @@ TABLES = {
         ("bobot", "REAL", ""),
         ("sort", "INTEGER", ""),
     ]),
-    "target": (1, "Target periode/cakupan; bulanan = tahunan/12.", [
+    "target": (1, "Target periode/cakupan; tahunan = tahunan, bulanan = tahunan/12.", [
         ("id", "TEXT", "PK"),
         ("label_id", "TEXT", "FK → label"),
         ("indikator_id", "TEXT", "FK → indikator"),
@@ -409,6 +421,8 @@ RELATIONS = [
     ("positions", "users", "position_id"),
     ("users", "auth_session", "segarkan"),
     ("faskes", "submission", "faskes_id"),
+    ("wilayah", "desa_faskes_mapping", "desa"),
+    ("faskes", "desa_faskes_mapping", "domisili"),
     ("periode", "submission", "periode_id"),
     ("file_object", "submission", "file_id"),
     ("master_release", "label", "release"),

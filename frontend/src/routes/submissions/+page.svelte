@@ -19,7 +19,7 @@
   let loading = $state(true);
   let error = $state('');
 
-  let periodOptions = $derived($periods.map((p) => ({ value: p.id, label: p.kode })));
+  let periodOptions = $derived($periods.map((p) => ({ value: p.id, label: p.bulan === 0 ? `${p.tahun} (tahunan)` : p.kode })));
   let canUpload = $derived(
     !!$currentActor && ['pkm_operator', 'pkm_pj', 'admin'].includes($currentActor.role)
   );

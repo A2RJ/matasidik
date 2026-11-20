@@ -31,7 +31,7 @@
   let tlOpen = $state(false);
   let tlForm = $state({ ikuValueID: '', masalah: '', rekomendasi: '', pj_user_id: '', status: 'open' });
 
-  let periodOptions = $derived($periods.map((p) => ({ value: p.id, label: p.kode })));
+  let periodOptions = $derived($periods.map((p) => ({ value: p.id, label: p.bulan === 0 ? `${p.tahun} (tahunan)` : p.kode })));
   let userOptions = $derived(($bootstrap?.users ?? []).map((u) => ({ value: u.id, label: `${u.nama} · ${ROLE_LABELS[u.role]}` })));
   let ikuOptions = $derived(factors.map((f) => ({ value: f.iku_value.id, label: `${f.iku_value.label_kode} · ${f.iku_value.label_nama ?? ''}` })));
   let canFactor = $derived($currentActor && ['kabid', 'sekretaris', 'admin'].includes($currentActor.role));

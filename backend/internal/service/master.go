@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -21,6 +22,7 @@ type Bootstrap struct {
 	Wilayah            []domain.Wilayah              `json:"wilayah"`
 	Bidang             []domain.Bidang               `json:"bidang"`
 	Categories         []domain.DashboardCategory    `json:"categories"`
+	DesaFaskes         []domain.DesaFaskesMapping    `json:"desa_faskes"`
 	Periods            []domain.Periode              `json:"periods"`
 	DefaultPeriodID    string                        `json:"default_period_id"`
 	Labels             []domain.Label                `json:"labels"`
@@ -59,6 +61,10 @@ func (s *MasterService) Bootstrap(ctx context.Context) (*Bootstrap, error) {
 	if err != nil {
 		return nil, err
 	}
+	desaFaskes, err := s.repo.ListDesaFaskesMappings(ctx)
+	if err != nil {
+		return nil, err
+	}
 	periods, err := s.repo.ListPeriods(ctx)
 	if err != nil {
 		return nil, err
@@ -88,7 +94,8 @@ func (s *MasterService) Bootstrap(ctx context.Context) (*Bootstrap, error) {
 	}
 	return &Bootstrap{
 		Users: users, Faskes: faskes, Wilayah: wilayah, Bidang: bidang, Categories: categories,
-		Periods: periods, DefaultPeriodID: defaultPeriod, Labels: labels, Indicators: indicators, Targets: targets,
+		DesaFaskes: desaFaskes, Periods: periods, DefaultPeriodID: defaultPeriod,
+		Labels: labels, Indicators: indicators, Targets: targets,
 		DashboardRows: rows, Roles: domain.AllRoles,
 		SubmissionStatuses: domain.AllSubmissionStatuses,
 		Classifications:    domain.AllClassificationStatuses,
@@ -140,6 +147,82 @@ func (s *MasterService) Periods(ctx context.Context) ([]domain.Periode, error) {
 
 func (s *MasterService) Categories(ctx context.Context) ([]domain.DashboardCategory, error) {
 	return s.repo.ListDashboardCategories(ctx)
+}
+
+func (s *MasterService) DesaFaskesMappings(ctx context.Context) ([]domain.DesaFaskesMapping, error) {
+	return s.repo.ListDesaFaskesMappings(ctx)
+}
+
+type DesaFaskesMappingInput struct {
+	DesaID      string `json:"desa_id"`
+	FaskesID    string `json:"faskes_id"`
+	BerlakuDari string `json:"berlaku_dari"`
+}
+
+func (s *MasterService) UpsertDesaFaskesMapping(ctx context.Context, in DesaFaskesMappingInput, actor *domain.User) (*domain.DesaFaskesMapping, error) {
+	if actor.Role != domain.RoleAdmin {
+		return nil, domain.Forbidden("hanya admin yang boleh mengubah mapping desa")
+	}
+	desaID := strings.TrimSpace(in.DesaID)
+	faskesID := strings.TrimSpace(in.FaskesID)
+	if desaID == "" || faskesID == "" {
+		return nil, domain.Validation("desa dan faskes wajib dipilih", nil)
+	}
+	wilayah, err := s.repo.ListWilayah(ctx)
+	if err != nil {
+		return nil, err
+	}
+	foundDesa := false
+	for _, w := range wilayah {
+		if w.ID == desaID && w.Level == "desa" {
+			foundDesa = true
+			break
+		}
+	}
+	if !foundDesa {
+		return nil, domain.Validation("desa_id harus menunjuk wilayah level desa", nil)
+	}
+	faskes, err := s.repo.GetFaskes(ctx, faskesID)
+	if err != nil {
+		return nil, err
+	}
+	if !faskes.Aktif {
+		return nil, domain.Validation("faskes domisili tidak aktif", nil)
+	}
+	berlakuDari := strings.TrimSpace(in.BerlakuDari)
+	if berlakuDari == "" {
+		berlakuDari = now()[:10]
+	}
+	if _, err := time.Parse("2006-01-02", berlakuDari); err != nil {
+		return nil, domain.Validation("berlaku_dari harus berformat YYYY-MM-DD", nil)
+	}
+	if berlakuDari > now()[:10] {
+		return nil, domain.Validation("berlaku_dari tidak boleh melebihi hari ini", nil)
+	}
+	m := &domain.DesaFaskesMapping{
+		DesaID: desaID, FaskesID: faskesID, BerlakuDari: berlakuDari,
+		Aktif: true, CreatedBy: &actor.ID, CreatedAt: now(), UpdatedAt: now(),
+	}
+	if err := s.repo.UpsertDesaFaskesMapping(ctx, m); err != nil {
+		return nil, fmt.Errorf("simpan mapping desa: %w", err)
+	}
+	all, err := s.repo.ListDesaFaskesMappings(ctx)
+	if err != nil {
+		return m, nil
+	}
+	for _, item := range all {
+		if item.ID == m.ID {
+			return &item, nil
+		}
+	}
+	return m, nil
+}
+
+func (s *MasterService) DeactivateDesaFaskesMapping(ctx context.Context, id string, actor *domain.User) error {
+	if actor.Role != domain.RoleAdmin {
+		return domain.Forbidden("hanya admin yang boleh mengubah mapping desa")
+	}
+	return s.repo.DeactivateDesaFaskesMapping(ctx, id, now()[:10])
 }
 
 type CategoryInput struct {
@@ -325,6 +408,7 @@ type CreateIndicatorInput struct {
 	Kode             string   `json:"kode"`
 	Nama             string   `json:"nama"`
 	Satuan           string   `json:"satuan"`
+	TipeNilai        string   `json:"tipe_nilai"`
 	Definisi         string   `json:"definisi"`
 	NumeratorLabel   string   `json:"numerator_label"`
 	DenominatorLabel string   `json:"denominator_label"`
@@ -350,6 +434,16 @@ func (s *MasterService) CreateIndicator(ctx context.Context, in CreateIndicatorI
 	if in.Frekuensi == "" {
 		in.Frekuensi = "bulanan"
 	}
+	if in.Frekuensi != "bulanan" && in.Frekuensi != "tahunan" {
+		return nil, domain.Validation("frekuensi harus bulanan atau tahunan", nil)
+	}
+	tipeNilai := strings.ToUpper(strings.TrimSpace(in.TipeNilai))
+	if tipeNilai == "" {
+		tipeNilai = string(domain.TipeRatio)
+	}
+	if tipeNilai != string(domain.TipeRatio) && tipeNilai != string(domain.TipeCount) && tipeNilai != string(domain.TipeScalar) {
+		return nil, domain.Validation("tipe_nilai harus RATIO, COUNT, atau SCALAR", nil)
+	}
 	labelIDs, primaryLabelID, err := s.validateIndicatorLabels(ctx, in.LabelIDs, in.PrimaryLabelID)
 	if err != nil {
 		return nil, err
@@ -370,6 +464,7 @@ func (s *MasterService) CreateIndicator(ctx context.Context, in CreateIndicatorI
 		Kode:             strings.TrimSpace(in.Kode),
 		Nama:             strings.TrimSpace(in.Nama),
 		Satuan:           strings.TrimSpace(in.Satuan),
+		TipeNilai:        tipeNilai,
 		Definisi:         strPtr(in.Definisi),
 		NumeratorLabel:   strPtr(in.NumeratorLabel),
 		DenominatorLabel: strPtr(in.DenominatorLabel),
@@ -635,6 +730,10 @@ func (s *MasterService) UpsertTarget(ctx context.Context, in UpsertTargetInput, 
 	if in.ScopeID == "" {
 		in.ScopeID = "wil-kab-swb"
 	}
+	period, err := s.repo.GetPeriodByID(ctx, in.PeriodeID)
+	if err != nil {
+		return nil, err
+	}
 	layananTahunan := in.TargetLayananTahunan
 	if layananTahunan == nil {
 		if existing, err := s.repo.ListTargets(ctx, in.PeriodeID); err == nil {
@@ -650,14 +749,21 @@ func (s *MasterService) UpsertTarget(ctx context.Context, in UpsertTargetInput, 
 			}
 		}
 	}
+	targetBulanan := in.TargetTahunan / 12
+	if period.Bulan == 0 {
+		targetBulanan = in.TargetTahunan
+	}
 	target := &domain.Target{
 		ID: uuid.NewString(), LabelID: strPtr(in.LabelID), IndikatorID: strPtr(in.IndikatorID),
 		PeriodeID: in.PeriodeID, ScopeType: in.ScopeType, ScopeID: strPtr(in.ScopeID),
-		TargetTahunan: in.TargetTahunan, TargetBulanan: in.TargetTahunan / 12,
+		TargetTahunan: in.TargetTahunan, TargetBulanan: targetBulanan,
 		TargetLayananTahunan: layananTahunan,
 	}
 	if layananTahunan != nil {
 		monthly := *layananTahunan / 12
+		if period.Bulan == 0 {
+			monthly = *layananTahunan
+		}
 		target.TargetLayananBulanan = &monthly
 	}
 	if err := s.repo.UpsertTarget(ctx, target); err != nil {

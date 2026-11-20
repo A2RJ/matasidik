@@ -31,7 +31,7 @@ func (s *DashboardService) ResolveFilter(ctx context.Context, f domain.Dashboard
 				f.PeriodeID = periods[0].ID
 			}
 		}
-	} else if len(f.PeriodeID) == 7 && strings.Count(f.PeriodeID, "-") == 1 {
+	} else if len(f.PeriodeID) == 4 || (len(f.PeriodeID) == 7 && strings.Count(f.PeriodeID, "-") == 1) {
 		if p, err := s.master.GetPeriodByKode(ctx, f.PeriodeID); err == nil {
 			f.PeriodeID = p.ID
 		}
@@ -66,6 +66,8 @@ func (s *DashboardService) SPM(ctx context.Context, f domain.DashboardFilter) ([
 	if err != nil {
 		return nil, nil, err
 	}
+	targets, _ := s.master.ListTargets(ctx, f.PeriodeID)
+	labelTargets, indicatorTargets := targetMaps(targets, f)
 	labels, _ := s.master.ListLabels(ctx)
 	labelByID := map[string]domain.Label{}
 	for _, l := range labels {
@@ -73,6 +75,19 @@ func (s *DashboardService) SPM(ctx context.Context, f domain.DashboardFilter) ([
 	}
 	for i := range items {
 		item := &items[i]
+		if item.TipeNilai == "" && item.LabelID != nil {
+			item.TipeNilai, item.Satuan = s.labelMetric(ctx, *item.LabelID)
+		}
+		if item.LabelID != nil {
+			if target, ok := labelTargets[*item.LabelID]; ok && target > 0 {
+				item.Target = target
+			}
+		}
+		if item.IndikatorID != nil {
+			if target, ok := indicatorTargets[*item.IndikatorID]; ok && target > 0 {
+				item.Target = target
+			}
+		}
 		filteredOut := false
 		if item.LabelID != nil {
 			if l, ok := labelByID[*item.LabelID]; ok {
@@ -114,6 +129,7 @@ func (s *DashboardService) SPM(ctx context.Context, f domain.DashboardFilter) ([
 			if v, _ := s.values.GetIKUValue(ctx, l.ID, f.PeriodeID, f.ScopeType, f.ScopeID); v != nil {
 				summary.ParentValue = v.Value
 				summary.ParentStatus = string(v.Status)
+				summary.ParentTipeNilai, summary.ParentSatuan = s.labelMetric(ctx, l.ID)
 			}
 			break
 		}
@@ -319,10 +335,12 @@ func (s *DashboardService) appendLabelCategory(ctx context.Context, category *do
 		if label.CategoryID == nil || *label.CategoryID != category.ID {
 			continue
 		}
+		tipeNilai, satuan := s.labelMetric(ctx, label.ID)
 		item := domain.DashboardSPMItem{
 			Kode: label.Kode, Indikator: label.Nama, LabelID: &label.ID,
 			LabelKode: &label.Kode, LabelNama: &label.Nama,
 			CategoryKode: &category.Kode, CategoryNama: &category.Nama,
+			TipeNilai: tipeNilai, Satuan: satuan,
 			Target: labelTargets[label.ID], ValueStatus: string(domain.ValueNoData),
 		}
 		if v, err := s.values.GetIKUValue(ctx, label.ID, f.PeriodeID, f.ScopeType, f.ScopeID); err == nil && v != nil {
@@ -362,19 +380,31 @@ func (s *DashboardService) ownerCategory(ctx context.Context, category *domain.D
 	for _, b := range bidangList {
 		bidangByID[b.ID] = b
 	}
-	values, err := s.values.ListFinalIndicatorValuesForScope(ctx, f.PeriodeID, f.ScopeType, f.ScopeID)
+	var values []domain.IndicatorValue
+	if f.ScopeType == "FASKES" {
+		values, err = s.values.ListFinalIndicatorValuesForFaskesDomisili(ctx, f.PeriodeID, f.ScopeID)
+	} else {
+		values, err = s.values.ListFinalIndicatorValuesForScope(ctx, f.PeriodeID, f.ScopeType, f.ScopeID)
+	}
 	if err != nil {
 		return nil, err
 	}
 	type aggregate struct {
-		num float64
-		den float64
+		num    float64
+		den    float64
+		sum    float64
+		latest *domain.IndicatorValue
 	}
 	byIndicator := map[string]aggregate{}
 	for _, v := range values {
 		a := byIndicator[v.IndikatorID]
 		a.num += v.Numerator
 		a.den += v.Denominator
+		a.sum += v.Value
+		if a.latest == nil || v.CreatedAt > a.latest.CreatedAt {
+			copy := v
+			a.latest = &copy
+		}
 		byIndicator[v.IndikatorID] = a
 	}
 	for _, indicator := range indicators {
@@ -387,14 +417,32 @@ func (s *DashboardService) ownerCategory(ctx context.Context, category *domain.D
 		item := domain.DashboardSPMItem{
 			Kode: indicator.Kode, Indikator: indicator.Nama, IndikatorID: &indicator.ID,
 			CategoryKode: &category.Kode, CategoryNama: &category.Nama,
+			TipeNilai: indicator.TipeNilai, Satuan: indicator.Satuan,
 			Target: indicatorTargets[indicator.ID], ValueStatus: string(domain.ValueNoData),
 		}
-		if a, ok := byIndicator[indicator.ID]; ok && a.den > 0 {
-			value := a.num / a.den * 100
-			item.Value = &value
-			item.Numerator = &a.num
-			item.Denominator = &a.den
-			item.ValueStatus = string(domain.ValueComplete)
+		if a, ok := byIndicator[indicator.ID]; ok {
+			switch domain.TipeNilai(indicator.TipeNilai) {
+			case domain.TipeCount:
+				value := a.sum
+				item.Value = &value
+				item.Numerator = &value
+				item.ValueStatus = string(domain.ValueComplete)
+			case domain.TipeScalar:
+				if a.latest != nil {
+					value := a.latest.Value
+					item.Value = &value
+					item.Numerator = &value
+					item.ValueStatus = string(domain.ValueComplete)
+				}
+			default:
+				if a.den > 0 {
+					value := a.num / a.den * 100
+					item.Value = &value
+					item.Numerator = &a.num
+					item.Denominator = &a.den
+					item.ValueStatus = string(domain.ValueComplete)
+				}
+			}
 		}
 		ownerID := indicator.PJBidangID
 		if indicator.PJTimkerID != nil {
@@ -505,6 +553,59 @@ func (s *DashboardService) IKUValues(ctx context.Context, periodeID, scopeType, 
 	return s.values.ListIKUValues(ctx, periodeID, scopeType, scopeID)
 }
 
+func (s *DashboardService) labelMetric(ctx context.Context, labelID string) (string, string) {
+	return s.labelMetricVisited(ctx, labelID, map[string]bool{})
+}
+
+func (s *DashboardService) labelMetricVisited(ctx context.Context, labelID string, seen map[string]bool) (string, string) {
+	if seen[labelID] {
+		return "", ""
+	}
+	seen[labelID] = true
+	links, err := s.master.ListIndicatorLabelsForLabel(ctx, labelID)
+	if err != nil {
+		return "", ""
+	}
+	tipe, satuan := "", ""
+	for _, link := range links {
+		ind, err := s.master.GetIndicatorByID(ctx, link.IndikatorID)
+		if err != nil {
+			continue
+		}
+		if tipe == "" {
+			tipe, satuan = ind.TipeNilai, ind.Satuan
+			continue
+		}
+		if tipe != ind.TipeNilai {
+			return "", ""
+		}
+	}
+	if len(links) > 0 {
+		return tipe, satuan
+	}
+	comps, err := s.master.ListIKUComponents(ctx, labelID)
+	if err != nil {
+		return "", ""
+	}
+	for _, comp := range comps {
+		if comp.TipeKomponen != "CHILD_IKU" {
+			continue
+		}
+		childTipe, childSatuan := s.labelMetricVisited(ctx, comp.KomponenID, seen)
+		if childTipe == "" {
+			continue
+		}
+		if tipe == "" {
+			tipe, satuan = childTipe, childSatuan
+			continue
+		}
+		if tipe != childTipe {
+			return "", ""
+		}
+	}
+	return tipe, satuan
+}
+
 func displayStatus(item domain.DashboardSPMItem) string {
 	if item.Value == nil || item.ValueStatus == string(domain.ValueNoData) || item.ValueStatus == "" {
 		return "NO_DATA"
@@ -536,7 +637,8 @@ func summarize(items []domain.DashboardSPMItem) *domain.DashboardSummary {
 		default:
 			out.NoData++
 		}
-		if item.Value != nil {
+		if item.Value != nil && (item.TipeNilai == "" || item.TipeNilai == string(domain.TipeRatio)) &&
+			!strings.HasPrefix(strings.ToLower(strings.TrimSpace(item.Satuan)), "rasio") {
 			sum += *item.Value
 			count++
 		}
@@ -575,7 +677,7 @@ func (s *DashboardService) Detail(ctx context.Context, kode string, f domain.Das
 		gap := *row.Value - row.Target
 		row.Gap = &gap
 	}
-	detail := &domain.SPMDetail{Row: *row}
+	detail := &domain.SPMDetail{Row: *row, Wilayah: []domain.SPMWilayahDetail{}}
 	if row.IKUValueID != nil {
 		provenance, err := s.values.ListIKUValueDetails(ctx, *row.IKUValueID)
 		if err == nil {
@@ -588,7 +690,8 @@ func (s *DashboardService) Detail(ctx context.Context, kode string, f domain.Das
 	}
 	for _, fk := range faskesList {
 		item := domain.SPMFaskesDetail{
-			FaskesID: fk.ID, FaskesKode: fk.Kode, FaskesNama: fk.Nama, Status: string(domain.ValueNoData),
+			FaskesID: fk.ID, FaskesKode: fk.Kode, FaskesNama: fk.Nama,
+			TipeNilai: row.TipeNilai, Satuan: row.Satuan, Status: string(domain.ValueNoData),
 		}
 		if rowDef.LabelID != nil {
 			if v, err := s.values.GetIKUValue(ctx, *rowDef.LabelID, f.PeriodeID, "FASKES", fk.ID); err == nil && v != nil {
@@ -601,7 +704,7 @@ func (s *DashboardService) Detail(ctx context.Context, kode string, f domain.Das
 			}
 		}
 		if rowDef.IndikatorID != nil {
-			vals, _ := s.values.ListFinalIndicatorValuesForScope(ctx, f.PeriodeID, "FASKES", fk.ID)
+			vals, _ := s.values.ListFinalIndicatorValuesForFaskesDomisili(ctx, f.PeriodeID, fk.ID)
 			for _, iv := range vals {
 				if iv.IndikatorID != *rowDef.IndikatorID {
 					continue
@@ -627,6 +730,27 @@ func (s *DashboardService) Detail(ctx context.Context, kode string, f domain.Das
 			}
 		}
 		detail.Faskes = append(detail.Faskes, item)
+	}
+	if rowDef.LabelID != nil {
+		wilayahList, err := s.master.ListWilayah(ctx)
+		if err == nil {
+			for _, w := range wilayahList {
+				item := domain.SPMWilayahDetail{
+					ScopeType: strings.ToUpper(w.Level), ScopeID: w.ID,
+					ScopeKode: w.Kode, ScopeNama: w.Nama,
+					TipeNilai: row.TipeNilai, Satuan: row.Satuan, Status: string(domain.ValueNoData),
+				}
+				if v, err := s.values.GetIKUValue(ctx, *rowDef.LabelID, f.PeriodeID, item.ScopeType, w.ID); err == nil && v != nil {
+					item.Numerator = &v.Numerator
+					item.Denominator = &v.Denominator
+					item.Value = v.Value
+					item.Status = string(v.Status)
+					item.UpdatedAt = &v.UpdatedAt
+					item.Uploaded = v.Value != nil && v.Status != domain.ValueNoData
+				}
+				detail.Wilayah = append(detail.Wilayah, item)
+			}
+		}
 	}
 	return detail, nil
 }
@@ -665,7 +789,14 @@ func (s *DashboardService) IKUByFaskes(ctx context.Context, f domain.DashboardFi
 		chart.Faskes = append(chart.Faskes, domain.ChartFaskes{ID: fk.ID, Kode: fk.Kode, Nama: fk.Nama})
 	}
 	for _, label := range ikuLabels {
-		series := domain.ChartSeries{Kode: label.Kode, Nama: label.Nama}
+		tipeNilai, satuan := s.labelMetric(ctx, label.ID)
+		if tipeNilai != "" && tipeNilai != string(domain.TipeRatio) {
+			continue
+		}
+		if strings.HasPrefix(strings.ToLower(strings.TrimSpace(satuan)), "rasio") {
+			continue
+		}
+		series := domain.ChartSeries{Kode: label.Kode, Nama: label.Nama, TipeNilai: tipeNilai, Satuan: satuan}
 		for _, fk := range faskesList {
 			var val *float64
 			if v, err := s.values.GetIKUValue(ctx, label.ID, f.PeriodeID, "FASKES", fk.ID); err == nil && v != nil {

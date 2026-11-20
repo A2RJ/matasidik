@@ -18,15 +18,20 @@ func (s *Store) ListFinalIndicatorValues(ctx context.Context, periodeID string) 
 func (s *Store) ListFinalIndicatorValuesForScope(ctx context.Context, periodeID, scopeType, scopeID string) ([]domain.IndicatorValue, error) {
 	q := `SELECT iv.id, iv.submission_row_id, iv.indikator_id, iv.periode_id, iv.faskes_id,
 		iv.scope_type, iv.scope_id, iv.numerator, iv.denominator, iv.value, iv.status,
-		iv.data_version, iv.created_at
+		iv.data_version, iv.created_at, i.tipe_nilai, i.satuan
 		FROM indicator_value iv
+		JOIN indikator i ON i.id = iv.indikator_id
 		JOIN submission_row sr ON sr.id = iv.submission_row_id
 		JOIN submission s ON s.id = sr.submission_id
 		WHERE s.status = 'final' AND iv.periode_id = ?`
 	args := []any{periodeID}
-	if scopeType == "FASKES" && scopeID != "" {
+	switch {
+	case scopeType == "FASKES" && scopeID != "":
 		q += ` AND iv.faskes_id = ?`
 		args = append(args, scopeID)
+	case scopeType != "" && scopeType != "KABUPATEN":
+		q += ` AND iv.scope_type = ? AND COALESCE(iv.scope_id,'') = ?`
+		args = append(args, scopeType, scopeID)
 	}
 	q += ` ORDER BY iv.created_at`
 	var out []domain.IndicatorValue
@@ -158,11 +163,31 @@ func (s *Store) LatestCalculationRun(ctx context.Context, periodeID string) (*do
 
 func (s *Store) ListFinalFileHashes(ctx context.Context, periodeID, scopeType, scopeID string) ([]string, error) {
 	q := `SELECT DISTINCT s.file_hash FROM submission s
+		JOIN submission_row sr ON sr.submission_id = s.id
+		JOIN indicator_value iv ON iv.submission_row_id = sr.id
 		WHERE s.status = 'final' AND s.periode_id = ?`
 	args := []any{periodeID}
-	if scopeType == "FASKES" && scopeID != "" {
-		q += ` AND s.faskes_id = ?`
-		args = append(args, scopeID)
+	switch {
+	case scopeType == "FASKES" && scopeID != "":
+		q += ` AND (s.faskes_id = ? OR (iv.scope_type = 'DESA' AND iv.scope_id IN
+			(SELECT desa_id FROM desa_faskes_mapping WHERE faskes_id = ? AND aktif = 1 AND berlaku_dari <= date('now') AND (berlaku_sampai IS NULL OR berlaku_sampai > date('now')))))`
+		args = append(args, scopeID, scopeID)
+	case scopeType != "" && scopeType != "KABUPATEN" && scopeID != "":
+		q = `WITH RECURSIVE scope_tree(id) AS (
+			SELECT ?
+			UNION ALL
+			SELECT w.id FROM wilayah w JOIN scope_tree t ON w.parent_id = t.id
+		)
+		SELECT DISTINCT s.file_hash FROM submission s
+		JOIN submission_row sr ON sr.submission_id = s.id
+		JOIN indicator_value iv ON iv.submission_row_id = sr.id
+		WHERE s.status = 'final' AND s.periode_id = ?
+			AND CASE WHEN ? = 'KECAMATAN'
+				THEN iv.scope_type IN ('DESA','KECAMATAN')
+				ELSE iv.scope_type = 'DESA'
+			END
+			AND iv.scope_id IN (SELECT id FROM scope_tree)`
+		args = []any{scopeID, periodeID, scopeType}
 	}
 	q += ` ORDER BY s.file_hash`
 	var out []string
@@ -172,9 +197,11 @@ func (s *Store) ListFinalFileHashes(ctx context.Context, periodeID, scopeType, s
 
 func (s *Store) GetIndicatorValueBySubmissionRow(ctx context.Context, submissionRowID string) (*domain.IndicatorValue, error) {
 	var out domain.IndicatorValue
-	err := s.db.GetContext(ctx, &out, `SELECT id, submission_row_id, indikator_id, periode_id, faskes_id,
-		scope_type, scope_id, numerator, denominator, value, status, data_version, created_at
-		FROM indicator_value WHERE submission_row_id = ?`, submissionRowID)
+	err := s.db.GetContext(ctx, &out, `SELECT iv.id, iv.submission_row_id, iv.indikator_id, iv.periode_id, iv.faskes_id,
+		iv.scope_type, iv.scope_id, iv.numerator, iv.denominator, iv.value, iv.status,
+		iv.data_version, iv.created_at, i.tipe_nilai, i.satuan
+		FROM indicator_value iv JOIN indikator i ON i.id = iv.indikator_id
+		WHERE iv.submission_row_id = ?`, submissionRowID)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -184,15 +211,20 @@ func (s *Store) GetIndicatorValueBySubmissionRow(ctx context.Context, submission
 func (s *Store) latestIndicatorValue(ctx context.Context, indikatorID, periodeID, scopeType, scopeID string) (*domain.IndicatorValue, error) {
 	q := `SELECT iv.id, iv.submission_row_id, iv.indikator_id, iv.periode_id, iv.faskes_id,
 		iv.scope_type, iv.scope_id, iv.numerator, iv.denominator, iv.value, iv.status,
-		iv.data_version, iv.created_at
+		iv.data_version, iv.created_at, i.tipe_nilai, i.satuan
 		FROM indicator_value iv
+		JOIN indikator i ON i.id = iv.indikator_id
 		JOIN submission_row sr ON sr.id = iv.submission_row_id
 		JOIN submission s ON s.id = sr.submission_id
 		WHERE s.status = 'final' AND iv.indikator_id = ? AND iv.periode_id = ?`
 	args := []any{indikatorID, periodeID}
-	if scopeType == "FASKES" && scopeID != "" {
+	switch {
+	case scopeType == "FASKES" && scopeID != "":
 		q += ` AND iv.faskes_id = ?`
 		args = append(args, scopeID)
+	case scopeType != "" && scopeType != "KABUPATEN":
+		q += ` AND iv.scope_type = ? AND COALESCE(iv.scope_id,'') = ?`
+		args = append(args, scopeType, scopeID)
 	}
 	q += ` ORDER BY iv.created_at DESC LIMIT 1`
 	var out domain.IndicatorValue
@@ -257,6 +289,8 @@ func (s *Store) DashboardSPM(ctx context.Context, f domain.DashboardFilter) ([]d
 		if row.IndikatorID != nil {
 			if ind, err := s.GetIndicatorByID(ctx, *row.IndikatorID); err == nil {
 				item.Indikator = ind.Nama
+				item.TipeNilai = ind.TipeNilai
+				item.Satuan = ind.Satuan
 			}
 		} else {
 			item.Indikator = row.Kode
@@ -371,4 +405,37 @@ func (s *Store) TraceSPM(ctx context.Context, kode string, f domain.DashboardFil
 		break
 	}
 	return trace, nil
+}
+
+// ListFinalIndicatorValuesForFaskesDomisili mengambil nilai desa yang dipetakan
+// ke faskes, lalu fallback ke nilai FASKES uploader hanya jika indikator itu
+// belum punya nilai desa. Ini mencegah double counting saat mapping aktif.
+func (s *Store) ListFinalIndicatorValuesForFaskesDomisili(ctx context.Context, periodeID, faskesID string) ([]domain.IndicatorValue, error) {
+	q := `SELECT iv.id, iv.submission_row_id, iv.indikator_id, iv.periode_id, iv.faskes_id,
+		iv.scope_type, iv.scope_id, iv.numerator, iv.denominator, iv.value, iv.status,
+		iv.data_version, iv.created_at, i.tipe_nilai, i.satuan
+		FROM indicator_value iv
+		JOIN indikator i ON i.id = iv.indikator_id
+		JOIN submission_row sr ON sr.id = iv.submission_row_id
+		JOIN submission s ON s.id = sr.submission_id
+		WHERE s.status = 'final' AND iv.periode_id = ?
+		  AND (
+			(iv.scope_type = 'DESA' AND iv.scope_id IN
+				(SELECT desa_id FROM desa_faskes_mapping WHERE faskes_id = ? AND aktif = 1 AND berlaku_dari <= date('now') AND (berlaku_sampai IS NULL OR berlaku_sampai > date('now'))))
+			OR
+			(iv.scope_type = 'FASKES' AND iv.faskes_id = ?
+			 AND NOT EXISTS (
+				SELECT 1 FROM indicator_value iv2
+				JOIN submission_row sr2 ON sr2.id = iv2.submission_row_id
+				JOIN submission s2 ON s2.id = sr2.submission_id
+				WHERE s2.status = 'final' AND iv2.periode_id = iv.periode_id
+				  AND iv2.indikator_id = iv.indikator_id AND iv2.scope_type = 'DESA'
+				  AND iv2.scope_id IN
+					(SELECT desa_id FROM desa_faskes_mapping WHERE faskes_id = ? AND aktif = 1 AND berlaku_dari <= date('now') AND (berlaku_sampai IS NULL OR berlaku_sampai > date('now')))
+			 ))
+		  )
+		ORDER BY iv.created_at`
+	var out []domain.IndicatorValue
+	err := s.db.SelectContext(ctx, &out, q, periodeID, faskesID, faskesID, faskesID)
+	return out, err
 }

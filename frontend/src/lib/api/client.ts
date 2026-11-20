@@ -7,6 +7,7 @@ import type {
   CapaianTahunan,
   DashboardCategory,
   DashboardCategoryResult,
+  DesaFaskesMapping,
   DashboardItem,
   DashboardSummary,
   Factor,
@@ -118,15 +119,22 @@ export const api = {
       body: JSON.stringify({ current_password, new_password })
     }),
 
-  dashboard: (params: { periode?: string; faskes_id?: string; status?: string; indikator_id?: string; bidang_id?: string }) =>
+  dashboard: (params: { periode?: string; faskes_id?: string; scope_type?: string; scope_id?: string; status?: string; indikator_id?: string; bidang_id?: string }) =>
     request<{ items: DashboardItem[]; summary: DashboardSummary; meta: Record<string, unknown> }>(
       `/dashboard/spm${query(params)}`
     ),
-  spmMonthly: (tahun: number) => request<MonthlySPMReport>(`/dashboard/spm/monthly${query({ tahun: String(tahun) })}`),
-  spmMonthlyExport: async (tahun: number, format: 'xlsx' | 'pdf'): Promise<{ blob: Blob; filename: string }> => {
+  spmMonthly: (
+    tahun: number,
+    params: { scope_type?: string; scope_id?: string; faskes_id?: string } = {}
+  ) => request<MonthlySPMReport>(`/dashboard/spm/monthly${query({ tahun: String(tahun), ...params })}`),
+  spmMonthlyExport: async (
+    tahun: number,
+    format: 'xlsx' | 'pdf',
+    params: { scope_type?: string; scope_id?: string; faskes_id?: string } = {}
+  ): Promise<{ blob: Blob; filename: string }> => {
     const doFetch = async (token: string | null) => {
       try {
-        return await fetch(`${BASE}/dashboard/spm/monthly/export${query({ tahun: String(tahun), format })}`, {
+        return await fetch(`${BASE}/dashboard/spm/monthly/export${query({ tahun: String(tahun), format, ...params })}`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
           credentials: 'include'
         });
@@ -145,13 +153,13 @@ export const api = {
     return { blob: await response.blob(), filename: match?.[1] ?? `mata-sidik-bulanan-${tahun}.${format}` };
   },
   trace: (kode: string, periode: string) => request<SPMTrace>(`/dashboard/spm/${kode}/trace${query({ periode })}`),
-  spmDetail: (kode: string, params: { periode?: string; faskes_id?: string } = {}) =>
+  spmDetail: (kode: string, params: { periode?: string; faskes_id?: string; scope_type?: string; scope_id?: string } = {}) =>
     request<SPMDetail>(`/dashboard/spm/${kode}/detail${query(params)}`),
   ikuByFaskes: (params: { periode?: string; faskes_id?: string } = {}) =>
     request<IKUChart>(`/dashboard/iku-by-faskes${query(params)}`),
   dashboardCategory: (
     kode: string,
-    params: { periode?: string; faskes_id?: string; status?: string; bidang_id?: string; timker_id?: string } = {}
+    params: { periode?: string; faskes_id?: string; scope_type?: string; scope_id?: string; status?: string; bidang_id?: string; timker_id?: string } = {}
   ) => request<DashboardCategoryResult>(`/dashboard/category${query({ kode, ...params })}`),
 
   submissions: (params: { periode?: string; status?: string; faskes_id?: string } = {}) =>
@@ -167,7 +175,11 @@ export const api = {
   updateRow: (submissionId: string, rowId: string, ikuKode: string, reason: string) =>
     request<SubmissionRow>(`/submissions/${submissionId}/rows/${rowId}`, {
       method: 'PATCH',
-      body: JSON.stringify({ iku_kode: ikuKode, reason })
+      body: JSON.stringify({
+        iku_kodes: ikuKode.split(';').map((code) => code.trim()).filter(Boolean),
+        iku_kode: ikuKode,
+        reason
+      })
     }),
   submit: (id: string) => request<Submission>(`/submissions/${id}/submit`, { method: 'POST' }),
   decision: (id: string, action: 'approve' | 'return', notes: string, reasonCode = '') =>
@@ -178,6 +190,11 @@ export const api = {
 
   labels: () => request<Label[]>('/master/labels'),
   categories: () => request<DashboardCategory[]>('/master/categories'),
+  desaFaskesMappings: () => request<DesaFaskesMapping[]>('/master/mapping-desa'),
+  upsertDesaFaskesMapping: (payload: Record<string, unknown>) =>
+    request<DesaFaskesMapping>('/master/mapping-desa', { method: 'POST', body: JSON.stringify(payload) }),
+  deactivateDesaFaskesMapping: (id: string) =>
+    request<{ ok: boolean }>(`/master/mapping-desa/${id}`, { method: 'DELETE' }),
   bidang: () => request<Bidang[]>('/master/bidang'),
   indicators: () => request<Bootstrap['indicators']>('/master/indicators'),
   targets: (periode?: string) => request<Target[]>(`/master/targets${query({ periode })}`),

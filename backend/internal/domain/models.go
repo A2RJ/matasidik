@@ -62,6 +62,22 @@ type Faskes struct {
 	Aktif     bool    `db:"aktif" json:"aktif"`
 }
 
+type DesaFaskesMapping struct {
+	ID            string  `db:"id" json:"id"`
+	DesaID        string  `db:"desa_id" json:"desa_id"`
+	FaskesID      string  `db:"faskes_id" json:"faskes_id"`
+	BerlakuDari   string  `db:"berlaku_dari" json:"berlaku_dari"`
+	BerlakuSampai *string `db:"berlaku_sampai" json:"berlaku_sampai,omitempty"`
+	Aktif         bool    `db:"aktif" json:"aktif"`
+	CreatedBy     *string `db:"created_by" json:"created_by,omitempty"`
+	CreatedAt     string  `db:"created_at" json:"created_at"`
+	UpdatedAt     string  `db:"updated_at" json:"updated_at"`
+	DesaKode      *string `db:"desa_kode" json:"desa_kode,omitempty"`
+	DesaNama      *string `db:"desa_nama" json:"desa_nama,omitempty"`
+	FaskesKode    *string `db:"faskes_kode" json:"faskes_kode,omitempty"`
+	FaskesNama    *string `db:"faskes_nama" json:"faskes_nama,omitempty"`
+}
+
 type Bidang struct {
 	ID       string  `db:"id" json:"id"`
 	Kode     string  `db:"kode" json:"kode"`
@@ -128,6 +144,7 @@ type Indikator struct {
 	Kode             string  `db:"kode" json:"kode"`
 	Nama             string  `db:"nama" json:"nama"`
 	Satuan           string  `db:"satuan" json:"satuan"`
+	TipeNilai        string  `db:"tipe_nilai" json:"tipe_nilai"`
 	Definisi         *string `db:"definisi" json:"definisi,omitempty"`
 	NumeratorLabel   *string `db:"numerator_label" json:"numerator_label,omitempty"`
 	DenominatorLabel *string `db:"denominator_label" json:"denominator_label,omitempty"`
@@ -272,6 +289,8 @@ type SubmissionRow struct {
 	// Join-only fields.
 	IndikatorKode *string `db:"indikator_kode" json:"indikator_kode,omitempty"`
 	IndikatorNama *string `db:"indikator_nama" json:"indikator_nama,omitempty"`
+	TipeNilai     *string `db:"tipe_nilai" json:"tipe_nilai,omitempty"`
+	Satuan        *string `db:"satuan" json:"satuan,omitempty"`
 	IKUKode       *string `db:"iku_kode" json:"iku_kode,omitempty"`
 	IKUNama       *string `db:"iku_nama" json:"iku_nama,omitempty"`
 }
@@ -318,6 +337,8 @@ type IndicatorValue struct {
 	Numerator       float64 `db:"numerator" json:"numerator"`
 	Denominator     float64 `db:"denominator" json:"denominator"`
 	Value           float64 `db:"value" json:"value"`
+	TipeNilai       string  `db:"tipe_nilai" json:"tipe_nilai"`
+	Satuan          string  `db:"satuan" json:"satuan"`
 	Status          string  `db:"status" json:"status"`
 	DataVersion     *string `db:"data_version" json:"data_version,omitempty"`
 	CreatedAt       string  `db:"created_at" json:"created_at"`

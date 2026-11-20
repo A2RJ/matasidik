@@ -21,6 +21,43 @@ export function formatNumber(value?: number | null, digits = 0): string {
   });
 }
 
+export function formatMetric(
+  value?: number | null,
+  metric?: { tipe_nilai?: string | null; satuan?: string | null } | null,
+  digits = 2
+): string {
+  if (value === null || value === undefined || Number.isNaN(value)) return '—';
+  if (!metric || !metric.tipe_nilai) {
+    return formatPercent(value, digits);
+  }
+  if (metric.tipe_nilai === 'RATIO') {
+    if (metric.satuan?.toLowerCase().startsWith('rasio')) {
+      return `${formatNumber(value, digits)}${metric.satuan ? ` ${metric.satuan}` : ''}`;
+    }
+    return formatPercent(value, digits);
+  }
+  const number = formatNumber(value, metric.tipe_nilai === 'COUNT' ? 0 : digits);
+  return metric.satuan ? `${number} ${metric.satuan}` : number;
+}
+
+export function formatGap(
+  value?: number | null,
+  metric?: { tipe_nilai?: string | null; satuan?: string | null } | null
+): string {
+  if (value === null || value === undefined || Number.isNaN(value)) return '—';
+  if (!metric || !metric.tipe_nilai) {
+    return `${value > 0 ? '+' : ''}${formatNumber(value, 2)} pp`;
+  }
+  if (metric.tipe_nilai === 'RATIO') {
+    if (metric.satuan?.toLowerCase().startsWith('rasio')) {
+      return `${value > 0 ? '+' : ''}${formatNumber(value, 2)}${metric.satuan ? ` ${metric.satuan}` : ''}`;
+    }
+    return `${value > 0 ? '+' : ''}${formatNumber(value, 2)} pp`;
+  }
+  const number = formatNumber(value, metric.tipe_nilai === 'COUNT' ? 0 : 2);
+  return `${value > 0 ? '+' : ''}${number}${metric.satuan ? ` ${metric.satuan}` : ''}`;
+}
+
 export function formatDateTime(value?: string | null): string {
   if (!value) return '—';
   const date = new Date(value);

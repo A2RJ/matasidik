@@ -107,6 +107,22 @@ export interface Wilayah {
   parent_id?: string;
 }
 
+export interface DesaFaskesMapping {
+  id: string;
+  desa_id: string;
+  faskes_id: string;
+  berlaku_dari: string;
+  berlaku_sampai?: string;
+  aktif: boolean;
+  created_by?: string;
+  created_at: string;
+  updated_at: string;
+  desa_kode?: string;
+  desa_nama?: string;
+  faskes_kode?: string;
+  faskes_nama?: string;
+}
+
 export interface Periode {
   id: string;
   tahun: number;
@@ -140,6 +156,7 @@ export interface Indicator {
   kode: string;
   nama: string;
   satuan: string;
+  tipe_nilai: 'RATIO' | 'COUNT' | 'SCALAR';
   definisi?: string;
   numerator_label?: string;
   denominator_label?: string;
@@ -211,6 +228,8 @@ export interface DashboardItem {
   calculation_run_id?: string;
   source_hash?: string;
   data_version?: string;
+  tipe_nilai?: 'RATIO' | 'COUNT' | 'SCALAR';
+  satuan?: string;
   target: number;
   baseline_prev?: number;
   baseline_year?: number;
@@ -233,6 +252,8 @@ export interface DashboardSummary {
   average: number;
   parent_value?: number;
   parent_status: string;
+  parent_tipe_nilai?: 'RATIO' | 'COUNT' | 'SCALAR';
+  parent_satuan?: string;
 }
 
 export interface DashboardCategoryResult {
@@ -325,6 +346,23 @@ export interface SPMFaskesDetail {
   numerator?: number;
   denominator?: number;
   value?: number;
+  tipe_nilai?: 'RATIO' | 'COUNT' | 'SCALAR';
+  satuan?: string;
+  status: string;
+  updated_at?: string;
+}
+
+export interface SPMWilayahDetail {
+  scope_type: string;
+  scope_id: string;
+  scope_kode: string;
+  scope_nama: string;
+  uploaded: boolean;
+  numerator?: number;
+  denominator?: number;
+  value?: number;
+  tipe_nilai?: 'RATIO' | 'COUNT' | 'SCALAR';
+  satuan?: string;
   status: string;
   updated_at?: string;
 }
@@ -332,6 +370,7 @@ export interface SPMFaskesDetail {
 export interface SPMDetail {
   row: DashboardItem;
   faskes: SPMFaskesDetail[];
+  wilayah: SPMWilayahDetail[];
   provenance?: IKUValueDetail[];
 }
 
@@ -344,6 +383,8 @@ export interface ChartFaskes {
 export interface ChartSeries {
   kode: string;
   nama: string;
+  tipe_nilai?: 'RATIO' | 'COUNT' | 'SCALAR';
+  satuan?: string;
   values: (number | null)[];
 }
 
@@ -358,6 +399,7 @@ export interface Bootstrap {
   wilayah: Wilayah[];
   bidang: Bidang[];
   categories: DashboardCategory[];
+  desa_faskes: DesaFaskesMapping[];
   periods: Periode[];
   default_period_id?: string;
   labels: Label[];
@@ -404,6 +446,8 @@ export interface SubmissionRow {
   nilai?: number;
   numerator?: number;
   denominator?: number;
+  tipe_nilai?: 'RATIO' | 'COUNT' | 'SCALAR';
+  satuan?: string;
   classification_status: ClassificationStatus;
   error_message?: string;
   indikator_kode?: string;

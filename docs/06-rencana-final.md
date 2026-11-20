@@ -15,7 +15,7 @@ Ada lima track pekerjaan:
 
 | Track | Isi | Status |
 | --- | --- | --- |
-| A | BNBA Excel line-level, domisili, sebaran wilayah | **BLOCKED** — menunggu format BNBA dan definisi denominator |
+| A | BNBA Excel line-level, domisili, sebaran wilayah | **BLOCKED** — template review tersedia di `docs/05` §10.14; menunggu keputusan format/denominator dan file asli |
 | B | Dashboard kategori dinamis + CRUD kategori/bidang + preview pemetaan | **SELESAI sebagian besar** |
 | C | Laporan absolut bulanan dari IKU/SPM + target layanan + ekspor | **SELESAI** |
 | D | Tata kelola pengajuan IKU: Operator → Puskesmas → Admin | **IMPLEMENTED** |
@@ -129,6 +129,8 @@ Puskesmas mengunggah BNBA sesuai format yang sudah ada; sistem memetakan ibu ham
 - Peta vs tabel/ranking.
 - Target per wilayah/faskes.
 
+**Template dan alur upload → dashboard (2026-11-20):** template utama `assets/templates/bnba/final/BNBA-Semua-Satuan.xlsx` dengan kolom `periode` untuk `YYYY-MM-DD`, `YYYY-MM`, atau `YYYY` (tidak ada template tahunan terpisah); `assets/templates/bnba/template-bnba-dinamis.xlsx` tetap legacy untuk rasio. Upload, klasifikasi scope, kalkulasi per wilayah, filter dashboard, detail wilayah, serta mapping desa → puskesmas domisili sudah diimplementasikan untuk rasio, count/scalar, dan periode tahunan. Sisa: format harian, target per desa, dedupe lintas submission. v1/v2 dan file tahunan lama ada di `assets/templates/bnba/arsip/`. Detail ada di [`05-rencana-bnba-wilayah.md`](05-rencana-bnba-wilayah.md) §10.14–§10.19.
+
 ### Fase
 
 1. Inventaris format dan anonimisasi sampel.
@@ -172,7 +174,7 @@ Puskesmas mengunggah BNBA sesuai format yang sudah ada; sistem memetakan ibu ham
 ### Keputusan final
 
 - `Target 2026 = 2000` adalah **target layanan tahunan**, bukan target persentase.
-- `Target Bulanan = target layanan tahunan / 12`.
+- `Target Bulanan = target layanan tahunan / 12` untuk periode bulanan; periode tahunan memakai target tahunan.
 - Status bulanan membandingkan **jumlah layanan bulan itu** dengan **target bulanan**.
 - Laporan ditampilkan sebagai section + ekspor XLSX/PDF.
 - Data diambil dari IKU/SPM/dashboard, bukan tiga baris duplikat Excel.

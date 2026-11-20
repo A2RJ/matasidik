@@ -6,7 +6,7 @@
 >
 > Diagram tabel, kolom, dan relasi: [`../assets/diagrams/schema-db.webp`](../assets/diagrams/schema-db.webp) · sumber HTML: [`../assets/diagrams/schema-db.html`](../assets/diagrams/schema-db.html) · generator: [`../assets/diagrams/gen-schema.py`](../assets/diagrams/gen-schema.py).
 >
-> **Catatan:** diagram `schema-db` belum diregenerasi setelah penambahan `dashboard_category`, `label.category_id`, `bidang.jenis`, `indikator.pj_timker_id`, dan tabel `iku_change_*`; generator sudah diperbarui sebagian, WebP menunggu build ulang.
+> **Catatan:** diagram `schema-db` belum diregenerasi setelah penambahan `dashboard_category`, `label.category_id`, `bidang.jenis`, `indikator.pj_timker_id`, `indikator.tipe_nilai`, periode tahunan (`bulan = 0`), dan tabel `iku_change_*`; generator sudah diperbarui sebagian, WebP menunggu build ulang.
 
 ## 1. Prinsip
 
@@ -36,7 +36,7 @@
 
 | Kelompok | Tabel |
 | --- | --- |
-| Master inti | `users`, `positions`, `auth_session`, `wilayah`, `faskes`, `bidang`, `periode`, `master_release`, `workflow_version` |
+| Master inti | `users`, `positions`, `auth_session`, `wilayah`, `faskes`, `desa_faskes_mapping`, `bidang`, `periode`, `master_release`, `workflow_version` |
 | Taksonomi & target | `dashboard_category`, `label`, `indikator`, `indikator_label`, `iku_komponen`, `target`, `capaian_tahunan`, `dashboard_row` |
 | Submission & file | `file_object`, `submission`, `submission_revision`, `submission_group`, `submission_row`, `submission_review`, `job` |
 | Nilai & kalkulasi | `indicator_value`, `calculation_run`, `iku_value`, `iku_value_detail` |
@@ -117,9 +117,27 @@ Puskesmas/faskes pengirim data.
 | `id` | TEXT | PK | UUID faskes |
 | `kode` | TEXT | UNIQUE, NOT NULL | Contoh `PKM-TALIWANG` |
 | `nama` | TEXT | NOT NULL | Nama faskes |
-| `wilayah_id` | TEXT | FK → `wilayah.id` | Wilayah faskes |
+| `wilayah_id` | TEXT | FK → `wilayah.id` | Lokasi faskes, bukan mapping desa |
 | `jenis` | TEXT | NOT NULL | `puskesmas` dan sejenisnya |
 | `aktif` | INTEGER | NOT NULL | Soft delete |
+
+### 4.5.1 `desa_faskes_mapping`
+
+Mapping berversi desa → puskesmas domisili. Satu desa hanya punya satu mapping aktif.
+
+| Kolom | Tipe | Constraint | Keterangan |
+| --- | --- | --- | --- |
+| `id` | TEXT | PK | UUID mapping |
+| `desa_id` | TEXT | FK → `wilayah.id` | Harus level `desa` |
+| `faskes_id` | TEXT | FK → `faskes.id` | Puskesmas domisili |
+| `berlaku_dari` | TEXT | NOT NULL | Tanggal `YYYY-MM-DD` |
+| `berlaku_sampai` | TEXT |  | Diisi saat mapping diganti/dinonaktifkan |
+| `aktif` | INTEGER | NOT NULL | Hanya satu aktif per desa |
+| `created_by` | TEXT | FK → `users.id` | Admin pembuat |
+| `created_at` | TEXT | NOT NULL | Waktu |
+| `updated_at` | TEXT | NOT NULL | Waktu |
+
+Unique aktif: `(desa_id)` dengan `aktif = 1 AND berlaku_sampai IS NULL`.
 
 ### 4.6 `bidang`
 
@@ -136,14 +154,14 @@ Bidang/sekretariat/timkerja pemilik data.
 
 ### 4.7 `periode`
 
-Bulan pelaporan; upload dan perhitungan terikat ke periode.
+Periode pelaporan; upload dan perhitungan terikat ke periode. Bulan `0` menandai periode tahunan.
 
 | Kolom | Tipe | Constraint | Keterangan |
 | --- | --- | --- | --- |
 | `id` | TEXT | PK | UUID periode |
 | `tahun` | INTEGER | NOT NULL | Tahun |
-| `bulan` | INTEGER | NOT NULL, CHECK 1–12 | Bulan |
-| `kode` | TEXT | UNIQUE, NOT NULL | `YYYY-MM`, contoh `2026-05` |
+| `bulan` | INTEGER | NOT NULL, CHECK 0–12 | `1`–`12` bulanan; `0` tahunan |
+| `kode` | TEXT | UNIQUE, NOT NULL | `YYYY-MM` (bulanan) atau `YYYY` (tahunan) |
 | `status` | TEXT | CHECK `open/locked` | Periode terkunci tidak menerima upload |
 | `is_late_allowed` | INTEGER | NOT NULL | Kebijakan keterlambatan |
 
@@ -226,6 +244,7 @@ Definisi indikator yang diukur.
 | `kode` | TEXT | UNIQUE, NOT NULL | `IND-001` |
 | `nama` | TEXT | NOT NULL | Nama indikator |
 | `satuan` | TEXT | NOT NULL | Satuan baku |
+| `tipe_nilai` | TEXT | NOT NULL, CHECK `RATIO/COUNT/SCALAR` | Bentuk nilai; default `RATIO` |
 | `definisi` | TEXT |  | Definisi operasional |
 | `numerator_label` | TEXT |  | Label pembilang |
 | `denominator_label` | TEXT |  | Label penyebut |
@@ -262,7 +281,7 @@ Graf kalkulasi induk. Hanya komponen eksplisit yang dihitung; mencegah double co
 
 ### 5.5 `target`
 
-Target per periode/scope. `target_bulanan = target_tahunan / 12`.
+Target per periode/scope. `target_bulanan = target_tahunan / 12` untuk periode bulanan; untuk periode tahunan (`bulan = 0`), `target_bulanan = target_tahunan`.
 
 | Kolom | Tipe | Constraint | Keterangan |
 | --- | --- | --- | --- |
@@ -273,9 +292,9 @@ Target per periode/scope. `target_bulanan = target_tahunan / 12`.
 | `scope_type` | TEXT | NOT NULL | `KABUPATEN`, `FASKES`, `KECAMATAN`, `DESA` |
 | `scope_id` | TEXT |  | ID scope |
 | `target_tahunan` | REAL | NOT NULL | Target capaian/persentase tahunan |
-| `target_bulanan` | REAL | NOT NULL | `target_tahunan / 12` |
+| `target_bulanan` | REAL | NOT NULL | `target_tahunan / 12` (bulanan); sama dengan tahunan untuk periode tahunan |
 | `target_layanan_tahunan` | REAL |  | Target layanan absolut tahunan (mis. 2000 ibu hamil) |
-| `target_layanan_bulanan` | REAL |  | `target_layanan_tahunan / 12` |
+| `target_layanan_bulanan` | REAL |  | `target_layanan_tahunan / 12` (bulanan); sama untuk tahunan |
 
 > Target layanan absolut dipisahkan dari target capaian persentase. Laporan bulanan absolut memakai `target_layanan_*`; dashboard persentase memakai `target`/`dashboard_row`.
 
@@ -399,9 +418,9 @@ Baris hasil parsing + klasifikasi deterministik.
 | `matched_label_id` | TEXT | FK → `label.id` | IKU leaf hasil pencocokan |
 | `scope_type` | TEXT | NOT NULL | `FASKES`, `DESA`, `KECAMATAN`, `KABUPATEN` |
 | `scope_code` | TEXT |  | Kode scope |
-| `nilai` | REAL |  | Nilai baris |
-| `numerator` | REAL |  | Pembilang |
-| `denominator` | REAL |  | Penyebut |
+| `nilai` | REAL |  | Nilai count/scalar; untuk rasio boleh diturunkan |
+| `numerator` | REAL |  | Pembilang rasio; `0` untuk count/scalar |
+| `denominator` | REAL |  | Penyebut rasio; `0` untuk count/scalar |
 | `classification_status` | TEXT | NOT NULL | `MATCHED`, `MISMATCH`, `UNKNOWN_IKU`, `UNKNOWN_INDICATOR`, `IKU_ROLLUP_ONLY`, `AMBIGUOUS`, `DUPLICATE`, `INVALID_VALUE`, `SCOPE_DENIED` |
 | `error_message` | TEXT |  | Pesan per baris |
 | `created_at` | TEXT | NOT NULL | Waktu |
@@ -508,9 +527,9 @@ Nilai dasar satu indikator dari satu baris submission.
 | `faskes_id` | TEXT | FK → `faskes.id` | Faskes |
 | `scope_type` | TEXT | NOT NULL | Scope |
 | `scope_id` | TEXT |  | ID scope |
-| `numerator` | REAL | NOT NULL | Jangan dibulatkan |
-| `denominator` | REAL | NOT NULL | Jangan dibulatkan |
-| `value` | REAL | NOT NULL | `numerator/denominator×100` |
+| `numerator` | REAL | NOT NULL | Pembilang rasio; `0` untuk count/scalar |
+| `denominator` | REAL | NOT NULL | Penyebut rasio; `0` untuk count/scalar |
+| `value` | REAL | NOT NULL | Rasio persen: `num/den×100`; Rasio non-persen: `num/den`; count/scalar: nilai |
 | `status` | TEXT | NOT NULL | `COMPLETE`, `PARTIAL`, `NO_DATA`, `STALE` |
 | `data_version` | TEXT |  | Versi data |
 | `created_at` | TEXT | NOT NULL | Waktu |
@@ -542,9 +561,9 @@ Nilai IKU materialized. Dashboard membaca tabel ini, bukan menghitung ulang saat
 | `periode_id` | TEXT | FK → `periode.id` | Periode |
 | `scope_type` | TEXT | NOT NULL | Scope |
 | `scope_id` | TEXT |  | ID scope |
-| `numerator` | REAL | NOT NULL | Σ numerator |
-| `denominator` | REAL | NOT NULL | Σ denominator |
-| `value` | REAL |  | `Σnum/Σden×100` |
+| `numerator` | REAL | NOT NULL | Rasio: Σ numerator; count/scalar: nilai |
+| `denominator` | REAL | NOT NULL | Rasio: Σ denominator; count/scalar: `0` |
+| `value` | REAL |  | Rasio persen: `Σnum/Σden×100`; Rasio non-persen: `Σnum/Σden`; count/scalar: nilai |
 | `status` | TEXT | NOT NULL | `COMPLETE`, `PARTIAL`, `NO_DATA`, `STALE` |
 | `formula_version` | TEXT | NOT NULL | `v1` |
 | `calculation_run_id` | TEXT | FK → `calculation_run.id` | Run |
@@ -651,6 +670,7 @@ Internal migrasi.
 | `indikator_label` | `indikator` | N:1 | `indikator_id` |
 | `indikator_label` | `label` | N:1 | `label_id` |
 | `iku_komponen` | `label` | N:1 | `parent_label_id` |
+| `desa_faskes_mapping` | `wilayah`/`faskes`/`users` | N:1 | FK |
 | `target` | `label`/`indikator`/`periode` | N:1 | FK |
 | `capaian_tahunan` | `label`/`indikator`/`users` | N:1 | FK |
 | `dashboard_row` | `label`/`indikator` | N:1 | FK |
@@ -679,6 +699,7 @@ Internal migrasi.
 | `ix_category_urutan` | Urutan/aktif kategori dashboard |
 | `ix_bidang_jenis` | Filter bidang/sekretariat/timker |
 | `ix_indikator_timker` | Filter indikator per timker |
+| `ix_desa_faskes_faskes` | Daftar desa per puskesmas domisili |
 | `ux_capaian_tahunan_key` | Cegah duplikasi capaian per tahun/label/indikator/scope |
 | `ix_capaian_tahunan_tahun` | Cari capaian per tahun/scope |
 | `ix_auth_session_user` | Cari sesi per user |

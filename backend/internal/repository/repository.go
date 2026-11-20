@@ -33,6 +33,11 @@ type MasterRepository interface {
 	ListWilayah(ctx context.Context) ([]domain.Wilayah, error)
 	ListFaskes(ctx context.Context) ([]domain.Faskes, error)
 	GetFaskes(ctx context.Context, id string) (*domain.Faskes, error)
+	ListDesaFaskesMappings(ctx context.Context) ([]domain.DesaFaskesMapping, error)
+	GetActiveFaskesForDesa(ctx context.Context, desaID string) (*domain.DesaFaskesMapping, error)
+	ListActiveDesaIDsForFaskes(ctx context.Context, faskesID string) ([]string, error)
+	UpsertDesaFaskesMapping(ctx context.Context, m *domain.DesaFaskesMapping) error
+	DeactivateDesaFaskesMapping(ctx context.Context, id, at string) error
 	ListBidang(ctx context.Context) ([]domain.Bidang, error)
 	GetBidang(ctx context.Context, id string) (*domain.Bidang, error)
 	CreateBidang(ctx context.Context, b *domain.Bidang) error
@@ -119,6 +124,7 @@ type JobRepository interface {
 type ValueRepository interface {
 	ListFinalIndicatorValues(ctx context.Context, periodeID string) ([]domain.IndicatorValue, error)
 	ListFinalIndicatorValuesForScope(ctx context.Context, periodeID, scopeType, scopeID string) ([]domain.IndicatorValue, error)
+	ListFinalIndicatorValuesForFaskesDomisili(ctx context.Context, periodeID, faskesID string) ([]domain.IndicatorValue, error)
 	GetIKUValue(ctx context.Context, labelID, periodeID, scopeType, scopeID string) (*domain.IKUValue, error)
 	ListIKUValues(ctx context.Context, periodeID, scopeType, scopeID string) ([]domain.IKUValue, error)
 	ListIKUValueDetails(ctx context.Context, ikuValueID string) ([]domain.IKUValueDetail, error)

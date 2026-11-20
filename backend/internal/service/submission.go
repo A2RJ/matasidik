@@ -190,8 +190,9 @@ func (s *SubmissionService) allowedIKUs(ctx context.Context, indikatorID string,
 }
 
 type UpdateRowInput struct {
-	IKUKode string `json:"iku_kode"`
-	Reason  string `json:"reason"`
+	IKUKode  string   `json:"iku_kode"`
+	IKUKodes []string `json:"iku_kodes"`
+	Reason   string   `json:"reason"`
 }
 
 func (s *SubmissionService) UpdateRow(ctx context.Context, actor *domain.User, submissionID, rowID string, in UpdateRowInput, requestID string) (*domain.SubmissionRow, error) {
@@ -212,29 +213,48 @@ func (s *SubmissionService) UpdateRow(ctx context.Context, actor *domain.User, s
 	if row.SubmissionID != submissionID || row.MatchedIndikatorID == nil {
 		return nil, domain.Validation("baris tidak valid", nil)
 	}
-	label, err := s.master.GetLabelByKode(ctx, strings.TrimSpace(in.IKUKode), deref(sub.MasterReleaseID))
-	if err != nil {
-		return nil, err
+	codes := in.IKUKodes
+	if len(codes) == 0 {
+		codes = strings.Split(in.IKUKode, ";")
 	}
-	if !label.AllowDirectInput || label.IsRollupOnly {
-		return nil, domain.Validation("IKU induk/rollup tidak boleh menerima input langsung", map[string]any{"iku_kode": in.IKUKode})
+	labels := make([]domain.Label, 0, len(codes))
+	seen := map[string]bool{}
+	for _, code := range codes {
+		code = strings.TrimSpace(code)
+		if code == "" || seen[code] {
+			continue
+		}
+		seen[code] = true
+		label, err := s.master.GetLabelByKode(ctx, code, deref(sub.MasterReleaseID))
+		if err != nil {
+			return nil, err
+		}
+		if !label.AllowDirectInput || label.IsRollupOnly {
+			return nil, domain.Validation("IKU induk/rollup tidak boleh menerima input langsung", map[string]any{"iku_kode": code})
+		}
+		labels = append(labels, *label)
+	}
+	if len(labels) == 0 {
+		return nil, domain.Validation("minimal satu kode IKU wajib diisi", nil)
 	}
 	links, err := s.master.ListIndicatorLabels(ctx, *row.MatchedIndikatorID)
 	if err != nil {
 		return nil, err
 	}
-	ok := false
-	for _, link := range links {
-		if link.LabelID == label.ID {
-			ok = true
-			break
+	for _, label := range labels {
+		ok := false
+		for _, link := range links {
+			if link.LabelID == label.ID {
+				ok = true
+				break
+			}
+		}
+		if !ok {
+			return nil, domain.Validation("IKU tidak terhubung ke indikator baris ini", map[string]any{"iku_kode": label.Kode})
 		}
 	}
-	if !ok {
-		return nil, domain.Validation("IKU tidak terhubung ke indikator baris ini", map[string]any{"iku_kode": in.IKUKode})
-	}
 	before := row
-	if err := s.subs.UpdateRowClassification(ctx, rowID, label.ID, domain.ClassMatched, ""); err != nil {
+	if err := s.subs.UpdateRowClassification(ctx, rowID, labels[0].ID, domain.ClassMatched, ""); err != nil {
 		return nil, err
 	}
 	after, _ := s.subs.GetRow(ctx, rowID)
